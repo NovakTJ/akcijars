@@ -168,7 +168,7 @@
     KATEGORIJE.forEach(k => document.getElementById('filter-kat').innerHTML += `<option value="${k}">${k}</option>`);
 
     // ── State ──────────────────────────────────
-    const PER_PAGE = 10;
+    const PER_PAGE = 9;
     let currentPage = 1;
     let filtered = [...AKCIJE];
     let selectedLocation = null; // { naziv, lat, lng }
@@ -346,8 +346,8 @@
             ? `<span class="dist-badge"><i class="bi bi-geo-alt-fill"></i> ${a._dist} km</span>` : '';
           return `
           <div class="card">
-            <div class="card-img-placeholder" style="background:${getCategoryGradient(a.kategorija)}">
-              <span class="card-img-icon">${getCategoryEmoji(a.kategorija)}</span>
+            <div class="card-img-placeholder" style="padding:0;overflow:hidden;">
+              <img src="slikaAkcije.png" style="width:100%;height:100%;object-fit:cover;display:block;">
             </div>
             <div class="card-body">
               <div class="card-meta">${getKategorijaBadge(a.kategorija)} ${getStatusBadge(a.status)} ${distBadge}</div>

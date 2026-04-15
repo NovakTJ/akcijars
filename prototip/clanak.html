@@ -93,10 +93,11 @@
           <span style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${clanak.naslov}</span>
         </div>
 
-        <!-- Article hero -->
-        <div class="article-hero" style="background:${getCategoryGradient(clanak.kategorija)};">
-          ${getCategoryEmoji(clanak.kategorija)}
-        </div>
+        <!-- Article hero (naslovna = slike[0]) -->
+        ${clanak.slike && clanak.slike.length ? `
+        <div class="article-hero" style="padding:0;overflow:hidden;">
+          <img src="${clanak.slike[0]}" style="width:100%;height:100%;object-fit:cover;display:block;">
+        </div>` : ''}
 
         <!-- Article header -->
         <div class="article-header">
@@ -126,6 +127,21 @@
         <div class="article-body">
           ${clanak.sadrzaj.split('\n\n').map(p=>`<p>${p}</p>`).join('')}
         </div>
+
+        ${clanak.slike && clanak.slike.length > 1 ? `
+        <div style="margin-top:32px;">
+          <h3 style="font-size:1rem;font-weight:700;color:var(--dark);margin-bottom:14px;display:flex;align-items:center;gap:8px;">
+            <i class="bi bi-images" style="color:var(--teal);"></i> Fotografije
+          </h3>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;">
+            ${clanak.slike.slice(1).map(s => `
+              <div style="border-radius:var(--radius);overflow:hidden;aspect-ratio:4/3;">
+                <img src="${s}" style="width:100%;height:100%;object-fit:cover;display:block;cursor:pointer;transition:transform .2s;"
+                  onmouseover="this.style.transform='scale(1.03)'"
+                  onmouseout="this.style.transform='scale(1)'">
+              </div>`).join('')}
+          </div>
+        </div>` : ''}
 
         <div class="divider" style="margin-top:40px;"></div>
 

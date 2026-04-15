@@ -83,7 +83,7 @@
     const katSel = document.getElementById('filter-kat');
     [...new Set(CLANCI.map(c=>c.kategorija))].forEach(k => katSel.innerHTML += `<option value="${k}">${k}</option>`);
 
-    const PER_PAGE = 10;
+    const PER_PAGE = 9;
     let currentPage = 1;
     let filtered = [...CLANCI];
 
@@ -139,8 +139,8 @@
         grid.style.display='grid'; emptyState.style.display='none';
         grid.innerHTML = page.map(c => `
           <div class="card">
-            <div class="card-img-placeholder" style="background:${getCategoryGradient(c.kategorija)}">
-              <span class="card-img-icon">${getCategoryEmoji(c.kategorija)}</span>
+            <div class="card-img-placeholder" style="padding:0;overflow:hidden;">
+              <img src="slikaAkcije.png" style="width:100%;height:100%;object-fit:cover;display:block;">
             </div>
             <div class="card-body">
               <div class="card-meta">

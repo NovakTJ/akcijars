@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administrator panel – AkcijaRS</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body>
+  <div id="navbar-placeholder"></div>
+  <div class="panel-page">
+    <div class="panel-header">
+      <div class="panel-header-bg" style="background:radial-gradient(ellipse 50% 80% at 90% 50%,rgba(0,151,178,0.18) 0%,transparent 60%),radial-gradient(ellipse 40% 60% at 10% 50%,rgba(126,217,87,0.1) 0%,transparent 60%);"></div>
+      <div class="container panel-header-inner">
+        <div class="panel-user-row">
+          <div class="panel-avatar">A</div>
+          <div class="panel-user-info">
+            <h2>Milica Milošević</h2>
+            <p>admin@test.rs</p>
+            <span class="panel-role-badge"><i class="bi bi-shield-check-fill"></i> Administrator</span>
+          </div>
+        </div>
+      </div>
+      <div class="panel-stats">
+        <div class="panel-stat"><div class="panel-stat-num teal" id="stat-zahtevi">0</div><div class="panel-stat-label">Zahtevi za naloge</div></div>
+        <div class="panel-stat"><div class="panel-stat-num" id="stat-ak-cek">0</div><div class="panel-stat-label">Akcije na čekanju</div></div>
+        <div class="panel-stat"><div class="panel-stat-num" id="stat-cl-cek">0</div><div class="panel-stat-label">Članci na čekanju</div></div>
+        <div class="panel-stat"><div class="panel-stat-num green" id="stat-kor">0</div><div class="panel-stat-label">Ukupno korisnika</div></div>
+      </div>
+    </div>
+    <div class="panel-tabs">
+      <div class="container">
+        <div class="panel-tabs-inner">
+          <button class="panel-tab active" data-tab="pregled" onclick="switchTab('pregled')"><i class="bi bi-grid-1x2"></i> Pregled</button>
+          <button class="panel-tab" data-tab="zahtevi" onclick="switchTab('zahtevi')"><i class="bi bi-person-check"></i> Zahtevi za naloge <span class="badge badge-warning" id="badge-zahtevi" style="display:none;"></span></button>
+          <button class="panel-tab" data-tab="korisnici" onclick="switchTab('korisnici')"><i class="bi bi-people"></i> Korisnici</button>
+          <button class="panel-tab" data-tab="akcije-cek" onclick="switchTab('akcije-cek')"><i class="bi bi-hourglass-split"></i> Akcije na čekanju <span class="badge badge-warning" id="badge-ak-cek" style="display:none;"></span></button>
+          <button class="panel-tab" data-tab="akcije-sve" onclick="switchTab('akcije-sve')"><i class="bi bi-lightning"></i> Sve akcije</button>
+          <button class="panel-tab" data-tab="clanci-cek" onclick="switchTab('clanci-cek')"><i class="bi bi-file-earmark-check"></i> Članci na čekanju <span class="badge badge-warning" id="badge-cl-cek" style="display:none;"></span></button>
+          <button class="panel-tab" data-tab="clanci-sve" onclick="switchTab('clanci-sve')"><i class="bi bi-newspaper"></i> Svi članci</button>
+        </div>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="container">
+
+        <!-- PREGLED -->
+        <div class="panel-section active" id="sec-pregled">
+          <div class="section-header"><div><h2 class="section-title">Pregled sistema</h2><p class="section-subtitle">Brzi uvid u stanje platforme</p></div></div>
+          <div class="overview-grid">
+            <div class="ov-card" onclick="switchTab('zahtevi')"><div class="ov-icon">👤</div><div class="ov-num teal" id="ov-zahtevi">0</div><div class="ov-label">Zahtevi za naloge</div></div>
+            <div class="ov-card" onclick="switchTab('akcije-cek')"><div class="ov-icon">⏳</div><div class="ov-num" style="color:var(--warning);" id="ov-ak-cek">0</div><div class="ov-label">Akcije na čekanju</div></div>
+            <div class="ov-card" onclick="switchTab('clanci-cek')"><div class="ov-icon">📄</div><div class="ov-num" style="color:var(--warning);" id="ov-cl-cek">0</div><div class="ov-label">Članci na čekanju</div></div>
+            <div class="ov-card" onclick="switchTab('korisnici')"><div class="ov-icon">🌱</div><div class="ov-num green" id="ov-kor">0</div><div class="ov-label">Ukupno korisnika</div></div>
+          </div>
+          <div class="grid-2" style="gap:20px;">
+            <div class="panel-card"><div class="panel-card-header"><h3><i class="bi bi-person-check"></i> Zahtevi za naloge</h3></div><div id="pregled-zahtevi"></div></div>
+            <div class="panel-card"><div class="panel-card-header"><h3><i class="bi bi-hourglass-split"></i> Akcije na čekanju</h3></div><div id="pregled-akcije"></div></div>
+          </div>
+        </div>
+
+        <!-- ZAHTEVI -->
+        <div class="panel-section" id="sec-zahtevi">
+          <div class="section-header"><div><h2 class="section-title">Zahtevi za naloge</h2><p class="section-subtitle">Organizatori i sponzori čiji nalozi čekaju odobrenje</p></div></div>
+          <div id="zahtevi-lista"></div>
+          <div id="zahtevi-empty" class="empty-state" style="display:none;"><div class="es-icon"><i class="bi bi-check2-circle"></i></div><h3>Nema zahteva</h3><p>Svi zahtevi su obrađeni.</p></div>
+        </div>
+
+        <!-- KORISNICI -->
+        <div class="panel-section" id="sec-korisnici">
+          <div class="section-header" style="flex-wrap:wrap;gap:14px;">
+            <div><h2 class="section-title">Upravljanje korisnicima</h2><p class="section-subtitle">Pregled i upravljanje svim registrovanim korisnicima</p></div>
+            <div class="sw-admin"><div class="search-wrap"><input class="form-control" id="kor-search" type="text" placeholder="Pretraži po imenu ili korisničkom imenu…" oninput="filterKorisnici(this.value)"><button class="search-clear" onclick="document.getElementById('kor-search').value='';filterKorisnici('');"><i class="bi bi-x"></i></button></div></div>
+          </div>
+          <div class="panel-card" style="overflow:hidden;">
+            <table class="activity-table" style="width:100%;"><thead><tr><th>Korisnik</th><th>Tip</th><th>Datum reg.</th><th>Status</th><th style="text-align:right;">Akcija</th></tr></thead><tbody id="kor-tbody"></tbody></table>
+            <div id="kor-empty" class="empty-state" style="display:none;padding:36px 20px;"><div class="es-icon"><i class="bi bi-search"></i></div><h3>Nema rezultata</h3><p>Pokušajte sa drugim pojmom pretrage.</p></div>
+          </div>
+        </div>
+
+        <!-- AKCIJE NA CEKANJU -->
+        <div class="panel-section" id="sec-akcije-cek">
+          <div class="section-header"><div><h2 class="section-title">Akcije na čekanju</h2><p class="section-subtitle">Odobravanje akcija pre nego što postanu vidljive na sajtu</p></div></div>
+          <div id="ak-pending-lista"></div>
+          <div id="ak-pending-empty" class="empty-state" style="display:none;"><div class="es-icon"><i class="bi bi-check2-circle"></i></div><h3>Nema akcija na čekanju</h3><p>Sve akcije su obrađene.</p></div>
+        </div>
+
+        <!-- SVE AKCIJE -->
+        <div class="panel-section" id="sec-akcije-sve">
+          <div class="section-header" style="flex-wrap:wrap;gap:14px;">
+            <div><h2 class="section-title">Sve akcije</h2><p class="section-subtitle">Pregled i upravljanje svim akcijama na platformi</p></div>
+            <div class="sw-admin"><div class="search-wrap"><input class="form-control" id="ak-search" type="text" placeholder="Pretraži akcije…" oninput="filterAkcijeAdmin(this.value)"><button class="search-clear" onclick="document.getElementById('ak-search').value='';filterAkcijeAdmin('');"><i class="bi bi-x"></i></button></div></div>
+          </div>
+          <div id="ak-sve-lista"></div>
+          <div id="ak-sve-empty" class="empty-state" style="display:none;"><div class="es-icon"><i class="bi bi-search"></i></div><h3>Nema rezultata</h3><p>Pokušajte sa drugim pojmom pretrage.</p></div>
+        </div>
+
+        <!-- CLANCI NA CEKANJU -->
+        <div class="panel-section" id="sec-clanci-cek">
+          <div class="section-header"><div><h2 class="section-title">Članci na čekanju</h2><p class="section-subtitle">Odobravanje članaka pre objavljivanja na sajtu</p></div></div>
+          <div class="panel-card"><div id="cl-pending-lista"></div><div id="cl-pending-empty" class="empty-state" style="display:none;padding:36px 20px;"><div class="es-icon"><i class="bi bi-check2-circle"></i></div><h3>Nema članaka na čekanju</h3><p>Svi članci su obrađeni.</p></div></div>
+        </div>
+
+        <!-- SVI CLANCI -->
+        <div class="panel-section" id="sec-clanci-sve">
+          <div class="section-header" style="flex-wrap:wrap;gap:14px;">
+            <div><h2 class="section-title">Svi članci</h2><p class="section-subtitle">Pregled i upravljanje svim člancima na platformi</p></div>
+            <div class="sw-admin"><div class="search-wrap"><input class="form-control" id="cl-search" type="text" placeholder="Pretraži članke…" oninput="filterClanciAdmin(this.value)"><button class="search-clear" onclick="document.getElementById('cl-search').value='';filterClanciAdmin('');"><i class="bi bi-x"></i></button></div></div>
+          </div>
+          <div class="panel-card"><div id="cl-sve-lista"></div><div id="cl-sve-empty" class="empty-state" style="display:none;padding:36px 20px;"><div class="es-icon"><i class="bi bi-search"></i></div><h3>Nema rezultata</h3><p>Pokušajte sa drugim pojmom pretrage.</p></div></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <div id="footer-placeholder"></div>
+
+  <!-- MODALI -->
+  <div class="modal-overlay" id="modal-odobri"><div class="modal-box"><h3><i class="bi bi-check-circle-fill" style="color:var(--success)"></i> Odobri nalog</h3><p id="modal-odobri-txt">Da li ste sigurni?</p><div class="modal-btns"><button class="btn btn-ghost" onclick="closeModal('modal-odobri')">Otkaži</button><button class="btn btn-primary" onclick="potvrdiOdobriNalog()"><i class="bi bi-check2"></i> Odobri</button></div></div></div>
+  <div class="modal-overlay" id="modal-odbij"><div class="modal-box"><h3><i class="bi bi-x-circle-fill" style="color:var(--error)"></i> Odbij zahtev</h3><p id="modal-odbij-txt"></p><div class="modal-btns"><button class="btn btn-ghost" onclick="closeModal('modal-odbij')">Otkaži</button><button class="btn btn-danger" onclick="potvrdiOdbijNalog()"><i class="bi bi-x-lg"></i> Odbij</button></div></div></div>
+  <div class="modal-overlay" id="modal-ukloni-kor"><div class="modal-box"><h3><i class="bi bi-exclamation-triangle-fill" style="color:var(--error)"></i> Ukloni nalog</h3><p id="modal-ukloni-kor-txt"></p><div class="modal-btns"><button class="btn btn-ghost" onclick="closeModal('modal-ukloni-kor')">Otkaži</button><button class="btn btn-danger" onclick="potvrdiUkloniKorisnika()"><i class="bi bi-trash3"></i> Ukloni</button></div></div></div>
+  <div class="modal-overlay" id="modal-odobri-ak"><div class="modal-box"><h3><i class="bi bi-check-circle-fill" style="color:var(--success)"></i> Odobri akciju</h3><p id="modal-odobri-ak-txt"></p><div class="modal-btns"><button class="btn btn-ghost" onclick="closeModal('modal-odobri-ak')">Otkaži</button><button class="btn btn-primary" onclick="potvrdiOdobriAkciju()"><i class="bi bi-check2"></i> Odobri i objavi</button></div></div></div>
+  <div class="modal-overlay" id="modal-brisi-ak"><div class="modal-box"><h3><i class="bi bi-exclamation-triangle-fill" style="color:var(--error)"></i> Obriši akciju</h3><p id="modal-brisi-ak-txt"></p><div class="modal-btns"><button class="btn btn-ghost" onclick="closeModal('modal-brisi-ak')">Otkaži</button><button class="btn btn-danger" onclick="potvrdiBrisiAkciju()"><i class="bi bi-trash3"></i> Obriši</button></div></div></div>
+  <div class="modal-overlay" id="modal-odobri-cl"><div class="modal-box"><h3><i class="bi bi-check-circle-fill" style="color:var(--success)"></i> Odobri članak</h3><p id="modal-odobri-cl-txt"></p><div class="modal-btns"><button class="btn btn-ghost" onclick="closeModal('modal-odobri-cl')">Otkaži</button><button class="btn btn-primary" onclick="potvrdiOdobriClanak()"><i class="bi bi-check2"></i> Odobri i objavi</button></div></div></div>
+  <div class="modal-overlay" id="modal-brisi-cl"><div class="modal-box"><h3><i class="bi bi-exclamation-triangle-fill" style="color:var(--error)"></i> Obriši članak</h3><p id="modal-brisi-cl-txt"></p><div class="modal-btns"><button class="btn btn-ghost" onclick="closeModal('modal-brisi-cl')">Otkaži</button><button class="btn btn-danger" onclick="potvrdiBrisiClanak()"><i class="bi bi-trash3"></i> Obriši</button></div></div></div>
+
+  <script src="data.js"></script>
+  <script>
+    // ── DATA ──
+    let ZAHTEVI = [
+      { id:101, ime:'Zelena Srbija NGO',    username:'zelenasrbija', tip:'Organizator', datum:'2026-04-10', email:'info@zelenasrbija.rs' },
+      { id:102, ime:'EkoSponsor d.o.o.',    username:'ekosponsor',   tip:'Sponzor',     datum:'2026-04-11', email:'kontakt@ekosponsor.rs' },
+      { id:103, ime:'Volonteri Novog Sada', username:'volonteriNS',  tip:'Organizator', datum:'2026-04-13', email:'ns@volonteri.org' },
+    ];
+    let KORISNICI = [
+      { id:1,  ime:'Ana Jovanović',         username:'ana.jovanovic',  tip:'Volonter',    datum:'2026-01-05' },
+      { id:2,  ime:'Marko Petrović',        username:'marko.p',        tip:'Volonter',    datum:'2026-01-08' },
+      { id:3,  ime:'Ekofront NGO',          username:'ekofront',       tip:'Organizator', datum:'2026-02-14' },
+      { id:4,  ime:'Sara Nikolić',          username:'sara.nikolic',   tip:'Volonter',    datum:'2026-02-20' },
+      { id:5,  ime:'ProNatura d.o.o.',      username:'pronatura',      tip:'Sponzor',     datum:'2026-03-01' },
+      { id:6,  ime:'Lazar Đorđević',        username:'lazar.djordjevic', tip:'Volonter',  datum:'2026-03-10' },
+      { id:7,  ime:'Sportski klub Beograd', username:'skbgd',          tip:'Organizator', datum:'2026-03-15' },
+      { id:8,  ime:'Milica Stojanović',     username:'milica.s',       tip:'Volonter',    datum:'2026-03-22' },
+      { id:9,  ime:'GreenCorp Serbia',      username:'greencorp',      tip:'Sponzor',     datum:'2026-04-02' },
+      { id:10, ime:'Stefan Ilić',           username:'stefan.ilic',    tip:'Volonter',    datum:'2026-04-05' },
+      { id:11, ime:'Jovana Radovanović',    username:'jovana.r',       tip:'Volonter',    datum:'2026-04-07' },
+      { id:12, ime:'Humana Srbija',         username:'humana',         tip:'Organizator', datum:'2026-04-09' },
+    ];
+    let AK_SVE = [
+      { id:901, naziv:'Čišćenje Topčiderskog parka',  organizator:'Ekofront NGO',          datum:'2026-05-03', lokacija:'Beograd',      kategorija:'Ekologija',      maxVol:30,  status:'ceka_odobrenje' },
+      { id:902, naziv:'Sadnja drveća – Fruška Gora',  organizator:'Zelena Srbija NGO',     datum:'2026-05-10', lokacija:'Fruška Gora',  kategorija:'Ekologija',      maxVol:50,  status:'ceka_odobrenje' },
+      { id:903, naziv:'Pomoć starijima – Zemun',      organizator:'Volonteri Novog Sada',  datum:'2026-05-17', lokacija:'Zemun',         kategorija:'Socijalna pomoć',maxVol:20,  status:'ceka_odobrenje' },
+      { id:904, naziv:'Humanitarna trka 5km',         organizator:'Sportski klub Beograd', datum:'2026-06-01', lokacija:'Beograd',      kategorija:'Sport',          maxVol:100, status:'ceka_odobrenje' },
+    ];
+    // Add published actions from data.js
+    if(typeof AKCIJE !== 'undefined') {
+      AKCIJE.slice(0,6).forEach(a => AK_SVE.push({ id:a.id, naziv:a.naziv, organizator:a.organizator, datum:a.datum, lokacija:a.lokacija, kategorija:a.kategorija, maxVol:a.maxVolontera, status:'objavljena' }));
+    }
+    let CL_SVE = [
+      { id:801, naslov:'Uspešna akcija čišćenja Savskog keja',  autor:'Ekofront NGO',       datum:'2026-04-12', status:'na_cekanju' },
+      { id:802, naslov:'Poziv na sadnju drveća – maj 2026.',    autor:'Zelena Srbija NGO',  datum:'2026-04-14', status:'na_cekanju' },
+    ];
+    if(typeof CLANCI !== 'undefined') {
+      CLANCI.forEach(c => CL_SVE.push({ id:c.id, naslov:c.naslov, autor:c.organizator||'Organizator', datum:c.datum, status:'objavljen' }));
+    }
+
+    // ── HELPERS ──
+    function getCatGrad(k){const m={'Ekologija':'linear-gradient(135deg,#d4f0d0,#a8e6a0)','Socijalna pomoć':'linear-gradient(135deg,#fde8d0,#fbc89a)','Sport':'linear-gradient(135deg,#dce8ff,#b0c8ff)','Kultura':'linear-gradient(135deg,#f0e0ff,#d8b0ff)','Obrazovanje':'linear-gradient(135deg,#fff3c0,#ffe066)','Zdravlje':'linear-gradient(135deg,#ffe0e8,#ffb0c0)'};return m[k]||'linear-gradient(135deg,#e8eef4,#d0dce8)';}
+    function getCatEmoji(k){const m={'Ekologija':'🌿','Socijalna pomoć':'🤝','Sport':'⚽','Kultura':'🎭','Obrazovanje':'📚','Zdravlje':'💊'};return m[k]||'🌟';}
+    function fmtDate(d){if(!d)return'—';const[y,m,dn]=d.split('-');return`${dn}.${m}.${y}.`;}
+    function initials(n){return n.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);}
+    function tipBadge(t){if(t==='Organizator')return`<span class="badge badge-teal"><i class="bi bi-building"></i> Organizator</span>`;if(t==='Sponzor')return`<span class="badge badge-green"><i class="bi bi-cash-coin"></i> Sponzor</span>`;return`<span class="badge badge-gray"><i class="bi bi-person"></i> Volonter</span>`;}
+
+    function updateStats(){
+      const z=ZAHTEVI.length, ac=AK_SVE.filter(a=>a.status==='ceka_odobrenje').length, cc=CL_SVE.filter(c=>c.status==='na_cekanju').length, k=KORISNICI.length;
+      document.getElementById('stat-zahtevi').textContent=z;
+      document.getElementById('stat-ak-cek').textContent=ac;
+      document.getElementById('stat-cl-cek').textContent=cc;
+      document.getElementById('stat-kor').textContent=k;
+      document.getElementById('ov-zahtevi').textContent=z;
+      document.getElementById('ov-ak-cek').textContent=ac;
+      document.getElementById('ov-cl-cek').textContent=cc;
+      document.getElementById('ov-kor').textContent=k;
+      const bz=document.getElementById('badge-zahtevi'),bac=document.getElementById('badge-ak-cek'),bcc=document.getElementById('badge-cl-cek');
+      bz.textContent=z; bz.style.display=z?'':'none';
+      bac.textContent=ac; bac.style.display=ac?'':'none';
+      bcc.textContent=cc; bcc.style.display=cc?'':'none';
+    }
+
+    // ── TAB ──
+    function switchTab(tab){
+      document.querySelectorAll('.panel-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+      document.querySelectorAll('.panel-section').forEach(s=>s.classList.remove('active'));
+      document.getElementById('sec-'+tab).classList.add('active');
+      if(tab==='pregled')    renderPregled();
+      if(tab==='zahtevi')    renderZahtevi();
+      if(tab==='korisnici')  renderKorisnici();
+      if(tab==='akcije-cek') renderAkPending();
+      if(tab==='akcije-sve') renderAkSve();
+      if(tab==='clanci-cek') renderClPending();
+      if(tab==='clanci-sve') renderClSve();
+    }
+
+    // ── PREGLED ──
+    function renderPregled(){
+      updateStats();
+      const zEl=document.getElementById('pregled-zahtevi');
+      if(!ZAHTEVI.length){
+        zEl.innerHTML=`<div style="padding:18px 22px;font-size:.875rem;color:var(--text-muted);"><i class="bi bi-check2-circle"></i> Nema novih zahteva.</div>`;
+      } else {
+        zEl.innerHTML=ZAHTEVI.map(z=>`
+          <div style="display:flex;align-items:center;gap:12px;padding:13px 22px;border-bottom:1px solid var(--border-light);flex-wrap:wrap;">
+            <div class="req-avatar" style="width:36px;height:36px;font-size:.875rem;">${initials(z.ime)}</div>
+            <div style="flex:1;min-width:120px;">
+              <div style="font-weight:700;font-size:.875rem;color:var(--dark);">${z.ime}</div>
+              <div style="font-size:.775rem;color:var(--text-muted);">${z.tip} · ${fmtDate(z.datum)}</div>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-primary btn-sm" onclick="otvoriOdobriNalog(${z.id})"><i class="bi bi-check2"></i> Odobri</button>
+              <button class="btn btn-danger btn-sm" onclick="otvoriOdbijNalog(${z.id})"><i class="bi bi-x-lg"></i></button>
+            </div>
+          </div>`).join('');
+      }
+      const aEl=document.getElementById('pregled-akcije');
+      const pending=AK_SVE.filter(a=>a.status==='ceka_odobrenje');
+      if(!pending.length){
+        aEl.innerHTML=`<div style="padding:18px 22px;font-size:.875rem;color:var(--text-muted);"><i class="bi bi-check2-circle"></i> Nema akcija na čekanju.</div>`;
+      } else {
+        aEl.innerHTML=pending.map(a=>`
+          <div style="display:flex;align-items:center;gap:12px;padding:13px 22px;border-bottom:1px solid var(--border-light);flex-wrap:wrap;">
+            <div style="width:36px;height:36px;border-radius:var(--radius-xs);background:${getCatGrad(a.kategorija)};display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">${getCatEmoji(a.kategorija)}</div>
+            <div style="flex:1;min-width:120px;">
+              <div style="font-weight:700;font-size:.875rem;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${a.naziv}</div>
+              <div style="font-size:.775rem;color:var(--text-muted);">${a.organizator} · ${fmtDate(a.datum)}</div>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-primary btn-sm" onclick="otvoriOdobriAkciju(${a.id})"><i class="bi bi-check2"></i> Odobri</button>
+              <button class="btn btn-danger btn-sm" onclick="otvoriBrisiAkciju(${a.id})"><i class="bi bi-trash3"></i></button>
+            </div>
+          </div>`).join('');
+      }
+    }
+
+    // ── ZAHTEVI ZA NALOGE ──
+    function renderZahtevi(){
+      const lista=document.getElementById('zahtevi-lista'), empty=document.getElementById('zahtevi-empty');
+      if(!ZAHTEVI.length){lista.innerHTML='';empty.style.display='block';return;}
+      empty.style.display='none';
+      lista.innerHTML=ZAHTEVI.map(z=>`
+        <div class="req-card"><div class="req-card-body">
+          <div class="req-avatar">${initials(z.ime)}</div>
+          <div class="req-info">
+            <div class="req-name">${z.ime}</div>
+            <div class="req-meta">${tipBadge(z.tip)}<span><i class="bi bi-envelope"></i> ${z.email}</span><span><i class="bi bi-calendar3"></i> ${fmtDate(z.datum)}</span></div>
+          </div>
+          <div class="req-actions">
+            <button class="btn btn-primary btn-sm" onclick="otvoriOdobriNalog(${z.id})"><i class="bi bi-check2"></i> Odobri</button>
+            <button class="btn btn-danger btn-sm" onclick="otvoriOdbijNalog(${z.id})"><i class="bi bi-x-lg"></i> Odbij</button>
+          </div>
+        </div></div>`).join('');
+    }
+    let pendingNalogId=null;
+    function otvoriOdobriNalog(id){pendingNalogId=id;const z=ZAHTEVI.find(x=>x.id===id);document.getElementById('modal-odobri-txt').textContent=`Da li ste sigurni da želite da odobrite nalog za „${z.ime}"? Da li ste sigurni?`;openModal('modal-odobri');}
+    function potvrdiOdobriNalog(){const z=ZAHTEVI.find(x=>x.id===pendingNalogId);if(z){KORISNICI.push({id:Date.now(),ime:z.ime,username:z.username,tip:z.tip,datum:z.datum});ZAHTEVI=ZAHTEVI.filter(x=>x.id!==pendingNalogId);showToast(`Nalog za „${z.ime}" je odobren. Email je poslat.`,true);}closeModal('modal-odobri');renderZahtevi();renderPregled();renderKorisnici();}
+    function otvoriOdbijNalog(id){pendingNalogId=id;const z=ZAHTEVI.find(x=>x.id===id);document.getElementById('modal-odbij-txt').textContent=`Da li ste sigurni da želite da odbijete zahtev za nalog „${z.ime}"? Da li ste sigurni?`;openModal('modal-odbij');}
+    function potvrdiOdbijNalog(){const z=ZAHTEVI.find(x=>x.id===pendingNalogId);if(z){ZAHTEVI=ZAHTEVI.filter(x=>x.id!==pendingNalogId);showToast(`Zahtev za „${z.ime}" je odbijen. Email je poslat.`,true);}closeModal('modal-odbij');renderZahtevi();renderPregled();}
+
+    // ── KORISNICI ──
+    let korFilter='';
+    function renderKorisnici(filter){
+      if(filter!==undefined)korFilter=filter;
+      const tbody=document.getElementById('kor-tbody'),empty=document.getElementById('kor-empty');
+      const list=KORISNICI.filter(k=>!korFilter||k.ime.toLowerCase().includes(korFilter.toLowerCase())||k.username.toLowerCase().includes(korFilter.toLowerCase()));
+      if(!list.length){tbody.innerHTML='';empty.style.display='block';return;}
+      empty.style.display='none';
+      tbody.innerHTML=list.map(k=>`<tr><td><div style="display:flex;align-items:center;gap:10px;"><div class="user-avatar">${initials(k.ime)}</div><div><div style="font-weight:600;color:var(--dark);font-size:.9rem;">${k.ime}</div><div style="font-size:.775rem;color:var(--text-muted);">@${k.username}</div></div></div></td><td>${tipBadge(k.tip)}</td><td style="font-size:.85rem;color:var(--text-muted);">${fmtDate(k.datum)}</td><td><span class="badge badge-green"><i class="bi bi-check-circle-fill"></i> Aktivan</span></td><td style="text-align:right;"><button class="btn btn-danger btn-sm" onclick="otvoriUkloniKorisnika(${k.id})"><i class="bi bi-trash3"></i> Ukloni</button></td></tr>`).join('');
+    }
+    function filterKorisnici(v){renderKorisnici(v);}
+    let pendingKorId=null;
+    function otvoriUkloniKorisnika(id){pendingKorId=id;const k=KORISNICI.find(x=>x.id===id);document.getElementById('modal-ukloni-kor-txt').textContent=`Da li ste sigurni da želite da uklonite nalog korisnika „${k.ime}" (@${k.username})? Ova akcija je nepovratna.`;openModal('modal-ukloni-kor');}
+    function potvrdiUkloniKorisnika(){const k=KORISNICI.find(x=>x.id===pendingKorId);if(k){KORISNICI=KORISNICI.filter(x=>x.id!==pendingKorId);showToast(`Nalog korisnika „${k.ime}" je uklonjen.`,true);}closeModal('modal-ukloni-kor');renderKorisnici();renderPregled();}
+
+    // ── AKCIJE NA CEKANJU ──
+    function renderAkPending(){
+      const lista=document.getElementById('ak-pending-lista'),empty=document.getElementById('ak-pending-empty');
+      const pending=AK_SVE.filter(a=>a.status==='ceka_odobrenje');
+      if(!pending.length){lista.innerHTML='';empty.style.display='block';return;}
+      empty.style.display='none';
+      lista.innerHTML=pending.map(a=>`
+        <div class="akcija-admin-card"><div class="akcija-admin-body">
+          <div class="akcija-icon" style="background:${getCatGrad(a.kategorija)};">${getCatEmoji(a.kategorija)}</div>
+          <div class="akcija-info">
+            <div class="akcija-title">${a.naziv}</div>
+            <div class="akcija-sub"><span><i class="bi bi-building"></i> ${a.organizator}</span><span><i class="bi bi-calendar3"></i> ${fmtDate(a.datum)}</span><span><i class="bi bi-geo-alt"></i> ${a.lokacija}</span><span><i class="bi bi-people"></i> Max ${a.maxVol} vol.</span></div>
+          </div>
+          <div class="akcija-actions">
+            <button class="btn btn-primary btn-sm" onclick="otvoriOdobriAkciju(${a.id})"><i class="bi bi-check2"></i> Odobri</button>
+            <button class="btn btn-danger btn-sm" onclick="otvoriBrisiAkciju(${a.id})"><i class="bi bi-trash3"></i> Obriši</button>
+          </div>
+        </div></div>`).join('');
+    }
+    let pendingAkId=null;
+    function otvoriOdobriAkciju(id){pendingAkId=id;const a=AK_SVE.find(x=>x.id===id);document.getElementById('modal-odobri-ak-txt').textContent=`Akcija „${a.naziv}" organizatora ${a.organizator} će biti objavljena i vidljiva svim korisnicima sajta.`;openModal('modal-odobri-ak');}
+    function potvrdiOdobriAkciju(){const a=AK_SVE.find(x=>x.id===pendingAkId);if(a){a.status='objavljena';showToast(`Akcija „${a.naziv}" je objavljena!`,true);}closeModal('modal-odobri-ak');renderAkPending();renderAkSve();renderPregled();}
+    function otvoriBrisiAkciju(id){pendingAkId=id;const a=AK_SVE.find(x=>x.id===id);document.getElementById('modal-brisi-ak-txt').textContent=`Da li ste sigurni da želite da obrišete akciju „${a.naziv}"? Ova akcija je nepovratna.`;openModal('modal-brisi-ak');}
+    function potvrdiBrisiAkciju(){const a=AK_SVE.find(x=>x.id===pendingAkId);if(a){AK_SVE=AK_SVE.filter(x=>x.id!==pendingAkId);showToast(`Akcija „${a.naziv}" je obrisana.`,true);}closeModal('modal-brisi-ak');renderAkPending();renderAkSve();renderPregled();}
+
+    // ── SVE AKCIJE ──
+    let akFilter='';
+    function renderAkSve(filter){
+      if(filter!==undefined)akFilter=filter;
+      const lista=document.getElementById('ak-sve-lista'),empty=document.getElementById('ak-sve-empty');
+      const list=AK_SVE.filter(a=>!akFilter||a.naziv.toLowerCase().includes(akFilter.toLowerCase())||a.organizator.toLowerCase().includes(akFilter.toLowerCase()));
+      if(!list.length){lista.innerHTML='';empty.style.display='block';return;}
+      empty.style.display='none';
+      lista.innerHTML=list.map(a=>`
+        <div class="akcija-admin-card"><div class="akcija-admin-body">
+          <div class="akcija-icon" style="background:${getCatGrad(a.kategorija)};">${getCatEmoji(a.kategorija)}</div>
+          <div class="akcija-info">
+            <div class="akcija-title">${a.naziv}</div>
+            <div class="akcija-sub"><span><i class="bi bi-building"></i> ${a.organizator}</span><span><i class="bi bi-calendar3"></i> ${fmtDate(a.datum)}</span><span><i class="bi bi-geo-alt"></i> ${a.lokacija}</span></div>
+          </div>
+          <div class="akcija-actions" style="align-items:center;">
+            ${a.status==='ceka_odobrenje'
+              ?`<span class="badge badge-warning"><i class="bi bi-hourglass-split"></i> Na čekanju</span><button class="btn btn-primary btn-sm" onclick="otvoriOdobriAkciju(${a.id})"><i class="bi bi-check2"></i> Odobri</button>`
+              :`<span class="badge badge-green"><i class="bi bi-check-circle-fill"></i> Objavljena</span>`}
+            <button class="btn btn-danger btn-sm" onclick="otvoriBrisiAkciju(${a.id})"><i class="bi bi-trash3"></i></button>
+          </div>
+        </div></div>`).join('');
+    }
+    function filterAkcijeAdmin(v){renderAkSve(v);}
+
+    // ── CLANCI NA CEKANJU ──
+    function renderClPending(){
+      const lista=document.getElementById('cl-pending-lista'),empty=document.getElementById('cl-pending-empty');
+      const pending=CL_SVE.filter(c=>c.status==='na_cekanju');
+      if(!pending.length){lista.innerHTML='';empty.style.display='block';return;}
+      empty.style.display='none';
+      lista.innerHTML=pending.map(c=>`
+        <div class="clanak-admin-row">
+          <div class="clanak-icon">📰</div>
+          <div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:.9375rem;color:var(--dark);margin-bottom:3px;">${c.naslov}</div><div style="font-size:.8rem;color:var(--text-muted);display:flex;flex-wrap:wrap;gap:10px;"><span><i class="bi bi-person"></i> ${c.autor}</span><span><i class="bi bi-calendar3"></i> ${fmtDate(c.datum)}</span></div></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0;">
+            <button class="btn btn-primary btn-sm" onclick="otvoriOdobriClanak(${c.id})"><i class="bi bi-check2"></i> Odobri</button>
+            <button class="btn btn-danger btn-sm" onclick="otvoriBrisiClanak(${c.id})"><i class="bi bi-trash3"></i> Obriši</button>
+            <a href="clanak.html?id=${c.id}" class="btn btn-ghost btn-sm" target="_blank"><i class="bi bi-eye"></i></a>
+          </div>
+        </div>`).join('');
+    }
+    let pendingClId=null;
+    function otvoriOdobriClanak(id){pendingClId=id;const c=CL_SVE.find(x=>x.id===id);document.getElementById('modal-odobri-cl-txt').textContent=`Članak „${c.naslov}" autora ${c.autor} će biti objavljen i vidljiv svim korisnicima sajta.`;openModal('modal-odobri-cl');}
+    function potvrdiOdobriClanak(){const c=CL_SVE.find(x=>x.id===pendingClId);if(c){c.status='objavljen';showToast(`Članak „${c.naslov}" je objavljen!`,true);}closeModal('modal-odobri-cl');renderClPending();renderClSve();renderPregled();}
+    function otvoriBrisiClanak(id){pendingClId=id;const c=CL_SVE.find(x=>x.id===id);document.getElementById('modal-brisi-cl-txt').textContent=`Da li ste sigurni da želite da obrišete članak „${c.naslov}"? Ova akcija je nepovratna.`;openModal('modal-brisi-cl');}
+    function potvrdiBrisiClanak(){const c=CL_SVE.find(x=>x.id===pendingClId);if(c){CL_SVE=CL_SVE.filter(x=>x.id!==pendingClId);showToast(`Članak „${c.naslov}" je obrisan.`,true);}closeModal('modal-brisi-cl');renderClPending();renderClSve();renderPregled();}
+
+    // ── SVI CLANCI ──
+    let clFilter='';
+    function renderClSve(filter){
+      if(filter!==undefined)clFilter=filter;
+      const lista=document.getElementById('cl-sve-lista'),empty=document.getElementById('cl-sve-empty');
+      const list=CL_SVE.filter(c=>!clFilter||c.naslov.toLowerCase().includes(clFilter.toLowerCase())||c.autor.toLowerCase().includes(clFilter.toLowerCase()));
+      if(!list.length){lista.innerHTML='';empty.style.display='block';return;}
+      empty.style.display='none';
+      lista.innerHTML=list.map(c=>`
+        <div class="clanak-admin-row">
+          <div class="clanak-icon">📰</div>
+          <div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:.9375rem;color:var(--dark);margin-bottom:3px;">${c.naslov}</div><div style="font-size:.8rem;color:var(--text-muted);display:flex;flex-wrap:wrap;gap:10px;"><span><i class="bi bi-person"></i> ${c.autor}</span><span><i class="bi bi-calendar3"></i> ${fmtDate(c.datum)}</span>${c.status==='na_cekanju'?`<span style="color:var(--warning);font-weight:600;"><i class="bi bi-hourglass-split"></i> Na čekanju</span>`:`<span style="color:var(--success);font-weight:600;"><i class="bi bi-check-circle-fill"></i> Objavljeno</span>`}</div></div>
+          <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;">
+            ${c.status==='na_cekanju'?`<button class="btn btn-primary btn-sm" onclick="otvoriOdobriClanak(${c.id})"><i class="bi bi-check2"></i> Odobri</button>`:''}
+            <button class="btn btn-danger btn-sm" onclick="otvoriBrisiClanak(${c.id})"><i class="bi bi-trash3"></i></button>
+          </div>
+        </div>`).join('');
+    }
+    function filterClanciAdmin(v){renderClSve(v);}
+
+    // ── MODALI ──
+    function openModal(id){document.getElementById(id).classList.add('open');}
+    function closeModal(id){document.getElementById(id).classList.remove('open');}
+    document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+
+    // ── TOAST ──
+    function showToast(msg,ok=true){const t=document.createElement('div');t.className=`toast ${ok?'ok':'err'}`;t.innerHTML=`<i class="bi bi-${ok?'check-circle-fill':'exclamation-circle-fill'}"></i> ${msg}`;document.body.appendChild(t);setTimeout(()=>t.remove(),3500);}
+
+    // ── INIT ──
+    window.addEventListener('scroll',()=>{document.getElementById('navbar')?.classList.toggle('scrolled',window.scrollY>10);});
+    document.getElementById('navbar-placeholder').innerHTML=renderNavbar('');
+    document.getElementById('footer-placeholder').innerHTML=renderFooter();
+    document.getElementById('nav-auth').innerHTML=`<span class="badge badge-teal" style="padding:6px 12px;font-size:.8125rem;"><i class="bi bi-shield-check-fill"></i> Administrator</span><a href="index.html" class="btn btn-ghost btn-sm">Odjavi se</a>`;
+    renderPregled();
+    renderKorisnici();
+    renderAkSve();
+    renderClSve();
+  </script>
+</body>
+</html>

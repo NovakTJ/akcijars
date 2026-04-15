@@ -106,7 +106,7 @@
         <div class="panel-user-row">
           <div class="panel-avatar" id="user-avatar" style="background:linear-gradient(135deg,var(--teal),#0e8f91);">A</div>
           <div class="panel-user-info">
-            <h2 id="user-fullname">Ana Anić</h2>
+            <h2 id="user-fullname">Novak Stijepić</h2>
             <p id="user-email">organizator@test.rs</p>
             <p id="user-org" style="font-size:.85rem;color:var(--teal);font-weight:600;margin-top:2px;"></p>
             <div class="panel-role-badge" style="background:rgba(26,188,189,0.2);border-color:rgba(26,188,189,0.4);color:#67e8f9;">
@@ -295,6 +295,29 @@
                 </div>
               </div>
 
+              <div class="form-section-title">Naslovna slika</div>
+              <div class="form-group">
+                <label class="form-label">Slika akcije <span class="req">*</span></label>
+                <div style="border:2px dashed var(--border);border-radius:var(--radius-sm);padding:24px;text-align:center;background:var(--bg);cursor:pointer;transition:var(--transition);"
+                     id="slika-dropzone"
+                     onclick="document.getElementById('n-slika').click()"
+                     ondragover="event.preventDefault();this.style.borderColor='var(--teal)'"
+                     ondragleave="this.style.borderColor='var(--border)'"
+                     ondrop="handleDrop(event)">
+                  <input type="file" id="n-slika" accept="image/*" style="display:none;" onchange="previewSlika(this)">
+                  <div id="slika-preview-wrap" style="display:none;margin-bottom:12px;">
+                    <img id="slika-preview" style="max-height:160px;border-radius:var(--radius-sm);object-fit:cover;max-width:100%;">
+                  </div>
+                  <div id="slika-placeholder">
+                    <i class="bi bi-image" style="font-size:2rem;color:var(--text-muted);display:block;margin-bottom:8px;"></i>
+                    <div style="font-weight:600;color:var(--text-secondary);font-size:.9375rem;">Kliknite ili prevucite sliku ovde</div>
+                    <div style="font-size:.8rem;color:var(--text-muted);margin-top:4px;">PNG, JPG – preporučeno 1200×600px</div>
+                  </div>
+                  <div id="slika-name" style="display:none;font-size:.875rem;color:var(--teal);font-weight:600;margin-top:8px;"></div>
+                </div>
+                <div class="form-error" id="err-slika" style="display:none;"></div>
+              </div>
+
               <div class="form-section-title">Kontakt informacije</div>
 
               <div class="grid-2" style="gap:16px;">
@@ -363,14 +386,22 @@
               </div>
 
               <div class="form-group">
-                <label class="form-label">Slike (opciono)</label>
-                <div style="border:2px dashed var(--border-light);border-radius:var(--radius-sm);padding:20px;text-align:center;cursor:pointer;transition:border-color .2s;"
-                  onclick="showToast('Upload slika je simuliran u prototipu (SSU-11).')"
-                  onmouseenter="this.style.borderColor='var(--teal)'" onmouseleave="this.style.borderColor='var(--border-light)'">
-                  <i class="bi bi-image" style="font-size:1.75rem;color:var(--text-muted);display:block;margin-bottom:6px;"></i>
-                  <span style="font-size:.875rem;color:var(--text-muted);">Kliknite da dodate slike</span>
-                  <div style="font-size:.75rem;color:var(--text-muted);margin-top:4px;">JPG, PNG, GIF – max 5MB po fajlu</div>
+                <label class="form-label">Slike <span class="req">*</span> <span style="font-size:.8rem;color:var(--text-muted);font-weight:400;">(bar jedna obavezna)</span></label>
+                <div style="border:2px dashed var(--border);border-radius:var(--radius-sm);padding:24px;text-align:center;background:var(--bg);cursor:pointer;transition:var(--transition);"
+                     id="c-slika-dropzone"
+                     onclick="document.getElementById('c-slika').click()"
+                     ondragover="event.preventDefault();this.style.borderColor='var(--teal)'"
+                     ondragleave="this.style.borderColor='var(--border)'"
+                     ondrop="handleDropClanak(event)">
+                  <input type="file" id="c-slika" accept="image/*" multiple style="display:none;" onchange="previewSlikaClanak(this)">
+                  <div id="c-slika-placeholder">
+                    <i class="bi bi-images" style="font-size:2rem;color:var(--text-muted);display:block;margin-bottom:8px;"></i>
+                    <div style="font-weight:600;color:var(--text-secondary);font-size:.9375rem;">Kliknite ili prevucite slike ovde</div>
+                    <div style="font-size:.8rem;color:var(--text-muted);margin-top:4px;">PNG, JPG – možete odabrati više slika odjednom</div>
+                  </div>
+                  <div id="c-slika-previews" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;justify-content:center;"></div>
                 </div>
+                <div class="form-error" id="err-c-slika" style="display:none;margin-top:6px;"></div>
               </div>
 
               <div style="display:flex;gap:10px;flex-wrap:wrap;">
@@ -1083,8 +1114,10 @@
       const email    = document.getElementById('n-email').value.trim();
       const telefon  = document.getElementById('n-telefon').value.trim();
 
+      const slika = document.getElementById('n-slika').files[0];
       let ok = true;
       if (!naziv)     { showErr('err-naziv', 'Naziv akcije je obavezan.'); ok=false; }
+      if (!slika)     { document.getElementById('err-slika').innerHTML='<i class="bi bi-exclamation-circle"></i> Slika akcije je obavezna.'; document.getElementById('err-slika').style.display='flex'; ok=false; }
       else if (naziv.length > 128) { showErr('err-naziv', 'Naziv akcije ne sme imati više od 128 karaktera.'); ok=false; }
       if (!opis)      { showErr('err-opis',   'Opis akcije je obavezan.'); ok=false; }
       else if (opis.length > 2048) { showErr('err-opis', 'Opis akcije sme imati najviše 2048 karaktera.'); ok=false; }
@@ -1117,7 +1150,39 @@
       setTimeout(() => { switchTab('akcije'); }, 2000);
     }
 
+    function previewSlika(input) {
+      if (!input.files || !input.files[0]) return;
+      const file = input.files[0];
+      const reader = new FileReader();
+      reader.onload = e => {
+        document.getElementById('slika-preview').src = e.target.result;
+        document.getElementById('slika-preview-wrap').style.display = 'block';
+        document.getElementById('slika-placeholder').style.display = 'none';
+        document.getElementById('slika-name').textContent = file.name;
+        document.getElementById('slika-name').style.display = 'block';
+        document.getElementById('err-slika').style.display = 'none';
+      };
+      reader.readAsDataURL(file);
+    }
+    function handleDrop(e) {
+      e.preventDefault();
+      document.getElementById('slika-dropzone').style.borderColor = 'var(--border)';
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) {
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        const input = document.getElementById('n-slika');
+        input.files = dt.files;
+        previewSlika(input);
+      }
+    }
+
     function resetNovaForma() {
+      document.getElementById('n-slika').value = '';
+      document.getElementById('slika-preview-wrap').style.display = 'none';
+      document.getElementById('slika-placeholder').style.display = 'block';
+      document.getElementById('slika-name').style.display = 'none';
+      document.getElementById('err-slika').style.display = 'none';
       ['n-naziv','n-opis','n-datum','n-lokacija','n-max','n-email','n-telefon'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
@@ -1149,9 +1214,10 @@
                 : '<span style="color:var(--warning);font-weight:600;"><i class="bi bi-hourglass-split"></i> Čeka odobrenje administratora</span>'}
             </div>
           </div>
-          <a href="clanak.html?id=${c.id}" class="btn btn-ghost btn-sm" style="flex-shrink:0;">
-            <i class="bi bi-eye"></i> Pogledaj
-          </a>
+          ${c.status === 'objavljen'
+            ? `<a href="clanak.html?id=\${c.id}" class="btn btn-ghost btn-sm" style="flex-shrink:0;"><i class="bi bi-eye"></i> Pogledaj</a>`
+            : `<span style="color:var(--warning);font-weight:600;flex-shrink:0;"><i class="bi bi-hourglass-split"></i> Čeka odobrenje admina</span>`
+          }
         </div>`).join('');
     }
 
@@ -1159,6 +1225,11 @@
       document.getElementById('clanak-forma').style.display = 'block';
       document.getElementById('c-naslov').value  = '';
       document.getElementById('c-sadrzaj').value = '';
+      document.getElementById('c-slika').value   = '';
+      document.getElementById('c-slika-previews').innerHTML = '';
+      document.getElementById('c-slika-placeholder').style.display  = 'block';
+      if(document.getElementById('err-c-slika')) document.getElementById('err-c-slika').style.display = 'none';
+      document.getElementById('c-slika-dropzone').style.borderColor = 'var(--border)';
       document.getElementById('clanak-err').style.display = 'none';
       document.getElementById('clanak-ok').style.display  = 'none';
       document.getElementById('clanak-forma').scrollIntoView({ behavior:'smooth' });
@@ -1167,9 +1238,41 @@
       document.getElementById('clanak-forma').style.display = 'none';
     }
 
+    function previewSlikaClanak(input) {
+      if (!input.files || !input.files.length) return;
+      const previews = document.getElementById('c-slika-previews');
+      const placeholder = document.getElementById('c-slika-placeholder');
+      previews.innerHTML = '';
+      Array.from(input.files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const wrap = document.createElement('div');
+          wrap.style.cssText = 'position:relative;';
+          wrap.innerHTML = `<img src="${e.target.result}" style="height:90px;width:120px;object-fit:cover;border-radius:var(--radius-xs);border:1px solid var(--border-light);">
+            <div style="font-size:.7rem;color:var(--text-muted);margin-top:3px;text-align:center;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${file.name}</div>`;
+          previews.appendChild(wrap);
+        };
+        reader.readAsDataURL(file);
+      });
+      placeholder.style.display = input.files.length ? 'none' : 'block';
+    }
+    function handleDropClanak(e) {
+      e.preventDefault();
+      document.getElementById('c-slika-dropzone').style.borderColor = 'var(--border)';
+      const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+      if (files.length) {
+        const dt = new DataTransfer();
+        files.forEach(f => dt.items.add(f));
+        const input = document.getElementById('c-slika');
+        input.files = dt.files;
+        previewSlikaClanak(input);
+      }
+    }
+
     function sacuvajClanak() {
       const naslov  = document.getElementById('c-naslov').value.trim();
       const sadrzaj = document.getElementById('c-sadrzaj').value.trim();
+      const slika   = document.getElementById('c-slika').files[0];
       const errEl   = document.getElementById('clanak-err');
       errEl.style.display = 'none';
       document.getElementById('err-naslov')?.remove?.();
@@ -1187,6 +1290,14 @@
         document.getElementById('c-sadrzaj').classList.add('is-error');
         return;
       }
+      const slikeFiles = document.getElementById('c-slika').files;
+      if (!slikeFiles || !slikeFiles.length) {
+        document.getElementById('err-c-slika').innerHTML = '<i class="bi bi-exclamation-circle"></i> Dodajte bar jednu sliku.';
+        document.getElementById('err-c-slika').style.display = 'flex';
+        document.getElementById('c-slika-dropzone').style.borderColor = 'var(--error)';
+        return;
+      }
+
 
       const novi = { id: Date.now(), naslov, sadrzaj, status: 'na_cekanju', datum: new Date().toISOString().split('T')[0] };
       CLANCI_ORG.unshift(novi);
