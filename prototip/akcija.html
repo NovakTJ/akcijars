@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detalji akcije – AkcijaRS</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body>
+
+  <div id="navbar-placeholder"></div>
+
+  <div class="page-content">
+    <div class="container" id="page-body">
+      <div class="empty-state"><div class="es-icon">⏳</div><p>Učitavanje...</p></div>
+    </div>
+  </div>
+
+  <div id="footer-placeholder"></div>
+
+  <!-- Toast -->
+  <div id="toast" style="position:fixed;bottom:24px;right:24px;background:var(--dark);color:white;padding:14px 20px;border-radius:var(--radius);box-shadow:var(--shadow-lg);font-size:.9rem;z-index:9999;display:none;align-items:center;gap:10px;max-width:340px;">
+    <i class="bi bi-check-circle-fill" style="color:var(--green);font-size:1.1rem;"></i>
+    <span id="toast-text"></span>
+  </div>
+
+  <script src="data.js"></script>
+  <script>
+    document.getElementById('navbar-placeholder').innerHTML = renderNavbar('akcije');
+    document.getElementById('footer-placeholder').innerHTML = renderFooter();
+
+    const params = new URLSearchParams(location.search);
+    const id = parseInt(params.get('id'));
+    const akcija = AKCIJE.find(a => a.id === id);
+
+    // Hardkodovano za test volontera
+    const _u = AUTH.getUser();
+    if (_u && _u.uloga === 'volonter') {
+      localStorage.setItem('accepted_7', 'true');
+      localStorage.setItem('joined_8',   'true');
+    }
+
+
+    function renderPage(a) {
+      const pct = progressWidth(a.prihvacenih, a.maxVolontera);
+      const slobodnih = a.maxVolontera - a.prihvacenih;
+      const user = AUTH.getUser();
+      const isVolonter  = user && user.uloga === 'volonter';
+      const isSponzor   = user && user.uloga === 'sponzor';
+      const joined   = localStorage.getItem('joined_'   + a.id) === 'true';
+      const accepted = localStorage.getItem('accepted_' + a.id) === 'true';
+
+      // ── Signup button (volonteri) ────────────
+      let signupHtml = '';
+      if (a.status === 'popunjena') {
+        signupHtml = `<div class="alert alert-warning" style="margin-top:0;">
+          <i class="bi bi-people-fill"></i>
+          <span>Sva mesta na ovoj akciji su popunjena.</span>
+        </div>`;
+      } else if (a.status === 'otkazana') {
+        signupHtml = `<div class="alert alert-error" style="margin-top:0;"><i class="bi bi-x-circle"></i><span>Ova akcija je otkazana.</span></div>`;
+      } else if (!user) {
+        signupHtml = `<div class="alert alert-info" style="margin-top:0;">
+          <i class="bi bi-person-circle"></i>
+          <span><a href="prijava.html" style="font-weight:700;">Prijavite se</a> da biste se prijavili na ovu akciju.</span>
+        </div>`;
+      } else if (isSponzor) {
+        signupHtml = ''; // sponzori imaju svoju karticu ispod
+      } else if (!isVolonter) {
+        signupHtml = `<div class="alert alert-info" style="margin-top:0;"><i class="bi bi-info-circle"></i><span>Samo registrovani volonteri mogu se prijaviti na akcije.</span></div>`;
+      } else if (accepted) {
+        signupHtml = `
+          <div class="alert alert-success" style="margin-top:0;"><i class="bi bi-check-circle-fill"></i><span>Vaša prijava je <strong>prihvaćena</strong>! Vidimo se na akciji.</span></div>
+          <button class="btn btn-ghost" style="width:100%;" onclick="odjavi(${a.id})"><i class="bi bi-x-circle"></i> Odjavi se sa akcije</button>`;
+      } else if (joined) {
+        signupHtml = `
+          <div class="alert alert-success" style="margin-top:0;"><i class="bi bi-check-circle-fill"></i><span>Uspešno ste se prijavili. Čekajte potvrdu organizatora.</span></div>
+          <button class="btn btn-ghost" style="width:100%;" onclick="odjavi(${a.id})"><i class="bi bi-x-circle"></i> Odjavi se sa akcije</button>`;
+      } else {
+        signupHtml = `<button class="btn btn-primary btn-lg" style="width:100%;" onclick="prijavi(${a.id})">
+          <i class="bi bi-person-plus"></i> Prijavi se na akciju
+        </button>
+        <p style="font-size:.8rem;color:var(--text-muted);text-align:center;margin-top:8px;">Slobodnih mesta: ${slobodnih}</p>`;
+      }
+
+      // ── Sponzor kartica (SSU-7) ──────────────
+      const vecPoslao = localStorage.getItem('sponzor_ponuda_' + a.id);
+      let sponzorHtml = '';
+      if (isSponzor && a.status === 'otvorena') {
+        if (vecPoslao) {
+          sponzorHtml = `
+          <div class="sidebar-card" style="border-color:var(--green-light);">
+            <h4><i class="bi bi-patch-check-fill" style="color:var(--green);"></i> Vaša ponuda</h4>
+            <div class="alert alert-success" style="margin:0;">
+              <i class="bi bi-check-circle-fill"></i>
+              <span>Ponuda je poslata i čeka odgovor organizatora.</span>
+            </div>
+            <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:10px;" onclick="povuciPonudu(${a.id})">
+              <i class="bi bi-x-circle"></i> Povuci ponudu
+            </button>
+          </div>`;
+        } else {
+          sponzorHtml = `
+          <div class="sidebar-card">
+            <h4><i class="bi bi-patch-check" style="color:var(--green);"></i> Postani sponzor</h4>
+            <div id="sp-error" class="alert alert-error" style="display:none;margin-bottom:12px;"></div>
+            <div class="form-group" style="margin-bottom:12px;">
+              <label class="form-label" style="font-size:.8rem;">Opis doprinosa <span class="req">*</span></label>
+              <textarea id="sp-opis" class="form-control" rows="3"
+                placeholder="Šta nudite? (oprema, novac, usluge...)" style="font-size:.875rem;"></textarea>
+            </div>
+            <div class="form-group" style="margin-bottom:14px;">
+              <label class="form-label" style="font-size:.8rem;">Vrednost (EUR) <span class="req">*</span></label>
+              <div style="position:relative;">
+                <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-weight:600;font-size:.875rem;">€</span>
+                <input type="number" id="sp-vrednost" class="form-control" placeholder="0" min="1"
+                  style="padding-left:28px;font-size:.875rem;">
+              </div>
+            </div>
+            <button class="btn btn-green" style="width:100%;" onclick="posaljiPonuduSidebar(${a.id})">
+              <i class="bi bi-send"></i> Pošalji ponudu
+            </button>
+            <p style="font-size:.75rem;color:var(--text-muted);margin-top:8px;text-align:center;">
+              Organizator će pregledati vašu ponudu i odgovoriti emailom.
+            </p>
+          </div>`;
+        }
+      }
+
+      document.getElementById('page-body').innerHTML = `
+        <!-- Breadcrumb -->
+        <div class="breadcrumb">
+          <a href="index.html">Početna</a>
+          <i class="bi bi-chevron-right" style="font-size:.75rem;"></i>
+          <a href="akcije.html">Akcije</a>
+          <i class="bi bi-chevron-right" style="font-size:.75rem;"></i>
+          <span>${a.naziv}</span>
+        </div>
+
+        <div class="action-detail-layout">
+          <!-- Main content -->
+          <div>
+            <!-- Hero image -->
+            <div class="article-hero" style="background:${getCategoryGradient(a.kategorija)};font-size:6rem;margin-bottom:24px;">
+              ${getCategoryEmoji(a.kategorija)}
+            </div>
+
+            <!-- Title & badges -->
+            <div class="article-header">
+              <div class="card-meta" style="margin-bottom:14px;">
+                ${getKategorijaBadge(a.kategorija)} ${getStatusBadge(a.status)}
+              </div>
+              <h1 style="font-size:1.875rem;font-weight:800;margin-bottom:12px;line-height:1.3;">${a.naziv}</h1>
+              <div class="card-meta">
+                <span class="card-meta-item"><i class="bi bi-building" style="color:var(--teal);"></i><strong>${a.organizator}</strong></span>
+                <span class="card-meta-item"><i class="bi bi-calendar3"></i>Objavljeno ${formatDate(a.createdAt)}</span>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- Description -->
+            <div class="article-body">
+              ${a.opis.split('\n').map(p=>`<p>${p}</p>`).join('')}
+            </div>
+
+            <!-- Sponsors -->
+            ${a.sponzori && a.sponzori.length > 0 ? `
+            <div style="margin-top:32px;padding:20px 24px;background:linear-gradient(135deg,rgba(93,201,93,0.07),rgba(26,188,189,0.07));border:1px solid rgba(93,201,93,0.2);border-radius:var(--radius-lg);">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+                <i class="bi bi-patch-check-fill" style="color:var(--green);font-size:1.1rem;"></i>
+                <h3 style="font-size:.9375rem;font-weight:700;color:var(--dark);margin:0;">Sponzori ove akcije</h3>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:10px;">
+                ${a.sponzori.map(s=>`
+                  <div style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:white;border:1px solid rgba(93,201,93,0.3);border-radius:24px;box-shadow:0 1px 4px rgba(0,0,0,.06);">
+                    <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--green-light),var(--teal-light));display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;color:var(--green-hover);">${s.charAt(0)}</div>
+                    <span style="font-weight:600;font-size:.875rem;color:var(--dark);">${s}</span>
+                  </div>`).join('')}
+              </div>
+            </div>` : ''}
+          </div>
+
+          <!-- Sidebar -->
+          <div class="action-sidebar">
+            <!-- Signup card (volonteri) -->
+            ${signupHtml ? `<div class="sidebar-card" style="background:${a.status==='otvorena'?'white':'var(--bg)'}">
+              <h4>Prijava na akciju</h4>
+              <div class="progress-wrap" style="margin-bottom:16px;">
+                <div class="progress-label">
+                  <span style="font-weight:600;color:var(--dark);">${a.prihvacenih} od ${a.maxVolontera}</span>
+                  <span style="color:var(--teal);font-weight:600;">${pct}%</span>
+                </div>
+                <div class="progress-bar" style="height:8px;"><div class="progress-fill" style="width:${pct}%"></div></div>
+              </div>
+              ${signupHtml}
+            </div>` : ''}
+
+            <!-- Sponzor kartica (SSU-7) -->
+            ${sponzorHtml}
+
+            <!-- Info card -->
+            <div class="sidebar-card">
+              <h4>Informacije</h4>
+              <div class="info-row">
+                <i class="bi bi-calendar3"></i>
+                <div><strong>Datum i vreme</strong><span>${formatDate(a.datum)}, ${a.vreme}h</span></div>
+              </div>
+              <div class="info-row">
+                <i class="bi bi-geo-alt"></i>
+                <div><strong>Lokacija</strong><span>${a.lokacija}</span></div>
+              </div>
+              <div class="info-row">
+                <i class="bi bi-people"></i>
+                <div><strong>Volonteri</strong><span>${a.prihvacenih} prihvaćeno / ${a.maxVolontera} maks.</span></div>
+              </div>
+              <div class="info-row">
+                <i class="bi bi-tag"></i>
+                <div><strong>Kategorija</strong><span>${a.kategorija}</span></div>
+              </div>
+              <div class="info-row">
+                <i class="bi bi-envelope"></i>
+                <div><strong>Kontakt</strong><span>${a.kontaktEmail}</span></div>
+              </div>
+              <div class="info-row">
+                <i class="bi bi-telephone"></i>
+                <div><strong>Telefon</strong><span>${a.kontaktTelefon}</span></div>
+              </div>
+              <div class="map-placeholder">
+                <i class="bi bi-map"></i>
+                <span>Google Maps – ${a.lokacija}</span>
+                <small style="color:var(--text-muted);font-size:.75rem;">Integracija sa Google Maps API</small>
+              </div>
+            </div>
+
+            <!-- Organizer card -->
+            <div class="sidebar-card">
+              <h4>Organizator</h4>
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--teal-light),var(--green-light));display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--teal-hover);font-size:.875rem;flex-shrink:0;">
+                  ${a.organizator.charAt(0)}
+                </div>
+                <div>
+                  <div style="font-weight:700;color:var(--dark);font-size:.9375rem;">${a.organizator}</div>
+                  <div style="font-size:.8rem;color:var(--text-muted);">Organizator</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        ${renderOrgMgmt(a, user)}
+      `;
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      document.getElementById('toast-text').textContent = msg;
+      t.style.display='flex';
+      setTimeout(()=>t.style.display='none',3500);
+    }
+
+    // ── Mock podaci za organizatora ──────────────
+    const MOCK_VOLONTERI = {
+      1: [
+        { id:'v1', ime:'Maja Petrović',   email:'maja@test.rs',   status:'cekanje'   },
+        { id:'v2', ime:'Luka Jovanović',  email:'luka@test.rs',   status:'cekanje'   },
+        { id:'v3', ime:'Mila Stojanović', email:'mila@test.rs',   status:'prihvacen' },
+        { id:'v4', ime:'Ivan Đorđević',   email:'ivan@test.rs',   status:'prihvacen' },
+      ],
+      3: [
+        { id:'v5', ime:'Stefan Ristić',   email:'stefan2@test.rs', status:'cekanje'  },
+        { id:'v6', ime:'Jelena Popović',  email:'jelena@test.rs',  status:'prihvacen'},
+      ],
+    };
+    const MOCK_PONUDE = {
+      1: [
+        { id:'sp1', sponzor:'EkoFarma d.o.o.',  opis:'Finansijska podrška i oprema', vrednost:800, status:'cekanje'   },
+        { id:'sp2', sponzor:'NatureCo RS',       opis:'Rukavice i kese za smeće',     vrednost:150, status:'cekanje'   },
+      ],
+      3: [
+        { id:'sp3', sponzor:'NatureSeed',        opis:'Donacija 200 sadnica',          vrednost:600, status:'prihvacen' },
+      ],
+    };
+
+    // ── Organizatorska sekcija na stranici akcije ──
+    function renderOrgMgmt(a, user) {
+      if (!user || user.uloga !== 'organizator') return '';
+      const orgName = user.organizacija || 'Zeleni Beograd';
+      if (a.organizator !== orgName) return '';
+
+      const vols  = MOCK_VOLONTERI[a.id] || [];
+      const ponude = MOCK_PONUDE[a.id]   || [];
+      const naC_vol = vols.filter(v => v.status === 'cekanje').length;
+      const naC_sp  = ponude.filter(p => p.status === 'cekanje').length;
+
+      return `
+      <div style="margin-top:40px;padding-top:32px;border-top:2px solid var(--border-light);">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:24px;">
+          <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--teal),#0e8f91);display:flex;align-items:center;justify-content:center;">
+            <i class="bi bi-sliders" style="color:white;font-size:.9rem;"></i>
+          </div>
+          <div>
+            <h2 style="font-size:1.25rem;font-weight:800;margin:0;">Upravljanje akcijom</h2>
+            <p style="font-size:.8rem;color:var(--text-muted);margin:0;">Vidljivo samo vama kao organizatoru</p>
+          </div>
+        </div>
+
+        <!-- Tabovi upravljanja -->
+        <div style="display:flex;gap:4px;border-bottom:2px solid var(--border-light);margin-bottom:24px;overflow-x:auto;">
+          ${[
+            ['org-vol', `<i class="bi bi-person-check"></i> Volonteri${naC_vol ? ` <span style="background:var(--warning);color:white;font-size:.65rem;padding:1px 6px;border-radius:8px;font-weight:700;">${naC_vol}</span>` : ''}`],
+            ['org-sp',  `<i class="bi bi-patch-check"></i> Sponzori${naC_sp ? ` <span style="background:var(--teal);color:white;font-size:.65rem;padding:1px 6px;border-radius:8px;font-weight:700;">${naC_sp}</span>` : ''}`],
+            ['org-obavestenje', `<i class="bi bi-megaphone"></i> Pošalji obaveštenje`],
+            ['org-izmeni',      `<i class="bi bi-pencil"></i> Izmeni akciju`],
+          ].map(([id, label], i) => `
+            <button onclick="switchOrgTab('${id}')" id="otab-${id}"
+              style="padding:10px 18px;font-size:.875rem;font-weight:600;border:none;background:none;cursor:pointer;
+                     border-bottom:2px solid ${i===0?'var(--teal)':'transparent'};
+                     color:${i===0?'var(--teal)':'var(--text-muted)'};
+                     margin-bottom:-2px;white-space:nowrap;transition:all .15s;"
+              onmouseover="if(!this.style.borderBottomColor.includes('teal'))this.style.color='var(--dark)'"
+              onmouseout="if(!this.style.borderBottomColor.includes('teal'))this.style.color='var(--text-muted)'">
+              ${label}
+            </button>`).join('')}
+        </div>
+
+        <!-- Volonteri (SSU-18) -->
+        <div id="org-vol">
+          ${renderOrgVolonteri(a.id)}
+        </div>
+
+        <!-- Sponzori (SSU-17) -->
+        <div id="org-sp" style="display:none;">
+          ${renderOrgSponzori(a.id)}
+        </div>
+
+        <!-- Obaveštenje (SSU-8) -->
+        <div id="org-obavestenje" style="display:none;">
+          <div style="max-width:640px;">
+            <h3 style="font-size:1rem;font-weight:700;margin-bottom:4px;">Prijavljeni volonteri</h3>
+            <p style="font-size:.875rem;color:var(--text-secondary);margin-bottom:16px;">Obaveštenje će biti poslato svim prihvaćenim volonterima.</p>
+            ${(() => {
+              const prihv = vols.filter(v => v.status === 'prihvacen');
+              if (!prihv.length) return '<div class="alert alert-info"><i class="bi bi-info-circle-fill"></i><span>Nema prihvaćenih volontera.</span></div>';
+              return `<div style="background:var(--bg);border:1px solid var(--border-light);border-radius:var(--radius-sm);margin-bottom:20px;overflow:hidden;">
+                ${prihv.map((v,i) => `
+                  <div style="padding:10px 16px;display:flex;align-items:center;gap:10px;${i<prihv.length-1?'border-bottom:1px solid var(--border-light);':''}">
+                    <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--green-light),var(--teal-light));display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;color:var(--teal-hover);flex-shrink:0;">${v.ime.charAt(0)}</div>
+                    <div>
+                      <div style="font-weight:600;font-size:.875rem;">${v.ime}</div>
+                      <div style="font-size:.75rem;color:var(--text-muted);">${v.email}</div>
+                    </div>
+                  </div>`).join('')}
+              </div>`;
+            })()}
+            <div class="form-group">
+              <label class="form-label">Tekst obaveštenja <span class="req">*</span></label>
+              <textarea id="org-notif-tekst" class="form-control" rows="4"
+                placeholder="npr. Podsećamo vas da je akcija u subotu u 9h. Ponesimo rukavice!"></textarea>
+            </div>
+            <button class="btn btn-primary" onclick="posaljiOrgObavestenje(${a.id})">
+              <i class="bi bi-send"></i> Pošalji obaveštenje
+            </button>
+          </div>
+        </div>
+
+        <!-- Izmeni akciju (SSU-10) -->
+        <div id="org-izmeni" style="display:none;">
+          <div style="max-width:680px;">
+            <div id="org-izmeni-err" class="alert alert-error" style="display:none;margin-bottom:16px;"></div>
+            <div id="org-izmeni-ok"  class="alert alert-success" style="display:none;margin-bottom:16px;"></div>
+            <div class="grid-2" style="gap:16px;">
+              <div class="form-group">
+                <label class="form-label">Naziv akcije <span class="req">*</span></label>
+                <input type="text" id="org-naziv" class="form-control" value="${a.naziv}" maxlength="128">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Kategorija</label>
+                <select id="org-kategorija" class="form-control">
+                  ${KATEGORIJE.map(k => `<option value="${k}" ${k===a.kategorija?'selected':''}>${k}</option>`).join('')}
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Opis akcije <span class="req">*</span></label>
+              <textarea id="org-opis" class="form-control" rows="4" maxlength="2048">${a.opis}</textarea>
+            </div>
+            <div class="grid-2" style="gap:16px;">
+              <div class="form-group">
+                <label class="form-label">Datum <span class="req">*</span></label>
+                <input type="date" id="org-datum" class="form-control" value="${a.datum}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Vreme</label>
+                <input type="time" id="org-vreme" class="form-control" value="${a.vreme}">
+              </div>
+            </div>
+            <div class="grid-2" style="gap:16px;">
+              <div class="form-group">
+                <label class="form-label">Lokacija <span class="req">*</span></label>
+                <input type="text" id="org-lokacija" class="form-control" value="${a.lokacija}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Maks. volontera <span class="req">*</span></label>
+                <input type="number" id="org-max" class="form-control" value="${a.maxVolontera}" min="1">
+              </div>
+            </div>
+            <div class="grid-2" style="gap:16px;">
+              <div class="form-group">
+                <label class="form-label">Kontakt email <span class="req">*</span></label>
+                <input type="email" id="org-email" class="form-control" value="${a.kontaktEmail}">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Kontakt telefon <span class="req">*</span></label>
+                <input type="text" id="org-telefon" class="form-control" value="${a.kontaktTelefon}">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Fotografije (opciono)</label>
+              <div style="border:2px dashed var(--border-light);border-radius:var(--radius-sm);padding:16px;text-align:center;cursor:pointer;"
+                onclick="showToast('Upload fotografija simuliran (SSU-10).')">
+                <i class="bi bi-camera" style="font-size:1.5rem;color:var(--text-muted);"></i>
+                <div style="font-size:.8rem;color:var(--text-muted);margin-top:4px;">Dodajte fotografije pre i posle akcije</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <button class="btn btn-primary" onclick="sacuvajOrgIzmene(${a.id})">
+                <i class="bi bi-floppy"></i> Sačuvaj izmene
+              </button>
+              ${a.status !== 'otkazana' ? `
+              <button class="btn btn-sm" style="background:var(--error-bg);color:var(--error);border:1px solid #fca5a5;"
+                onclick="if(confirm('Da li ste sigurni da želite da otkažete ovu akciju? Volonteri će biti obavešteni.')){showToast('Akcija je otkazana. Volonteri su obavešteni putem emaila.');document.getElementById('org-izmeni-ok').style.display='none';}">
+                <i class="bi bi-x-circle"></i> Otkaži akciju
+              </button>` : ''}
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    function renderOrgVolonteri(akcId) {
+      const vols = MOCK_VOLONTERI[akcId] || [];
+      if (!vols.length) return '<p style="color:var(--text-muted);">Nema prijavljenih volontera.</p>';
+      const grupe = [
+        { label: 'Na čekanju', status: 'cekanje',   dot: '#f59e0b' },
+        { label: 'Prihvaćeni', status: 'prihvacen', dot: 'var(--green)' },
+      ];
+      return grupe.map(g => {
+        const lista = vols.filter(v => v.status === g.status);
+        if (!lista.length) return '';
+        return `
+          <div style="margin-bottom:20px;">
+            <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+              <span style="width:8px;height:8px;border-radius:50%;background:${g.dot};display:inline-block;"></span> ${g.label}
+            </div>
+            ${lista.map(v => `
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:white;border:1px solid var(--border-light);border-radius:var(--radius-sm);margin-bottom:8px;flex-wrap:wrap;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--teal-light),var(--green-light));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;color:var(--teal-hover);">${v.ime.charAt(0)}</div>
+                  <div>
+                    <div style="font-weight:600;font-size:.9rem;">${v.ime}</div>
+                    <div style="font-size:.75rem;color:var(--text-muted);">${v.email}</div>
+                  </div>
+                </div>
+                ${g.status === 'cekanje' ? `
+                <div style="display:flex;gap:6px;">
+                  <button class="btn btn-sm" style="background:rgba(93,201,93,.15);color:var(--green-hover);border:1px solid rgba(93,201,93,.3);"
+                    onclick="orgPrihvatiVol('${akcId}','${v.id}',this)"><i class="bi bi-check"></i> Prihvati</button>
+                  <button class="btn btn-sm" style="background:var(--error-bg);color:var(--error);border:1px solid #fca5a5;"
+                    onclick="orgOdbijVol('${akcId}','${v.id}',this)"><i class="bi bi-x"></i> Odbij</button>
+                </div>` : `
+                <span class="badge ${g.status==='prihvacen'?'badge-green':'badge-error'}" style="font-size:.75rem;">
+                  ${g.status==='prihvacen'?'Prihvaćen':'Odbijen'}
+                </span>`}
+              </div>`).join('')}
+          </div>`;
+      }).join('');
+    }
+
+    function renderOrgSponzori(akcId) {
+      const ponude = MOCK_PONUDE[akcId] || [];
+      if (!ponude.length) return '<p style="color:var(--text-muted);">Nema pristiglih ponuda za sponzorstvo.</p>';
+      return ponude.map(p => `
+        <div id="org-ponuda-${p.id}" style="background:white;border:1px solid var(--border-light);border-radius:var(--radius-sm);padding:16px 20px;margin-bottom:12px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+              ${p.status==='cekanje'   ? '<span class="badge status-pending" style="font-size:.72rem;">Na čekanju</span>' : ''}
+              ${p.status==='prihvacen' ? '<span class="badge badge-green" style="font-size:.72rem;">Prihvaćeno</span>' : ''}
+              ${p.status==='odbijen'   ? '<span class="badge badge-error" style="font-size:.72rem;">Odbijeno</span>' : ''}
+            </div>
+            <div style="font-weight:700;font-size:.9375rem;margin-bottom:3px;">${p.sponzor}</div>
+            <div style="font-size:.875rem;color:var(--text-secondary);">${p.opis}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-family:var(--font-display);font-weight:800;font-size:1.25rem;color:var(--green-hover);">${p.vrednost} €</div>
+            ${p.status==='cekanje' ? `
+            <div style="display:flex;gap:6px;margin-top:8px;">
+              <button class="btn btn-sm" style="background:rgba(93,201,93,.15);color:var(--green-hover);border:1px solid rgba(93,201,93,.3);"
+                onclick="orgPrihvatiSp('${akcId}','${p.id}')"><i class="bi bi-check"></i> Prihvati</button>
+              <button class="btn btn-sm" style="background:var(--error-bg);color:var(--error);border:1px solid #fca5a5;"
+                onclick="orgOdbijSp('${akcId}','${p.id}')"><i class="bi bi-x"></i> Odbij</button>
+            </div>` : ''}
+          </div>
+        </div>`).join('');
+    }
+
+    function switchOrgTab(activeId) {
+      ['org-vol','org-sp','org-obavestenje','org-izmeni'].forEach(id => {
+        const el = document.getElementById(id);
+        const btn = document.getElementById('otab-' + id);
+        if (el) el.style.display = id === activeId ? 'block' : 'none';
+        if (btn) {
+          btn.style.borderBottomColor = id === activeId ? 'var(--teal)' : 'transparent';
+          btn.style.color = id === activeId ? 'var(--teal)' : 'var(--text-muted)';
+        }
+      });
+    }
+
+    // Akcije organizatora na volonterima
+    function orgPrihvatiVol(akcId, volId, btn) {
+      const vol = MOCK_VOLONTERI[akcId]?.find(v => v.id === volId);
+      if (vol) { vol.status = 'prihvacen'; showToast(`${vol.ime} je prihvaćen/a. Email je poslat.`); }
+      const a = AKCIJE.find(x => x.id == akcId);
+      if (a) renderPage(a);
+    }
+    function orgOdbijVol(akcId, volId, btn) {
+      const vol = MOCK_VOLONTERI[akcId]?.find(v => v.id === volId);
+      if (vol) { vol.status = 'odbijen'; showToast(`Prijava ${vol.ime} je odbijena. Email je poslat.`); }
+      const a = AKCIJE.find(x => x.id == akcId);
+      if (a) { renderPage(a); setTimeout(() => switchOrgTab('org-vol'), 50); }
+    }
+
+    // Akcije organizatora na sponzorima
+    function orgPrihvatiSp(akcId, ponId) {
+      const p = MOCK_PONUDE[akcId]?.find(x => x.id === ponId);
+      if (p) { p.status = 'prihvacen'; showToast(`Ponuda od ${p.sponzor} prihvaćena! Email poslat.`); }
+      const a = AKCIJE.find(x => x.id == akcId);
+      if (a) { renderPage(a); setTimeout(() => switchOrgTab('org-sp'), 50); }
+    }
+    function orgOdbijSp(akcId, ponId) {
+      const p = MOCK_PONUDE[akcId]?.find(x => x.id === ponId);
+      if (p) { p.status = 'odbijen'; showToast(`Ponuda od ${p.sponzor} odbijena. Email poslat.`); }
+      const a = AKCIJE.find(x => x.id == akcId);
+      if (a) { renderPage(a); setTimeout(() => switchOrgTab('org-sp'), 50); }
+    }
+
+    // Slanje obaveštenja
+    function posaljiOrgObavestenje(akcId) {
+      const tekst = document.getElementById('org-notif-tekst')?.value.trim();
+      if (!tekst) { showToast('Unesite tekst poruke.'); return; }
+      const prihv = (MOCK_VOLONTERI[akcId] || []).filter(v => v.status === 'prihvacen');
+      document.getElementById('org-notif-tekst').value = '';
+      showToast(`Obaveštenje poslato ${prihv.length} volontera putem Email API-ja.`);
+    }
+
+    // Izmena akcije
+    function sacuvajOrgIzmene(akcId) {
+      const naziv    = document.getElementById('org-naziv').value.trim();
+      const opis     = document.getElementById('org-opis').value.trim();
+      const datum    = document.getElementById('org-datum').value;
+      const email    = document.getElementById('org-email').value.trim();
+      const telefon  = document.getElementById('org-telefon').value.trim();
+      const max      = parseInt(document.getElementById('org-max').value);
+      const errEl    = document.getElementById('org-izmeni-err');
+      errEl.style.display = 'none';
+
+      if (!naziv || !opis || !datum || !email || !telefon) {
+        errEl.innerHTML = '<i class="bi bi-exclamation-circle"></i> Nisu uneta sva obavezna polja.';
+        errEl.style.display = 'flex'; return;
+      }
+      if (naziv.length > 128) { errEl.innerHTML = '<i class="bi bi-exclamation-circle"></i> Naziv ne sme imati više od 128 karaktera.'; errEl.style.display='flex'; return; }
+      if (opis.length > 2048) { errEl.innerHTML = '<i class="bi bi-exclamation-circle"></i> Opis sme imati najviše 2048 karaktera.'; errEl.style.display='flex'; return; }
+      if (new Date(datum) < new Date(new Date().toDateString())) { errEl.innerHTML = '<i class="bi bi-exclamation-circle"></i> Datum ne sme biti u prošlosti.'; errEl.style.display='flex'; return; }
+      if (!max || max <= 0) { errEl.innerHTML = '<i class="bi bi-exclamation-circle"></i> Maksimalan broj volontera mora biti pozitivan.'; errEl.style.display='flex'; return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { errEl.innerHTML = '<i class="bi bi-exclamation-circle"></i> Email nije ispravnog formata.'; errEl.style.display='flex'; return; }
+      if (!/^[\d\s+\-]+$/.test(telefon)) { errEl.innerHTML = '<i class="bi bi-exclamation-circle"></i> Telefon nije ispravnog formata.'; errEl.style.display='flex'; return; }
+
+      const okEl = document.getElementById('org-izmeni-ok');
+      okEl.innerHTML = '<i class="bi bi-check-circle-fill"></i> Izmene su sačuvane. Prijavljeni volonteri su obavešteni putem Email API-ja.';
+      okEl.style.display = 'flex';
+      showToast('Izmene sačuvane.');
+    }
+
+    function prijavi(id) {
+      localStorage.setItem('joined_'+id, 'true');
+      showToast('Uspešno ste se prijavili na akciju. Čekajte potvrdu organizatora.');
+      renderPage(AKCIJE.find(a=>a.id===id));
+    }
+
+    function odjavi(id) {
+      localStorage.removeItem('joined_'   + id);
+      localStorage.removeItem('accepted_' + id);
+      showToast('Uspešno ste se odjavili sa akcije.');
+      renderPage(AKCIJE.find(a=>a.id===id));
+    }
+
+    function posaljiPonuduSidebar(id) {
+      const opis     = document.getElementById('sp-opis')?.value.trim();
+      const vrednost = parseFloat(document.getElementById('sp-vrednost')?.value);
+      const errEl    = document.getElementById('sp-error');
+      if (errEl) errEl.style.display = 'none';
+
+      if (!opis || !vrednost || vrednost <= 0) {
+        if (errEl) {
+          errEl.innerHTML = '<i class="bi bi-exclamation-circle"></i> Popunite sva polja.';
+          errEl.style.display = 'flex';
+        }
+        return;
+      }
+      localStorage.setItem('sponzor_ponuda_' + id, JSON.stringify({ opis, vrednost }));
+      showToast('Ponuda je uspešno poslata organizatoru!');
+      renderPage(AKCIJE.find(a => a.id === id));
+    }
+
+    function povuciPonudu(id) {
+      if (!confirm('Da li ste sigurni da želite da povučete ovu ponudu?')) return;
+      localStorage.removeItem('sponzor_ponuda_' + id);
+      showToast('Ponuda je povučena.');
+      renderPage(AKCIJE.find(a => a.id === id));
+    }
+
+    // ── Init – poziva se tek kad su sve const deklaracije inicijalizovane ──
+    if (!akcija) {
+      document.getElementById('page-body').innerHTML = `
+        <div class="empty-state">
+          <div class="es-icon">😕</div>
+          <h3>Akcija nije pronađena</h3>
+          <p>Akcija sa ovim ID-jem ne postoji ili je uklonjena.</p>
+          <a href="akcije.html" class="btn btn-primary">← Nazad na akcije</a>
+        </div>`;
+    } else {
+      renderPage(akcija);
+    }
+  </script>
+</body>
+</html>

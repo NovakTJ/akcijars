@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AkcijaRS – Volonterski portal Srbije</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body>
+
+  <!-- NAVBAR (injected) -->
+  <div id="navbar-placeholder"></div>
+
+  <!-- ── HERO ── -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-badge fade-up">
+          <span class="badge badge-teal" style="font-size:.875rem;padding:6px 14px;box-shadow:var(--shadow-sm);">
+            <i class="bi bi-lightning-charge-fill"></i>&nbsp; 10.000+ aktivnih volontera u Srbiji
+          </span>
+        </div>
+        <h1 class="hero-title fade-up-1">
+          Jedinstven portal za<br>
+          <span class="gradient-text">volonterske akcije</span><br>
+          u Srbiji
+        </h1>
+        <p class="hero-desc fade-up-2">
+          Pronađite akcije u vašoj blizini, prijavite se u par klikova i postanite deo zajednice koja menja svet oko sebe – jednu akciju u vreme.
+        </p>
+        <div class="hero-btns fade-up-3">
+          <a href="akcije.html" class="btn btn-primary btn-lg">
+            <i class="bi bi-search"></i> Pregledaj akcije
+          </a>
+          <a href="registracija.html" class="btn btn-ghost btn-lg">
+            Postani volonter <i class="bi bi-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats strip -->
+    <div class="stats-strip">
+      <div class="container">
+        <div class="stats-grid">
+          <div class="stat-item"><div class="stat-num">500+</div><div class="stat-label">Akcija</div></div>
+          <div class="stat-divider"></div>
+          <div class="stat-item"><div class="stat-num">10.000+</div><div class="stat-label">Volontera</div></div>
+          <div class="stat-divider"></div>
+          <div class="stat-item"><div class="stat-num">150+</div><div class="stat-label">Organizacija</div></div>
+          <div class="stat-divider"></div>
+          <div class="stat-item"><div class="stat-num">150.000+</div><div class="stat-label">Volonterskih sati</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FEATURED ACTIONS ── -->
+  <section class="home-section" style="background:white;">
+    <div class="container">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Nadolazeće akcije</h2>
+          <p class="section-subtitle">Pronađite akciju koja vam odgovara i prijavite se danas</p>
+        </div>
+        <a href="akcije.html" class="btn btn-ghost">Sve akcije <i class="bi bi-arrow-right"></i></a>
+      </div>
+      <div class="grid-3" id="featured-actions"></div>
+    </div>
+  </section>
+
+  <!-- ── HOW TO JOIN ── -->
+  <section class="join-section">
+    <div class="container">
+      <h2 class="section-title text-center">Kako učestvovati?</h2>
+      <p class="section-subtitle text-center" style="color:#94a3b8;">Pridružite se na način koji vam najviše odgovara</p>
+      <div class="join-grid">
+        <div class="join-card featured fade-up-1">
+          <div class="join-badge">Najpopularnije</div>
+          <div class="join-icon teal"><i class="bi bi-person-heart"></i></div>
+          <h3>Volonter</h3>
+          <p>Pregledajte stotine akcija, prijavite se u par klikova i pratite vaše volonterske sate i lična dostignuća.</p>
+          <a href="registracija.html?uloga=volonter" class="btn btn-primary">Registruj se kao volonter</a>
+        </div>
+        <div class="join-card fade-up-2">
+          <div class="join-icon gradient"><i class="bi bi-people-fill"></i></div>
+          <h3>Organizator</h3>
+          <p>Kreirajte i upravljajte volonterskim akcijama, primajte prijave, upravljajte sponzorima i koordinišite učesnike.</p>
+          <a href="registracija.html?uloga=organizator" class="btn btn-secondary">Registruj se kao organizator</a>
+        </div>
+        <div class="join-card fade-up-3">
+          <div class="join-icon green"><i class="bi bi-patch-check"></i></div>
+          <h3>Sponzor</h3>
+          <p>Podržite volonterske akcije koje cenite i pratite ukupnu vrednost vašeg doprinosa zajednici u evrima.</p>
+          <a href="registracija.html?uloga=sponzor" class="btn btn-ghost" style="color:#94a3b8;border-color:#253545;">Registruj se kao sponzor</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── FEATURED ARTICLES ── -->
+  <section class="home-section" style="background:var(--bg);">
+    <div class="container">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Najnoviji članci</h2>
+          <p class="section-subtitle">Vesti i izveštaji sa volonterskih akcija</p>
+        </div>
+        <a href="clanci.html" class="btn btn-ghost">Svi članci <i class="bi bi-arrow-right"></i></a>
+      </div>
+      <div class="grid-2" id="featured-articles"></div>
+    </div>
+  </section>
+
+  <!-- ── CTA BANNER ── -->
+  <section style="background:linear-gradient(135deg,var(--teal),var(--green));padding:60px 0;">
+    <div class="container" style="text-align:center;">
+      <h2 style="color:white;font-size:1.875rem;margin-bottom:12px;">Spreman/na da promeniš nešto?</h2>
+      <p style="color:rgba(255,255,255,0.85);font-size:1.0625rem;margin-bottom:28px;max-width:520px;margin-left:auto;margin-right:auto;">
+        Registruj se danas i postani deo 10.000+ volontera koji zajedno čine Srbiju boljim mestom.
+      </p>
+      <a href="registracija.html" class="btn btn-lg" style="background:white;color:var(--teal-hover);box-shadow:0 6px 28px rgba(0,0,0,0.2);">
+        <i class="bi bi-person-plus-fill"></i> Registruj se besplatno
+      </a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <div id="footer-placeholder"></div>
+
+  <script src="data.js"></script>
+  <script>
+    // Inject navbar & footer
+    document.getElementById('navbar-placeholder').innerHTML = renderNavbar('home');
+    document.getElementById('footer-placeholder').innerHTML = renderFooter();
+
+    // Featured actions
+    const actEl = document.getElementById('featured-actions');
+    AKCIJE.slice(0,3).forEach((a,i) => {
+      const pct = progressWidth(a.prihvacenih, a.maxVolontera);
+      actEl.innerHTML += `
+        <div class="card fade-up-${i+1}">
+          <div class="card-img-placeholder" style="background:${getCategoryGradient(a.kategorija)}">
+            <span class="card-img-icon">${getCategoryEmoji(a.kategorija)}</span>
+          </div>
+          <div class="card-body">
+            <div class="card-meta" style="margin-bottom:12px;">
+              ${getKategorijaBadge(a.kategorija)} ${getStatusBadge(a.status)}
+            </div>
+            <h3 class="card-title">${a.naziv}</h3>
+            <div class="card-meta">
+              <span class="card-meta-item"><i class="bi bi-geo-alt"></i>${a.lokacija}</span>
+              <span class="card-meta-item"><i class="bi bi-calendar3"></i>${formatDate(a.datum)}</span>
+            </div>
+            <p class="card-excerpt">${a.opis}</p>
+            <div class="progress-wrap" style="margin-top:14px;">
+              <div class="progress-label"><span>Popunjenost</span><span>${a.prihvacenih}/${a.maxVolontera}</span></div>
+              <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+            </div>
+          </div>
+          <div class="card-footer">
+            <span class="card-meta-item" style="font-size:.875rem;"><i class="bi bi-building"></i>${a.organizator}</span>
+            <a href="akcija.html?id=${a.id}" class="btn btn-primary btn-sm">Pogledaj →</a>
+          </div>
+        </div>`;
+    });
+
+    // Featured articles
+    const artEl = document.getElementById('featured-articles');
+    CLANCI.slice(0,2).forEach((c,i) => {
+      artEl.innerHTML += `
+        <div class="card fade-up-${i+1}">
+          <div class="card-img-placeholder wide" style="background:${getCategoryGradient(c.kategorija)}">
+            <span class="card-img-icon">${getCategoryEmoji(c.kategorija)}</span>
+          </div>
+          <div class="card-body">
+            <div class="card-meta">
+              ${getKategorijaBadge(c.kategorija)}
+              <span class="card-meta-item"><i class="bi bi-calendar3"></i>${formatDate(c.datumObjave)}</span>
+            </div>
+            <h3 class="card-title">${c.naslov}</h3>
+            <div class="card-meta"><span class="card-meta-item"><i class="bi bi-building"></i>${c.organizator}</span></div>
+            <p class="card-excerpt">${c.sadrzaj}</p>
+          </div>
+          <div class="card-footer">
+            <span class="card-meta-item"><i class="bi bi-chat-left-text"></i>${c.komentari.length} komentara</span>
+            <a href="clanak.html?id=${c.id}" class="btn btn-secondary btn-sm">Čitaj →</a>
+          </div>
+        </div>`;
+    });
+  </script>
+</body>
+</html>

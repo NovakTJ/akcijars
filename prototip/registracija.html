@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registracija – AkcijaRS</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body>
+
+  <div id="navbar-placeholder"></div>
+
+  <div class="auth-page">
+    <div class="auth-card wide">
+
+      <!-- Logo -->
+      <div class="auth-logo">
+        <img src="logo.png" alt="AkcijaRS" style="height:44px;width:auto;object-fit:contain;">
+      </div>
+
+      <h1 class="auth-title">Kreirajte nalog</h1>
+      <p class="auth-subtitle">Pridružite se zajednici volontera Srbije</p>
+
+      <!-- Role tabs -->
+      <div class="role-tabs" id="role-tabs">
+        <button class="role-tab active" onclick="setRole('volonter', this)">
+          <i class="bi bi-person-heart"></i> Volonter
+        </button>
+        <button class="role-tab" onclick="setRole('organizator', this)">
+          <i class="bi bi-people"></i> Organizator
+        </button>
+        <button class="role-tab" onclick="setRole('sponzor', this)">
+          <i class="bi bi-patch-check"></i> Sponzor
+        </button>
+      </div>
+
+      <!-- Alert for org/sponzor -->
+      <div id="approval-note" class="alert alert-info" style="display:none;">
+        <i class="bi bi-info-circle-fill"></i>
+        <span>Nalog <strong id="approval-role"></strong> mora biti odobren od strane administratora pre korišćenja sistema.</span>
+      </div>
+
+      <!-- Global error -->
+      <div id="global-error" class="alert alert-error" style="display:none;"></div>
+      <div id="global-success" class="alert alert-success" style="display:none;"></div>
+
+      <!-- Form -->
+      <form id="reg-form" onsubmit="handleSubmit(event)" novalidate>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Ime <span class="req">*</span></label>
+            <input type="text" id="ime" class="form-control" placeholder="Vaše ime">
+            <div class="form-error" id="err-ime" style="display:none;"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Prezime <span class="req">*</span></label>
+            <input type="text" id="prezime" class="form-control" placeholder="Vaše prezime">
+            <div class="form-error" id="err-prezime" style="display:none;"></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email adresa <span class="req">*</span></label>
+          <input type="email" id="email" class="form-control" placeholder="vase@email.com">
+          <div class="form-error" id="err-email" style="display:none;"></div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Lozinka <span class="req">*</span></label>
+            <div class="password-toggle">
+              <input type="password" id="lozinka" class="form-control" placeholder="Min. 8 karaktera">
+              <button type="button" class="toggle-btn" onclick="togglePwd('lozinka',this)"><i class="bi bi-eye"></i></button>
+            </div>
+            <div class="form-hint">Minimum 8 karaktera, barem jedna cifra ili specijalni karakter.</div>
+            <div class="form-error" id="err-lozinka" style="display:none;"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Potvrda lozinke <span class="req">*</span></label>
+            <div class="password-toggle">
+              <input type="password" id="lozinka2" class="form-control" placeholder="Ponovite lozinku">
+              <button type="button" class="toggle-btn" onclick="togglePwd('lozinka2',this)"><i class="bi bi-eye"></i></button>
+            </div>
+            <div class="form-error" id="err-lozinka2" style="display:none;"></div>
+          </div>
+        </div>
+
+        <!-- Extra fields for organizator/sponzor -->
+        <div id="org-fields" style="display:none;">
+          <div class="divider" style="margin:4px 0 18px;"></div>
+          <div class="form-group">
+            <label class="form-label">Naziv organizacije <span class="req">*</span></label>
+            <input type="text" id="org-naziv" class="form-control" placeholder="Naziv vaše organizacije">
+            <div class="form-error" id="err-org-naziv" style="display:none;"></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Kontakt telefon <span class="req">*</span></label>
+            <input type="tel" id="telefon" class="form-control" placeholder="+381 11 123 4567">
+            <div class="form-hint">Dozvoljeni: cifre, razmaci, + i -</div>
+            <div class="form-error" id="err-telefon" style="display:none;"></div>
+          </div>
+        </div>
+
+        <input type="hidden" id="uloga" value="volonter">
+
+        <button type="submit" class="btn btn-primary btn-lg" style="width:100%;margin-top:8px;" id="submit-btn">
+          <i class="bi bi-person-plus"></i> Registruj se
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        Već imate nalog? <a href="prijava.html">Prijavite se</a>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script>
+    document.getElementById('navbar-placeholder')?.remove();
+    // Render minimal navbar inline for auth pages
+    document.body.insertAdjacentHTML('afterbegin', renderNavbar(''));
+
+    // Check if role preset via URL
+    const urlParams = new URLSearchParams(location.search);
+    const presetRole = urlParams.get('uloga');
+    if (presetRole && ['volonter','organizator','sponzor'].includes(presetRole)) {
+      const tabs = document.querySelectorAll('.role-tab');
+      tabs.forEach(t => t.classList.remove('active'));
+      const idx = {volonter:0,organizator:1,sponzor:2}[presetRole];
+      tabs[idx].classList.add('active');
+      setRole(presetRole, tabs[idx]);
+    }
+
+    function setRole(role, btn) {
+      document.querySelectorAll('.role-tab').forEach(t=>t.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('uloga').value = role;
+      const note = document.getElementById('approval-note');
+      const orgFields = document.getElementById('org-fields');
+      if (role==='organizator'||role==='sponzor') {
+        note.style.display='flex';
+        document.getElementById('approval-role').textContent = role==='organizator'?'organizatora':'sponzora';
+        orgFields.style.display='block';
+      } else {
+        note.style.display='none';
+        orgFields.style.display='none';
+      }
+    }
+
+    function togglePwd(fieldId, btn) {
+      const f = document.getElementById(fieldId);
+      if (f.type==='password') { f.type='text'; btn.innerHTML='<i class="bi bi-eye-slash"></i>'; }
+      else { f.type='password'; btn.innerHTML='<i class="bi bi-eye"></i>'; }
+    }
+
+    function showErr(fieldId, msg) {
+      const el = document.getElementById('err-'+fieldId);
+      if (!el) return;
+      el.innerHTML='<i class="bi bi-exclamation-circle"></i> '+msg;
+      el.style.display='flex';
+      document.getElementById(fieldId.includes('org')?fieldId.replace('err-',''):fieldId)?.classList.add('is-error');
+    }
+
+    function clearErrors() {
+      document.querySelectorAll('.form-error').forEach(e=>e.style.display='none');
+      document.querySelectorAll('.form-control').forEach(e=>e.classList.remove('is-error'));
+      document.getElementById('global-error').style.display='none';
+      document.getElementById('global-success').style.display='none';
+    }
+
+    // Mock existing emails
+    const EXISTING_EMAILS = ['test@test.com', 'admin@akcijars.rs', 'volonter@test.rs'];
+
+    function handleSubmit(e) {
+      e.preventDefault();
+      clearErrors();
+
+      const ime      = document.getElementById('ime').value.trim();
+      const prezime  = document.getElementById('prezime').value.trim();
+      const email    = document.getElementById('email').value.trim();
+      const lozinka  = document.getElementById('lozinka').value;
+      const lozinka2 = document.getElementById('lozinka2').value;
+      const uloga    = document.getElementById('uloga').value;
+      const orgNaziv = document.getElementById('org-naziv').value.trim();
+      const telefon  = document.getElementById('telefon').value.trim();
+      let hasError = false;
+
+      // Required fields
+      if (!ime)      { showErr('ime','Ime je obavezno.'); hasError=true; }
+      if (!prezime)  { showErr('prezime','Prezime je obavezno.'); hasError=true; }
+      if (!email)    { showErr('email','Email je obavezan.'); hasError=true; }
+      if (!lozinka)  { showErr('lozinka','Lozinka je obavezna.'); hasError=true; }
+      if (!lozinka2) { showErr('lozinka2','Potvrdite lozinku.'); hasError=true; }
+      if ((uloga==='organizator'||uloga==='sponzor') && !orgNaziv) { showErr('org-naziv','Naziv organizacije je obavezan.'); hasError=true; }
+      if ((uloga==='organizator'||uloga==='sponzor') && !telefon) { showErr('telefon','Kontakt telefon je obavezan.'); hasError=true; }
+
+      if (hasError) {
+        const ge=document.getElementById('global-error');
+        ge.innerHTML='<i class="bi bi-exclamation-triangle-fill"></i> Nisu uneta sva obavezna polja.';
+        ge.style.display='flex'; return;
+      }
+
+      // Email format
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showErr('email','Email adresa nije ispravnog formata.');
+        return;
+      }
+
+      // Email exists
+      if (EXISTING_EMAILS.includes(email.toLowerCase())) {
+        showErr('email','Korisnik sa tom email adresom već postoji.');
+        return;
+      }
+
+      // Password strength
+      if (lozinka.length < 8 || !/[\d!@#$%^&*()_\-+=\[\]{};:'",.<>?/\\|`~]/.test(lozinka)) {
+        showErr('lozinka','Lozinka mora imati najmanje 8 karaktera i sadržati barem jednu cifru ili specijalni karakter.');
+        return;
+      }
+
+      // Passwords match
+      if (lozinka !== lozinka2) {
+        showErr('lozinka2','Lozinke se ne poklapaju.');
+        return;
+      }
+
+      // Phone format (if provided)
+      if (telefon && !/^[0-9 +\-]+$/.test(telefon)) {
+        showErr('telefon','Kontakt telefon nije ispravnog formata.');
+        return;
+      }
+
+      // Success
+      const btn = document.getElementById('submit-btn');
+      btn.disabled=true;
+      btn.innerHTML='<span style="display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;"></span> Registracija...';
+
+      setTimeout(() => {
+        const gs = document.getElementById('global-success');
+        btn.style.display='none';
+        if (uloga==='volonter') {
+          gs.innerHTML='<i class="bi bi-check-circle-fill"></i> Registracija je uspešna. Možete se <a href="prijava.html" style="font-weight:700;">prijaviti na sistem</a>.';
+        } else {
+          gs.innerHTML=`<i class="bi bi-check-circle-fill"></i> Registracija je uspešna. Nalog <strong>${uloga}a</strong> čeka odobrenje administratora.`;
+        }
+        gs.style.display='flex';
+        document.getElementById('reg-form').reset();
+      }, 900);
+    }
+  </script>
+
+  <style>
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</body>
+</html>

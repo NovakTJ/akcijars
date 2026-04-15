@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Članci – AkcijaRS</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body>
+
+  <div id="navbar-placeholder"></div>
+
+  <div style="padding-top:calc(var(--nav-h) + 36px);background:white;border-bottom:1px solid var(--border-light);">
+    <div class="container" style="padding-top:32px;padding-bottom:28px;">
+      <h1 style="font-size:1.875rem;font-weight:800;margin-bottom:4px;">Članci i vesti</h1>
+      <p style="color:var(--text-secondary);">Izveštaji, vesti i priče sa volonterskih akcija</p>
+    </div>
+  </div>
+
+  <div class="page-content" style="padding-top:32px;">
+    <div class="container">
+
+      <!-- Search bar -->
+      <div class="filter-bar" style="margin-bottom:28px;">
+        <div class="filter-row">
+          <div class="filter-group" style="flex:2;min-width:200px;">
+            <label>Pretraga</label>
+            <div class="search-wrap">
+              <input id="search-input" type="text" class="form-control" placeholder="Naslov članka ili organizator..." maxlength="64">
+              <button class="search-clear" id="search-clear" style="display:none;" onclick="clearSearch()"><i class="bi bi-x"></i></button>
+            </div>
+          </div>
+          <div class="filter-group">
+            <label>Kategorija</label>
+            <select id="filter-kat" class="form-control">
+              <option value="">Sve kategorije</option>
+            </select>
+          </div>
+          <div class="filter-group" style="flex:0;min-width:auto;">
+            <label>&nbsp;</label>
+            <button class="btn btn-primary" onclick="doSearch()"><i class="bi bi-search"></i> Traži</button>
+          </div>
+        </div>
+        <div id="query-info" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border-light);font-size:.875rem;color:var(--text-secondary);">
+          Pretraga: <strong id="query-text"></strong> —
+          <button onclick="clearSearch()" style="background:none;border:none;color:var(--teal);cursor:pointer;font-weight:600;font-size:.875rem;">Poništi pretragu</button>
+        </div>
+        <div id="search-error" class="alert alert-warning" style="display:none;margin-top:12px;margin-bottom:0;"></div>
+      </div>
+
+      <!-- Results info -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:8px;">
+        <p id="results-info" style="font-size:.9rem;color:var(--text-muted);"></p>
+      </div>
+
+      <!-- Articles grid -->
+      <div class="grid-3" id="articles-grid"></div>
+
+      <!-- Empty state -->
+      <div id="empty-state" class="empty-state" style="display:none;">
+        <div class="es-icon">📰</div>
+        <h3>Nema pronađenih članaka</h3>
+        <p>Pokušajte sa drugačijim pojmom za pretragu.</p>
+        <button class="btn btn-secondary" onclick="clearSearch()">Pokaži sve članke</button>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination" id="pagination"></div>
+
+    </div>
+  </div>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="data.js"></script>
+  <script>
+    document.getElementById('navbar-placeholder').innerHTML = renderNavbar('clanci');
+    document.getElementById('footer-placeholder').innerHTML = renderFooter();
+
+    // Populate category filter
+    const katSel = document.getElementById('filter-kat');
+    [...new Set(CLANCI.map(c=>c.kategorija))].forEach(k => katSel.innerHTML += `<option value="${k}">${k}</option>`);
+
+    const PER_PAGE = 10;
+    let currentPage = 1;
+    let filtered = [...CLANCI];
+
+    const searchInput = document.getElementById('search-input');
+    searchInput.addEventListener('keydown', e => { if(e.key==='Enter') doSearch(); });
+    searchInput.addEventListener('input', () => {
+      document.getElementById('search-clear').style.display = searchInput.value ? 'block' : 'none';
+    });
+
+    function doSearch() {
+      const q = searchInput.value.trim();
+      const err = document.getElementById('search-error');
+      err.style.display='none';
+      if (q.length > 64) {
+        err.textContent='Dozvoljeni su upiti sa najviše 64 karaktera.'; err.style.display='flex'; return;
+      }
+      if (q && /[^a-zA-ZčćžšđČĆŽŠĐа-яА-ЯёЁ0-9 ]/.test(q)) {
+        err.textContent='U upitu su dozvoljeni samo slova, cifre i razmaci.'; err.style.display='flex'; return;
+      }
+      currentPage=1; applyFilters();
+    }
+
+    function applyFilters() {
+      const q = searchInput.value.trim().toLowerCase();
+      const kat = document.getElementById('filter-kat').value;
+
+      filtered = CLANCI.filter(c => {
+        const matchQ = !q || c.naslov.toLowerCase().includes(q) || c.organizator.toLowerCase().includes(q) || (c.lokacija||'').toLowerCase().includes(q);
+        const matchKat = !kat || c.kategorija===kat;
+        return matchQ && matchKat;
+      }).sort((a,b)=>new Date(b.datumObjave)-new Date(a.datumObjave));
+
+      const qi = document.getElementById('query-info');
+      if (q) { qi.style.display='block'; document.getElementById('query-text').textContent=q; }
+      else qi.style.display='none';
+
+      render();
+    }
+
+    function render() {
+      const grid = document.getElementById('articles-grid');
+      const emptyState = document.getElementById('empty-state');
+      const info = document.getElementById('results-info');
+
+      const start = (currentPage-1)*PER_PAGE;
+      const page = filtered.slice(start, start+PER_PAGE);
+
+      info.textContent = `Prikazano ${Math.min(filtered.length,start+PER_PAGE)} od ${filtered.length} članaka`;
+
+      if (filtered.length===0) {
+        grid.innerHTML=''; grid.style.display='none'; emptyState.style.display='block';
+      } else {
+        grid.style.display='grid'; emptyState.style.display='none';
+        grid.innerHTML = page.map(c => `
+          <div class="card">
+            <div class="card-img-placeholder" style="background:${getCategoryGradient(c.kategorija)}">
+              <span class="card-img-icon">${getCategoryEmoji(c.kategorija)}</span>
+            </div>
+            <div class="card-body">
+              <div class="card-meta">
+                ${getKategorijaBadge(c.kategorija)}
+                <span class="card-meta-item"><i class="bi bi-calendar3"></i>${formatDate(c.datumObjave)}</span>
+              </div>
+              <h3 class="card-title">${c.naslov}</h3>
+              <div class="card-meta">
+                <span class="card-meta-item"><i class="bi bi-building"></i>${c.organizator}</span>
+                ${c.lokacija?`<span class="card-meta-item"><i class="bi bi-geo-alt"></i>${c.lokacija}</span>`:''}
+              </div>
+              <p class="card-excerpt">${c.sadrzaj}</p>
+            </div>
+            <div class="card-footer">
+              <span class="card-meta-item"><i class="bi bi-chat-left-text"></i>${c.komentari.length} komentara</span>
+              <a href="clanak.html?id=${c.id}" class="btn btn-secondary btn-sm">Čitaj →</a>
+            </div>
+          </div>`).join('');
+      }
+      renderPagination();
+    }
+
+    function renderPagination() {
+      const total = Math.ceil(filtered.length/PER_PAGE);
+      const pg = document.getElementById('pagination');
+      if (total<=1) { pg.innerHTML=''; return; }
+      let html = `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
+      for(let i=1;i<=total;i++) {
+        html += `<button class="page-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+      }
+      html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===total?'disabled':''}>›</button>`;
+      pg.innerHTML=html;
+    }
+
+    function goPage(n) {
+      const total = Math.ceil(filtered.length/PER_PAGE);
+      if(n<1||n>total) return;
+      currentPage=n; render();
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+
+    function clearSearch() {
+      searchInput.value='';
+      document.getElementById('search-clear').style.display='none';
+      document.getElementById('search-error').style.display='none';
+      document.getElementById('filter-kat').value='';
+      document.getElementById('query-info').style.display='none';
+      currentPage=1; filtered=[...CLANCI].sort((a,b)=>new Date(b.datumObjave)-new Date(a.datumObjave));
+      render();
+    }
+
+    applyFilters();
+  </script>
+</body>
+</html>

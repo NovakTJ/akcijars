@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Akcije – AkcijaRS</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
+    .dist-badge {
+      display:inline-flex;align-items:center;gap:3px;
+      font-size:.73rem;font-weight:700;color:var(--teal-hover);
+      background:var(--teal-xlight);padding:2px 8px;border-radius:var(--radius-round);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="navbar-placeholder"></div>
+
+  <!-- Inline page title -->
+  <div style="padding-top:calc(var(--nav-h) + 36px);background:white;border-bottom:1px solid var(--border-light);">
+    <div class="container" style="padding-top:32px;padding-bottom:28px;">
+      <h1 style="font-size:1.875rem;font-weight:800;margin-bottom:4px;">Volonterske akcije</h1>
+      <p style="color:var(--text-secondary);">Pronađite akciju koja vam odgovara i prijavite se</p>
+    </div>
+  </div>
+
+  <div class="page-content" style="padding-top:32px;">
+    <div class="container">
+
+      <!-- ── FILTER BAR ── -->
+      <div class="filter-bar">
+
+        <!-- Prva linija: tekst pretraga + kategorija + status + datum + traži -->
+        <div class="filter-row" style="flex-wrap:wrap;gap:12px;">
+          <div class="filter-group" style="flex:2;min-width:180px;">
+            <label>Pretraga</label>
+            <div class="search-wrap">
+              <input id="search-input" type="text" class="form-control" placeholder="Naziv ili organizator..." maxlength="64">
+              <button class="search-clear" id="search-clear" style="display:none;" onclick="clearTextSearch()"><i class="bi bi-x"></i></button>
+            </div>
+          </div>
+          <div class="filter-group" style="min-width:150px;">
+            <label>Kategorija</label>
+            <select id="filter-kat" class="form-control"><option value="">Sve kategorije</option></select>
+          </div>
+          <div class="filter-group" style="min-width:130px;">
+            <label>Status</label>
+            <select id="filter-status" class="form-control">
+              <option value="">Svi statusi</option>
+              <option value="otvorena">Otvorena</option>
+              <option value="popunjena">Popunjena</option>
+              <option value="zavrsena">Završena</option>
+            </select>
+          </div>
+          <div class="filter-group" style="min-width:140px;">
+            <label>Datum akcije</label>
+            <input type="date" id="filter-datum" class="form-control">
+          </div>
+          <div class="filter-group" style="flex:0;">
+            <label>&nbsp;</label>
+            <button class="btn btn-primary" onclick="doSearch()">
+              <i class="bi bi-search"></i> Traži
+            </button>
+          </div>
+        </div>
+
+        <!-- Separator -->
+        <div style="height:1px;background:var(--border-light);margin:16px 0;"></div>
+
+        <!-- Druga linija: lokacija + radijus — uvek u istom redu -->
+        <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:nowrap;">
+          <div class="filter-group" style="flex:1;min-width:0;">
+            <label style="display:flex;align-items:center;gap:6px;white-space:nowrap;">
+              <i class="bi bi-geo-alt-fill" style="color:var(--teal);font-size:.9rem;"></i>
+              Lokacija (radijus pretrage)
+              <span style="font-size:.7rem;font-weight:400;color:var(--text-muted);
+                background:var(--bg-2);border:1px solid var(--border-light);
+                border-radius:4px;padding:1px 6px;letter-spacing:.01em;white-space:nowrap;">
+                Google Places API simulacija
+              </span>
+            </label>
+            <div class="loc-wrap">
+              <input
+                id="loc-input"
+                type="text"
+                class="form-control"
+                placeholder="Počnite da kucate grad (npr. Beograd, Novi Sad...)"
+                autocomplete="off"
+                style="padding-right:36px;"
+              >
+              <button class="loc-clear" id="loc-clear" onclick="clearLocation()"><i class="bi bi-x"></i></button>
+              <div class="loc-dropdown" id="loc-dropdown"></div>
+            </div>
+            <div id="loc-tag-wrap" style="display:none;margin-top:6px;">
+              <span class="loc-tag">
+                <i class="bi bi-geo-alt-fill"></i>
+                <span id="loc-tag-text"></span>
+                <button onclick="clearLocation()" title="Ukloni lokaciju">×</button>
+              </span>
+            </div>
+          </div>
+
+          <div style="flex-shrink:0;width:160px;">
+            <label class="filter-group" style="display:block;">
+              <span style="display:block;font-size:.8125rem;font-weight:600;color:var(--text-secondary);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em;">Radijus</span>
+            </label>
+            <select id="filter-radijus" class="form-control" onchange="applyFilters()" style="width:160px;">
+              <option value="10">do 10 km</option>
+              <option value="25" selected>do 25 km</option>
+              <option value="50">do 50 km</option>
+              <option value="100">do 100 km</option>
+              <option value="99999">Cela Srbija</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Aktivni filteri + poruka o lokaciji -->
+        <div id="loc-info" style="display:none;margin-top:12px;">
+          <div class="alert alert-info" style="padding:9px 14px;margin:0;font-size:.85rem;">
+            <i class="bi bi-geo-alt-fill"></i>
+            <span id="loc-info-text"></span>
+            <button onclick="clearLocation()" style="margin-left:auto;background:none;border:none;color:var(--teal-hover);cursor:pointer;font-weight:600;font-size:.8rem;white-space:nowrap;">Ukloni lokaciju ×</button>
+          </div>
+        </div>
+
+        <div id="active-filters" style="display:none;margin-top:10px;font-size:.85rem;display:flex;gap:8px;flex-wrap:wrap;align-items:center;"></div>
+        <div id="search-error" class="alert alert-warning" style="display:none;margin-top:12px;margin-bottom:0;"></div>
+      </div>
+
+      <!-- Results header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:8px;">
+        <p id="results-info" style="font-size:.9rem;color:var(--text-muted);"></p>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span style="font-size:.8125rem;color:var(--text-muted);">Sortiraj:</span>
+          <select id="sort-select" class="form-control" style="width:auto;padding:7px 32px 7px 10px;font-size:.875rem;" onchange="applyFilters()">
+            <option value="newest">Najnovije</option>
+            <option value="soonest">Najskorije</option>
+            <option value="spots">Slobodna mesta</option>
+            <option value="distance" id="sort-distance" disabled>Najbliže</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Cards -->
+      <div class="grid-3" id="actions-grid"></div>
+
+      <!-- Empty state -->
+      <div id="empty-state" class="empty-state" style="display:none;">
+        <div class="es-icon">🔍</div>
+        <h3>Nema pronađenih akcija</h3>
+        <p id="empty-hint">Pokušajte sa drugačijim pojmom ili povećajte radijus pretrage.</p>
+        <button class="btn btn-secondary" onclick="clearAll()">Poništi sve filtere</button>
+      </div>
+
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </div>
+
+  <div id="footer-placeholder"></div>
+
+  <script src="data.js"></script>
+  <script>
+    document.getElementById('navbar-placeholder').innerHTML = renderNavbar('akcije');
+    document.getElementById('footer-placeholder').innerHTML = renderFooter();
+    KATEGORIJE.forEach(k => document.getElementById('filter-kat').innerHTML += `<option value="${k}">${k}</option>`);
+
+    // ── State ──────────────────────────────────
+    const PER_PAGE = 10;
+    let currentPage = 1;
+    let filtered = [...AKCIJE];
+    let selectedLocation = null; // { naziv, lat, lng }
+
+    // ── Autocomplete ────────────────────────────
+    const locInput = document.getElementById('loc-input');
+    const locDrop  = document.getElementById('loc-dropdown');
+    const locClear = document.getElementById('loc-clear');
+    let dropMatches = [];
+    let activeIdx = -1;
+
+    locInput.addEventListener('input', () => {
+      const q = locInput.value.trim().toLowerCase();
+      locClear.style.display = q ? 'block' : 'none';
+      if (q.length < 1) { closeDrop(); return; }
+
+      dropMatches = LOKACIJE_AUTOCOMPLETE.filter(l => l.naziv.toLowerCase().includes(q)).slice(0, 8);
+      if (!dropMatches.length) { closeDrop(); return; }
+
+      activeIdx = -1;
+      locDrop.innerHTML = dropMatches.map((l, i) => `
+        <div class="loc-option" data-i="${i}" onmousedown="selectLoc(${i})">
+          <i class="bi bi-geo-alt"></i>${hilite(l.naziv, q)}
+        </div>`).join('');
+      locDrop.classList.add('open');
+    });
+
+    locInput.addEventListener('keydown', e => {
+      const opts = locDrop.querySelectorAll('.loc-option');
+      if (!locDrop.classList.contains('open') || !opts.length) { if (e.key==='Enter') doSearch(); return; }
+      if (e.key === 'ArrowDown') { e.preventDefault(); activeIdx = Math.min(activeIdx+1, opts.length-1); opts.forEach((o,i)=>o.classList.toggle('active',i===activeIdx)); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); activeIdx = Math.max(activeIdx-1, 0); opts.forEach((o,i)=>o.classList.toggle('active',i===activeIdx)); }
+      else if (e.key === 'Enter') { e.preventDefault(); if (activeIdx>=0) selectLoc(activeIdx); else doSearch(); }
+      else if (e.key === 'Escape') closeDrop();
+    });
+
+    locInput.addEventListener('blur', () => setTimeout(closeDrop, 150));
+
+    function hilite(str, q) {
+      const i = str.toLowerCase().indexOf(q);
+      if (i < 0) return str;
+      return str.slice(0,i) + `<strong>${str.slice(i,i+q.length)}</strong>` + str.slice(i+q.length);
+    }
+
+    function closeDrop() { locDrop.classList.remove('open'); }
+
+    function selectLoc(i) {
+      selectedLocation = dropMatches[i];
+      locInput.value = '';
+      locInput.placeholder = selectedLocation.naziv;
+      locClear.style.display = 'block';
+      closeDrop();
+      document.getElementById('loc-tag-text').textContent = selectedLocation.naziv;
+      document.getElementById('loc-tag-wrap').style.display = 'block';
+      document.getElementById('sort-distance').disabled = false;
+      document.getElementById('sort-select').value = 'distance';
+      applyFilters();
+    }
+
+    function clearLocation() {
+      selectedLocation = null;
+      locInput.value = '';
+      locInput.placeholder = 'Počnite da kucate grad (npr. Beograd, Novi Sad...)';
+      locClear.style.display = 'none';
+      document.getElementById('loc-tag-wrap').style.display = 'none';
+      document.getElementById('loc-info').style.display = 'none';
+      document.getElementById('sort-distance').disabled = true;
+      if (document.getElementById('sort-select').value === 'distance')
+        document.getElementById('sort-select').value = 'newest';
+      closeDrop();
+      applyFilters();
+    }
+
+    // ── Tekst pretraga ─────────────────────────
+    const searchInput = document.getElementById('search-input');
+    searchInput.addEventListener('keydown', e => { if (e.key==='Enter') doSearch(); });
+    searchInput.addEventListener('input', () => {
+      document.getElementById('search-clear').style.display = searchInput.value ? 'block' : 'none';
+    });
+
+    function doSearch() {
+      const q = searchInput.value.trim();
+      const err = document.getElementById('search-error');
+      err.style.display = 'none';
+      if (q.length > 64) {
+        err.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Dozvoljeni su upiti sa najviše 64 karaktera.';
+        err.style.display = 'flex'; return;
+      }
+      if (q && /[^a-zA-ZčćžšđČĆŽŠĐа-яА-ЯёЁ0-9 ]/.test(q)) {
+        err.innerHTML = '<i class="bi bi-exclamation-triangle"></i> U upitu su dozvoljeni samo slova, cifre i razmaci.';
+        err.style.display = 'flex'; return;
+      }
+      currentPage = 1;
+      applyFilters();
+    }
+
+    // ── Filteri ────────────────────────────────
+    function applyFilters() {
+      const q       = searchInput.value.trim().toLowerCase();
+      const kat     = document.getElementById('filter-kat').value;
+      const status  = document.getElementById('filter-status').value;
+      const datum   = document.getElementById('filter-datum').value;
+      const radijus = parseInt(document.getElementById('filter-radijus').value);
+      const sortVal = document.getElementById('sort-select').value;
+
+      filtered = AKCIJE.filter(a => {
+        const matchQ  = !q || a.naziv.toLowerCase().includes(q) || a.organizator.toLowerCase().includes(q);
+        const matchK  = !kat    || a.kategorija === kat;
+        const matchS  = !status || a.status === status;
+        const matchD  = !datum  || a.datum === datum;
+        let   matchL  = true;
+        if (selectedLocation) {
+          a._dist = Math.round(haversine(selectedLocation.lat, selectedLocation.lng, a.lat, a.lng) * 10) / 10;
+          matchL = a._dist <= radijus;
+        } else {
+          a._dist = null;
+        }
+        return matchQ && matchK && matchS && matchD && matchL;
+      });
+
+      // Sort
+      if      (sortVal === 'soonest')  filtered.sort((a,b) => new Date(a.datum) - new Date(b.datum));
+      else if (sortVal === 'newest')   filtered.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+      else if (sortVal === 'spots')    filtered.sort((a,b) => (a.maxVolontera-a.prihvacenih) - (b.maxVolontera-b.prihvacenih));
+      else if (sortVal === 'distance') filtered.sort((a,b) => (a._dist||0) - (b._dist||0));
+
+      // Location info
+      const locInfo = document.getElementById('loc-info');
+      if (selectedLocation) {
+        locInfo.style.display = 'block';
+        document.getElementById('loc-info-text').textContent =
+          `Prikazane akcije unutar ${radijus === 99999 ? 'cele Srbije' : radijus+' km'} od „${selectedLocation.naziv}" — pronađeno ${filtered.length}`;
+      } else {
+        locInfo.style.display = 'none';
+      }
+
+      // Active filter chips
+      const chips = [];
+      if (q)      chips.push(`<span style="background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:.78rem;">Pretraga: <strong>${q}</strong></span>`);
+      if (kat)    chips.push(`<span style="background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:.78rem;">Kategorija: <strong>${kat}</strong></span>`);
+      if (status) chips.push(`<span style="background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:.78rem;">Status: <strong>${status}</strong></span>`);
+      if (datum)  chips.push(`<span style="background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:.78rem;">Datum: <strong>${datum}</strong></span>`);
+
+      const af = document.getElementById('active-filters');
+      if (chips.length) {
+        af.style.display = 'flex';
+        af.innerHTML = '<span style="color:var(--text-muted);font-size:.78rem;">Aktivni filteri:</span>' + chips.join('') +
+          `<button onclick="clearAll()" style="background:none;border:none;color:var(--teal);cursor:pointer;font-weight:600;font-size:.8rem;">Poništi sve ×</button>`;
+      } else {
+        af.style.display = 'none';
+      }
+
+      currentPage = 1;
+      render();
+    }
+
+    // ── Render ─────────────────────────────────
+    function render() {
+      const grid  = document.getElementById('actions-grid');
+      const empty = document.getElementById('empty-state');
+      const info  = document.getElementById('results-info');
+
+      const start = (currentPage-1) * PER_PAGE;
+      const page  = filtered.slice(start, start+PER_PAGE);
+
+      if (filtered.length === 0) {
+        info.textContent = '0 akcija pronađeno';
+        grid.innerHTML = ''; grid.style.display = 'none'; empty.style.display = 'block';
+      } else {
+        info.textContent = `Prikazano ${start+1}–${Math.min(filtered.length, start+PER_PAGE)} od ${filtered.length} akcija`;
+        grid.style.display = 'grid'; empty.style.display = 'none';
+        grid.innerHTML = page.map(a => {
+          const pct = progressWidth(a.prihvacenih, a.maxVolontera);
+          const distBadge = a._dist !== null
+            ? `<span class="dist-badge"><i class="bi bi-geo-alt-fill"></i> ${a._dist} km</span>` : '';
+          return `
+          <div class="card">
+            <div class="card-img-placeholder" style="background:${getCategoryGradient(a.kategorija)}">
+              <span class="card-img-icon">${getCategoryEmoji(a.kategorija)}</span>
+            </div>
+            <div class="card-body">
+              <div class="card-meta">${getKategorijaBadge(a.kategorija)} ${getStatusBadge(a.status)} ${distBadge}</div>
+              <h3 class="card-title">${a.naziv}</h3>
+              <div class="card-meta">
+                <span class="card-meta-item"><i class="bi bi-geo-alt"></i>${a.lokacija}</span>
+                <span class="card-meta-item"><i class="bi bi-calendar3"></i>${formatDate(a.datum)}</span>
+                <span class="card-meta-item"><i class="bi bi-clock"></i>${a.vreme}</span>
+              </div>
+              <p class="card-excerpt">${a.opis}</p>
+              <div class="progress-wrap" style="margin-top:14px;">
+                <div class="progress-label"><span>Volonteri</span><span>${a.prihvacenih}/${a.maxVolontera}</span></div>
+                <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+              </div>
+            </div>
+            <div class="card-footer">
+              <span class="card-meta-item"><i class="bi bi-building"></i>${a.organizator}</span>
+              <a href="akcija.html?id=${a.id}" class="btn btn-primary btn-sm">Pogledaj →</a>
+            </div>
+          </div>`;
+        }).join('');
+      }
+      renderPagination();
+    }
+
+    function renderPagination() {
+      const total = Math.ceil(filtered.length / PER_PAGE);
+      const pg = document.getElementById('pagination');
+      if (total <= 1) { pg.innerHTML = ''; return; }
+      let html = `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
+      for (let i=1;i<=total;i++) {
+        if (total<=7 || i===1 || i===total || Math.abs(i-currentPage)<=1)
+          html += `<button class="page-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+        else if (Math.abs(i-currentPage)===2)
+          html += `<span class="page-btn" style="border:none;pointer-events:none;color:var(--text-muted)">…</span>`;
+      }
+      html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===total?'disabled':''}>›</button>`;
+      pg.innerHTML = html;
+    }
+
+    function goPage(n) {
+      const total = Math.ceil(filtered.length/PER_PAGE);
+      if (n<1||n>total) return;
+      currentPage = n; render();
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+
+    function clearTextSearch() {
+      searchInput.value = '';
+      document.getElementById('search-clear').style.display = 'none';
+      document.getElementById('search-error').style.display = 'none';
+      applyFilters();
+    }
+
+    function clearAll() {
+      searchInput.value = '';
+      document.getElementById('search-clear').style.display = 'none';
+      document.getElementById('search-error').style.display = 'none';
+      document.getElementById('filter-kat').value = '';
+      document.getElementById('filter-status').value = '';
+      document.getElementById('filter-datum').value = '';
+      clearLocation();
+    }
+
+    applyFilters();
+  </script>
+</body>
+</html>
