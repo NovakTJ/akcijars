@@ -386,7 +386,7 @@
               </div>
 
               <div class="form-group">
-                <label class="form-label">Slike <span class="req">*</span> <span style="font-size:.8rem;color:var(--text-muted);font-weight:400;">(bar jedna obavezna)</span></label>
+                <label class="form-label">Slike</label>
                 <div style="border:2px dashed var(--border);border-radius:var(--radius-sm);padding:24px;text-align:center;background:var(--bg);cursor:pointer;transition:var(--transition);"
                      id="c-slika-dropzone"
                      onclick="document.getElementById('c-slika').click()"
@@ -958,7 +958,7 @@
       const prihvaceni = (VOLONTERI[akcId] || []).filter(v => v.status === 'prihvacen');
       if (!prihvaceni.length) { showToast('Nema prihvaćenih volontera za slanje.', false); return; }
       document.getElementById('notif-' + akcId).value = '';
-      showToast(`Obaveštenje poslato ${prihvaceni.length} volontera putem Email API-ja.`);
+      showToast(`Obaveštenje poslato ${prihvaceni.length} volontera putem email-a.`);
     }
 
     // ══════════════════════════════════════════════
@@ -1044,8 +1044,10 @@
         errEl.innerHTML = '<i class="bi bi-exclamation-circle"></i> Maksimalan broj volontera mora biti pozitivan broj.';
         errEl.style.display = 'flex'; return;
       }
-      if (max < a.prihvacenih) {
-        errEl.innerHTML = `<i class="bi bi-exclamation-circle"></i> Maksimalan broj volontera ne može biti manji od broja već prihvaćenih (${a.prihvacenih}).`;
+      //const brPrihvacenih = (VOLONTERI[String(currentEditId)] || []).filter(v => v.status === 'prihvacen').length;      ‚
+      const brPrihvacenih = 2;
+      if (max < brPrihvacenih) {
+        errEl.innerHTML = `<i class="bi bi-exclamation-circle"></i> Maksimalan broj volontera ne može biti manji od broja već prihvaćenih (${brPrihvacenih}).`;
         errEl.style.display = 'flex'; return;
       }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -1060,7 +1062,7 @@
       // Sačuvaj
       Object.assign(a, { naziv, opis, datum, vreme, lokacija, maxVolontera: max, kategorija, kontaktEmail: email, kontaktTelefon: telefon });
       const okEl = document.getElementById('izmeni-ok');
-      okEl.innerHTML = '<i class="bi bi-check-circle-fill"></i> Izmene su uspešno sačuvane. Volonteri su obavešteni putem Email API-ja.';
+      okEl.innerHTML = '<i class="bi bi-check-circle-fill"></i> Izmene su uspešno sačuvane. Volonteri su obavešteni putem email-a.';
       okEl.style.display = 'flex';
       setTimeout(() => { closeModal('modal-izmeni'); renderAkcije(); renderPregled(); showToast('Izmene sačuvane.'); }, 1500);
     }
@@ -1216,7 +1218,9 @@
           </div>
           ${c.status === 'objavljen'
             ? `<a href="clanak.html?id=\${c.id}" class="btn btn-ghost btn-sm" style="flex-shrink:0;"><i class="bi bi-eye"></i> Pogledaj</a>`
-            : `<span style="color:var(--warning);font-weight:600;flex-shrink:0;"><i class="bi bi-hourglass-split"></i> Čeka odobrenje admina</span>`
+            : `<span style="font-size:.8rem;color:var(--text-muted);font-style:italic;">
+                    <i class="bi bi-hourglass-split"></i> Čeka odobrenje admina
+                   </span>`
           }
         </div>`).join('');
     }
@@ -1290,14 +1294,6 @@
         document.getElementById('c-sadrzaj').classList.add('is-error');
         return;
       }
-      const slikeFiles = document.getElementById('c-slika').files;
-      if (!slikeFiles || !slikeFiles.length) {
-        document.getElementById('err-c-slika').innerHTML = '<i class="bi bi-exclamation-circle"></i> Dodajte bar jednu sliku.';
-        document.getElementById('err-c-slika').style.display = 'flex';
-        document.getElementById('c-slika-dropzone').style.borderColor = 'var(--error)';
-        return;
-      }
-
 
       const novi = { id: Date.now(), naslov, sadrzaj, status: 'na_cekanju', datum: new Date().toISOString().split('T')[0] };
       CLANCI_ORG.unshift(novi);

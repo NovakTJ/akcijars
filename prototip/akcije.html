@@ -70,17 +70,11 @@
         <!-- Separator -->
         <div style="height:1px;background:var(--border-light);margin:16px 0;"></div>
 
-        <!-- Druga linija: lokacija + radijus — uvek u istom redu -->
         <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:nowrap;">
           <div class="filter-group" style="flex:1;min-width:0;">
             <label style="display:flex;align-items:center;gap:6px;white-space:nowrap;">
               <i class="bi bi-geo-alt-fill" style="color:var(--teal);font-size:.9rem;"></i>
-              Lokacija (radijus pretrage)
-              <span style="font-size:.7rem;font-weight:400;color:var(--text-muted);
-                background:var(--bg-2);border:1px solid var(--border-light);
-                border-radius:4px;padding:1px 6px;letter-spacing:.01em;white-space:nowrap;">
-                Google Places API simulacija
-              </span>
+              Lokacija
             </label>
             <div class="loc-wrap">
               <input
@@ -105,7 +99,7 @@
 
           <div style="flex-shrink:0;width:160px;">
             <label class="filter-group" style="display:block;">
-              <span style="display:block;font-size:.8125rem;font-weight:600;color:var(--text-secondary);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em;">Radijus</span>
+              <span style="display:block;font-size:.8125rem;font-weight:600;color:var(--text-secondary);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em;">Udaljenost</span>
             </label>
             <select id="filter-radijus" class="form-control" onchange="applyFilters()" style="width:160px;">
               <option value="10">do 10 km</option>
@@ -151,7 +145,7 @@
       <div id="empty-state" class="empty-state" style="display:none;">
         <div class="es-icon">🔍</div>
         <h3>Nema pronađenih akcija</h3>
-        <p id="empty-hint">Pokušajte sa drugačijim pojmom ili povećajte radijus pretrage.</p>
+        <p id="empty-hint">Pokušajte sa drugačijim pojmom ili većom udaljenošću.</p>
         <button class="btn btn-secondary" onclick="clearAll()">Poništi sve filtere</button>
       </div>
 
