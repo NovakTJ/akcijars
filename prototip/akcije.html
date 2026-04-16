@@ -286,7 +286,7 @@
       // Sort
       if      (sortVal === 'soonest')  filtered.sort((a,b) => new Date(b.datum) - new Date(a.datum));
       else if (sortVal === 'newest')   filtered.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
-      else if (sortVal === 'spots')    filtered.sort((a,b) => (a.maxVolontera-a.prihvacenih) - (b.maxVolontera-b.prihvacenih));
+      else if (sortVal === 'spots')    filtered.sort((a,b) => (b.maxVolontera-b.prihvacenih) - (a.maxVolontera-a.prihvacenih));
       else if (sortVal === 'distance') filtered.sort((a,b) => (a._dist||0) - (b._dist||0));
 
       // Location info
