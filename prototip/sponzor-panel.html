@@ -47,12 +47,6 @@
               <i class="bi bi-patch-check-fill"></i> Sponzor
             </div>
           </div>
-          <div style="margin-left:auto;">
-            <button class="btn btn-sm" style="background:rgba(220,38,38,0.15);color:#fca5a5;border:1px solid rgba(220,38,38,0.2);"
-              onclick="if(confirm('Da li ste sigurni da se želite odjaviti?')){AUTH.logout();location.href='index.html';}">
-              <i class="bi bi-box-arrow-right"></i> Odjavi se
-            </button>
-          </div>
         </div>
 
         <!-- Stats strip -->
@@ -113,21 +107,21 @@
               </div>
               <div class="panel-card-body">
                 <div style="text-align:center;padding:16px 0;">
-                  <div style="font-family:var(--font-display);font-size:3rem;font-weight:800;color:var(--green);line-height:1;">3.450</div>
+                  <div id="stat-ukupno-big" style="font-family:var(--font-display);font-size:3rem;font-weight:800;color:var(--green);line-height:1;">0</div>
                   <div style="font-size:1rem;color:var(--text-secondary);margin-top:4px;font-weight:600;">EUR ukupno</div>
                   <div style="margin-top:20px;display:flex;justify-content:center;gap:28px;">
                     <div style="text-align:center;">
-                      <div style="font-family:var(--font-display);font-size:1.25rem;font-weight:700;color:var(--dark);">4</div>
+                      <div id="stat-prihvacene" style="font-family:var(--font-display);font-size:1.25rem;font-weight:700;color:var(--dark);">0</div>
                       <div style="font-size:.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Prihvaćene</div>
                     </div>
                     <div style="width:1px;background:var(--border-light);"></div>
                     <div style="text-align:center;">
-                      <div style="font-family:var(--font-display);font-size:1.25rem;font-weight:700;color:var(--warning);">2</div>
+                      <div id="stat-cekanje-card" style="font-family:var(--font-display);font-size:1.25rem;font-weight:700;color:var(--warning);">0</div>
                       <div style="font-size:.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Na čekanju</div>
                     </div>
                     <div style="width:1px;background:var(--border-light);"></div>
                     <div style="text-align:center;">
-                      <div style="font-family:var(--font-display);font-size:1.25rem;font-weight:700;color:var(--error);">1</div>
+                      <div id="stat-odbijene" style="font-family:var(--font-display);font-size:1.25rem;font-weight:700;color:var(--error);">0</div>
                       <div style="font-size:.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Odbijene</div>
                     </div>
                   </div>
@@ -176,7 +170,7 @@
               <p style="color:var(--text-secondary);font-size:.9rem;">Akcije koje ste podržali i vrednost doprinosa</p>
             </div>
             <div style="background:#edfae4;border:1px solid #b9f0a0;border-radius:var(--radius);padding:12px 20px;text-align:center;">
-              <div style="font-family:var(--font-display);font-size:1.75rem;font-weight:800;color:var(--green-hover);line-height:1;">3.450 €</div>
+              <div id="stat-ukupno-total" style="font-family:var(--font-display);font-size:1.75rem;font-weight:800;color:var(--green-hover);line-height:1;">0 €</div>
               <div style="font-size:.75rem;color:var(--green-hover);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:2px;">ukupan doprinos</div>
             </div>
           </div>
@@ -284,20 +278,36 @@
     document.getElementById('user-avatar').textContent   = (user?.ime || 'S').charAt(0).toUpperCase();
     document.getElementById('user-fullname').textContent = (user?.ime || '') + ' ' + (user?.prezime || '');
     document.getElementById('user-email').textContent    = user?.email || '';
-    document.getElementById('user-org').textContent      = user?.organizacija || 'Stefan Sponzor d.o.o.';
+    document.getElementById('user-org').textContent      = user?.organizacija || '';
 
-    // ── Mock data ───────────────────────────────
-    const SPONZORSTVA = [
-      { akcija_id:1, naziv:"Čišćenje Ade Ciganlije",       organizator:"Zeleni Beograd", datum:"2026-03-15", opis:"Finansijska podrška i oprema za čišćenje",      vrednost:800  },
-      { akcija_id:3, naziv:"Sadnja drveća u Zvezdara šumi", organizator:"Zeleni Beograd", datum:"2026-02-28", opis:"Donacija sadnica i alata za sadnju",             vrednost:1200 },
-      { akcija_id:6, naziv:"Bazar hrane za potrebite",      organizator:"Hrana za Sve",   datum:"2026-01-15", opis:"Prehrambeni paketi za 100 porodica",             vrednost:950  },
-      { akcija_id:7, naziv:"Trčanje za zdravlje Novog Sada",organizator:"Sport za Dobro", datum:"2025-12-20", opis:"Sponzorstvo trke i sportske opreme za učesnike", vrednost:500  },
-    ];
+    // ── Mock data (po nalogu) ────────────────────
+    const ALL_SPONZORSTVA = {
+      'sponzor@test.rs': [
+        { akcija_id:1, naziv:"Čišćenje Ade Ciganlije",       organizator:"Zeleni Beograd", datum:"2026-03-15", opis:"Finansijska podrška i oprema za čišćenje",      vrednost:800  },
+        { akcija_id:3, naziv:"Sadnja drveća u Zvezdara šumi", organizator:"Zeleni Beograd", datum:"2026-02-28", opis:"Donacija sadnica i alata za sadnju",             vrednost:1200 },
+        { akcija_id:6, naziv:"Bazar hrane za potrebite",      organizator:"Hrana za Sve",   datum:"2026-01-15", opis:"Prehrambeni paketi za 100 porodica",             vrednost:950  },
+        { akcija_id:7, naziv:"Trčanje za zdravlje Novog Sada",organizator:"Sport za Dobro", datum:"2025-12-20", opis:"Sponzorstvo trke i sportske opreme za učesnike", vrednost:500  },
+      ],
+    };
 
-    let PONUDE_CEKANJE = [
-      { id:'p1', akcija_id:2, naziv:"Pomoć starim licima u Zemunu", organizator:"Srce za Zemun", datumSlanja:"2026-04-10", opis:"Namirnice i lekovi za 50 korisnika", vrednost:600  },
-      { id:'p2', akcija_id:8, naziv:"Renoviranje doma za nezbrinutu decu", organizator:"Ruke za Decu", datumSlanja:"2026-04-12", opis:"Građevinski materijal i alati",  vrednost:400  },
-    ];
+    const ALL_PONUDE_CEKANJE = {
+      'sponzor@test.rs': [
+        { id:'p1', akcija_id:2, naziv:"Pomoć starim licima u Zemunu",       organizator:"Srce za Zemun", datumSlanja:"2026-04-10", opis:"Namirnice i lekovi za 50 korisnika", vrednost:600 },
+        { id:'p2', akcija_id:8, naziv:"Renoviranje doma za nezbrinutu decu", organizator:"Ruke za Decu", datumSlanja:"2026-04-12", opis:"Građevinski materijal i alati",       vrednost:400 },
+      ],
+    };
+
+    const SPONZORSTVA    = ALL_SPONZORSTVA[user.email]    || [];
+    let   PONUDE_CEKANJE = (ALL_PONUDE_CEKANJE[user.email] || []).slice();
+
+    // ── Dinamički stats ──────────────────────────
+    const ukupnoEUR = SPONZORSTVA.reduce((s, x) => s + x.vrednost, 0);
+    document.getElementById('stat-ukupno').textContent      = ukupnoEUR.toLocaleString('sr-RS');
+    document.getElementById('stat-podrzane').textContent    = SPONZORSTVA.length;
+    document.getElementById('stat-ukupno-big').textContent  = ukupnoEUR.toLocaleString('sr-RS');
+    document.getElementById('stat-prihvacene').textContent  = SPONZORSTVA.length;
+    document.getElementById('stat-cekanje-card').textContent = PONUDE_CEKANJE.length;
+    document.getElementById('stat-ukupno-total').textContent = ukupnoEUR.toLocaleString('sr-RS') + ' €';
 
     // ── Tab switching ────────────────────────────
     function switchTab(tab) {

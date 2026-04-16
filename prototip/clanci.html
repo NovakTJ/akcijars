@@ -44,7 +44,7 @@
           </div>
         </div>
         <div id="query-info" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border-light);font-size:.875rem;color:var(--text-secondary);">
-          Pretraga: <strong id="query-text"></strong> —
+          Aktivni filteri: <strong id="query-text"></strong> —
           <button onclick="clearSearch()" style="background:none;border:none;color:var(--teal);cursor:pointer;font-weight:600;font-size:.875rem;">Poništi pretragu</button>
         </div>
         <div id="search-error" class="alert alert-warning" style="display:none;margin-top:12px;margin-bottom:0;"></div>
@@ -117,8 +117,16 @@
       }).sort((a,b)=>new Date(b.datumObjave)-new Date(a.datumObjave));
 
       const qi = document.getElementById('query-info');
-      if (q) { qi.style.display='block'; document.getElementById('query-text').textContent=q; }
-      else qi.style.display='none';
+      const activeParts = [];
+      if (q) activeParts.push(`Pretraga: ${q}`);
+      if (kat) activeParts.push(`Kategorija: ${kat}`);
+
+      if (activeParts.length) {
+        qi.style.display = 'block';
+        document.getElementById('query-text').textContent = activeParts.join(' • ');
+      } else {
+        qi.style.display = 'none';
+      }
 
       render();
     }
