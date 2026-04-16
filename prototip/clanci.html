@@ -144,13 +144,11 @@
             </div>
             <div class="card-body">
               <div class="card-meta">
-                ${getKategorijaBadge(c.kategorija)}
                 <span class="card-meta-item"><i class="bi bi-calendar3"></i>${formatDate(c.datumObjave)}</span>
               </div>
               <h3 class="card-title">${c.naslov}</h3>
               <div class="card-meta">
                 <span class="card-meta-item"><i class="bi bi-building"></i>${c.organizator}</span>
-                ${c.lokacija?`<span class="card-meta-item"><i class="bi bi-geo-alt"></i>${c.lokacija}</span>`:''}
               </div>
               <p class="card-excerpt">${c.sadrzaj}</p>
             </div>
