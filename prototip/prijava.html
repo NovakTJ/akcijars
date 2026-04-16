@@ -122,22 +122,12 @@
       setTimeout(() => {
         const user = DEMO_USERS.find(u => u.email === email.toLowerCase());
 
-        // Korisnik ne postoji
-        if (!user) {
+        // Korisnik ne postoji ili pogrešna lozinka
+        if (!user || user.lozinka !== lozinka) {
           btn.disabled = false;
           btn.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Prijavi se';
           const ge = document.getElementById('global-error');
-          ge.innerHTML = '<i class="bi bi-x-circle-fill"></i> Ne postoji nalog sa tom email adresom.';
-          ge.style.display = 'flex';
-          return;
-        }
-
-        // Pogrešna lozinka
-        if (user.lozinka !== lozinka) {
-          btn.disabled = false;
-          btn.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Prijavi se';
-          const ge = document.getElementById('global-error');
-          ge.innerHTML = '<i class="bi bi-x-circle-fill"></i> Pogrešna lozinka.';
+          ge.innerHTML = '<i class="bi bi-x-circle-fill"></i> Email adresa ili lozinka nisu ispravni.';
           ge.style.display = 'flex';
           return;
         }
