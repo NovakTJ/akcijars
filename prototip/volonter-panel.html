@@ -98,12 +98,12 @@
                 <div style="margin-bottom:24px;">
                   <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;">
                     <span style="font-size:.875rem;font-weight:600;color:var(--dark);">Volonterski sati</span>
-                    <span style="font-family:var(--font-display);font-weight:800;color:var(--teal);font-size:1.25rem;">47 / 50h</span>
+                    <span style="font-family:var(--font-display);font-weight:800;color:var(--teal);font-size:1.25rem;" id="progress-label">47 / 50h</span>
                   </div>
                   <div class="progress-bar" style="height:10px;">
-                    <div class="progress-fill" style="width:94%;"></div>
+                    <div class="progress-fill" id="progress-fill" style="width:94%;"></div>
                   </div>
-                  <p style="font-size:.8rem;color:var(--text-muted);margin-top:6px;">Samo još <strong>3 sata</strong> do zlatne bedže! 🏆</p>
+                  <p style="font-size:.8rem;color:var(--text-muted);margin-top:6px;" id="progress-msg">Samo još <strong>3 sata</strong> do zlatne bedže! 🏆</p>
                 </div>
 
                 <!-- Badges -->
@@ -272,20 +272,54 @@
     document.getElementById('user-fullname').textContent = (user?.ime || '') + ' ' + (user?.prezime || '');
     document.getElementById('user-email').textContent    = user?.email || '';
 
-    // ── Mock data – istorija ────────────────────
-    const ISTORIJA = [
-      { id:3, naziv:"Sadnja drveća u Zvezdara šumi",    organizator:"Zeleni Beograd",  datum:"2026-03-22", lokacija:"Zvezdara, Beograd",    sati:6 },
-      { id:1, naziv:"Čišćenje Ade Ciganlije",           organizator:"Zeleni Beograd",  datum:"2026-02-15", lokacija:"Ada Ciganlija",         sati:5 },
-      { id:6, naziv:"Bazar hrane za potrebite",         organizator:"Hrana za Sve",    datum:"2026-01-20", lokacija:"Trg Republike",         sati:8 },
-      { id:5, naziv:"Edukacija dece u Surčinu",         organizator:"Znanje za Sve",   datum:"2025-12-10", lokacija:"Surčin, Beograd",       sati:12 },
-      { id:2, naziv:"Pomoć starim licima u Zemunu",     organizator:"Srce za Zemun",   datum:"2025-11-05", lokacija:"Zemun, Beograd",        sati:16 },
-    ];
+    // ── Mock data – istorija (po korisniku) ─────
+    const ISTORIJA_PO_KORISNIKU = {
+      'volonter@test.rs': [
+        { id:3, naziv:"Sadnja drveća u Zvezdara šumi",    organizator:"Zeleni Beograd",  datum:"2026-03-22", lokacija:"Zvezdara, Beograd",    sati:6 },
+        { id:1, naziv:"Čišćenje Ade Ciganlije",           organizator:"Zeleni Beograd",  datum:"2026-02-15", lokacija:"Ada Ciganlija",         sati:5 },
+        { id:6, naziv:"Bazar hrane za potrebite",         organizator:"Hrana za Sve",    datum:"2026-01-20", lokacija:"Trg Republike",         sati:8 },
+        { id:5, naziv:"Edukacija dece u Surčinu",         organizator:"Znanje za Sve",   datum:"2025-12-10", lokacija:"Surčin, Beograd",       sati:12 },
+        { id:2, naziv:"Pomoć starim licima u Zemunu",     organizator:"Srce za Zemun",   datum:"2025-11-05", lokacija:"Zemun, Beograd",        sati:16 },
+      ],
+    };
 
-    // ── Mock data – predstojeće ─────────────────
-    const PREDSTOJEĆE = [
-      { id:7, naziv:"Trčanje za zdravlje Novog Sada", organizator:"Sport za Dobro",  datum:"2026-06-20", lokacija:"Novi Sad",         status:"prihvacena",  kategorija:"Sport i rekreacija" },
-      { id:8, naziv:"Renoviranje doma za nezbrinutu decu", organizator:"Ruke za Decu", datum:"2026-07-01", lokacija:"Voždovac, Beograd", status:"na_cekanju", kategorija:"Socijalna pomoć" },
-    ];
+    // ── Mock data – predstojeće (po korisniku) ──
+    const PREDSTOJEĆE_PO_KORISNIKU = {
+      'volonter@test.rs': [
+        { id:7, naziv:"Trčanje za zdravlje Novog Sada", organizator:"Sport za Dobro",  datum:"2026-06-20", lokacija:"Novi Sad",         status:"prihvacena",  kategorija:"Sport i rekreacija" },
+        { id:8, naziv:"Renoviranje doma za nezbrinutu decu", organizator:"Ruke za Decu", datum:"2026-07-01", lokacija:"Voždovac, Beograd", status:"na_cekanju", kategorija:"Socijalna pomoć" },
+      ],
+    };
+
+    const ISTORIJA    = ISTORIJA_PO_KORISNIKU[user.email]    || [];
+    const PREDSTOJEĆE = PREDSTOJEĆE_PO_KORISNIKU[user.email] || [];
+
+    // ── Popuni statistike na osnovu podataka korisnika ──
+    const ukupnoSati = ISTORIJA.reduce((sum, a) => sum + a.sati, 0);
+    document.getElementById('stat-sati').textContent        = ukupnoSati;
+    document.getElementById('stat-zavrsene').textContent    = ISTORIJA.length;
+    document.getElementById('stat-predstojeće').textContent = PREDSTOJEĆE.length;
+    document.getElementById('badge-predstojeće').textContent = PREDSTOJEĆE.length;
+    document.querySelector('#section-aktivnosti [style*="1.75rem"]').textContent = ukupnoSati;
+
+    // Progress bar
+    const cilj = 50;
+    const pct = Math.min(Math.round(ukupnoSati / cilj * 100), 100);
+    document.getElementById('progress-label').textContent = ukupnoSati + ' / ' + cilj + 'h';
+    document.getElementById('progress-fill').style.width  = pct + '%';
+    const ostalo = cilj - ukupnoSati;
+    document.getElementById('progress-msg').innerHTML = ostalo > 0
+      ? 'Samo još <strong>' + ostalo + ' sati</strong> do zlatne bedže! 🏆'
+      : '<strong>Zlatna bedža dostignuta!</strong> 🏆';
+
+    // Omiljena kategorija (najčešća iz AKCIJE)
+    const kategorijeBrojevi = {};
+    ISTORIJA.forEach(a => {
+      const akcija = AKCIJE.find(x => x.id === a.id);
+      if (akcija) kategorijeBrojevi[akcija.kategorija] = (kategorijeBrojevi[akcija.kategorija] || 0) + 1;
+    });
+    const omiljenaKat = Object.keys(kategorijeBrojevi).sort((a,b) => kategorijeBrojevi[b]-kategorijeBrojevi[a])[0] || '–';
+    document.getElementById('stat-kategorija').textContent = omiljenaKat.split(' ')[0]; // skrati ako je dugacka
 
     // ── Tab switching ───────────────────────────
     function switchTab(tab) {
