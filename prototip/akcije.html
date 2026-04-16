@@ -130,8 +130,8 @@
         <div style="display:flex;gap:8px;align-items:center;">
           <span style="font-size:.8125rem;color:var(--text-muted);">Sortiraj:</span>
           <select id="sort-select" class="form-control" style="width:auto;padding:7px 32px 7px 10px;font-size:.875rem;" onchange="applyFilters()">
-            <option value="soonest">Najnovije (datum održavanja)</option>
-            <option value="newest">Najnovije (datum kačenja)</option>
+            <option value="newest_by_event_date">Najnovije (datum održavanja)</option>
+            <option value="newest_by_post_date">Najnovije (datum kačenja)</option>
             <option value="spots">Slobodna mesta</option>
             <option value="distance" id="sort-distance" disabled>Najbliže</option>
           </select>
@@ -231,7 +231,7 @@
       document.getElementById('loc-info').style.display = 'none';
       document.getElementById('sort-distance').disabled = true;
       if (document.getElementById('sort-select').value === 'distance')
-        document.getElementById('sort-select').value = 'soonest';
+        document.getElementById('sort-select').value = 'newest_by_event_date';
       closeDrop();
       applyFilters();
     }
@@ -284,8 +284,8 @@
       });
 
       // Sort
-      if      (sortVal === 'soonest')  filtered.sort((a,b) => new Date(b.datum) - new Date(a.datum));
-      else if (sortVal === 'newest')   filtered.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+      if      (sortVal === 'newest_by_event_date')  filtered.sort((a,b) => new Date(b.datum) - new Date(a.datum));
+      else if (sortVal === 'newest_by_post_date')   filtered.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
       else if (sortVal === 'spots')    filtered.sort((a,b) => (b.maxVolontera-b.prihvacenih) - (a.maxVolontera-a.prihvacenih));
       else if (sortVal === 'distance') filtered.sort((a,b) => (a._dist||0) - (b._dist||0));
 
