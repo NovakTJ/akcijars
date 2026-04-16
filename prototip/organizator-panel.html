@@ -291,7 +291,7 @@
 
               <div class="form-section-title">Naslovna slika</div>
               <div class="form-group">
-                <label class="form-label">Slika akcije <span class="req">*</span></label>
+                <label class="form-label">Slika akcije</label>
                 <div style="border:2px dashed var(--border);border-radius:var(--radius-sm);padding:24px;text-align:center;background:var(--bg);cursor:pointer;transition:var(--transition);"
                      id="slika-dropzone"
                      onclick="document.getElementById('n-slika').click()"
@@ -1113,8 +1113,7 @@
       const slika = document.getElementById('n-slika').files[0];
       let ok = true;
       if (!naziv)     { showErr('err-naziv', 'Naziv akcije je obavezan.'); ok=false; }
-      if (!slika)     { document.getElementById('err-slika').innerHTML='<i class="bi bi-exclamation-circle"></i> Slika akcije je obavezna.'; document.getElementById('err-slika').style.display='flex'; ok=false; }
-      else if (naziv.length > 128) { showErr('err-naziv', 'Naziv akcije ne sme imati više od 128 karaktera.'); ok=false; }
+      if (naziv.length > 128) { showErr('err-naziv', 'Naziv akcije ne sme imati više od 128 karaktera.'); ok=false; }
       if (!opis)      { showErr('err-opis',   'Opis akcije je obavezan.'); ok=false; }
       else if (opis.length > 2048) { showErr('err-opis', 'Opis akcije sme imati najviše 2048 karaktera.'); ok=false; }
       if (!datum)     { showErr('err-datum',  'Datum je obavezan.'); ok=false; }
