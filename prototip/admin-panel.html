@@ -237,7 +237,7 @@
             </div>
             <div style="display:flex;gap:6px;">
               <button class="btn btn-primary btn-sm" onclick="otvoriOdobriAkciju(${a.id})"><i class="bi bi-check2"></i> Odobri</button>
-              <button class="btn btn-danger btn-sm" onclick="otvoriBrisiAkciju(${a.id})"><i class="bi bi-trash3"></i></button>
+              <button class="btn btn-danger btn-sm" onclick="otvoriBrisiAkciju(${a.id})"><i class="bi bi-trash3"></i> Obriši</button>
             </div>
           </div>`).join('');
       }
@@ -326,7 +326,7 @@
             ${a.status==='ceka_odobrenje'
               ?`<span class="badge badge-warning"><i class="bi bi-hourglass-split"></i> Na čekanju</span><button class="btn btn-primary btn-sm" onclick="otvoriOdobriAkciju(${a.id})"><i class="bi bi-check2"></i> Odobri</button>`
               :`<span class="badge badge-green"><i class="bi bi-check-circle-fill"></i> Objavljena</span>`}
-            <button class="btn btn-danger btn-sm" onclick="otvoriBrisiAkciju(${a.id})"><i class="bi bi-trash3"></i></button>
+            <button class="btn btn-danger btn-sm" onclick="otvoriBrisiAkciju(${a.id})"><i class="bi bi-trash3"></i> Obriši</button>
           </div>
         </div></div>`).join('');
     }
@@ -369,7 +369,7 @@
           <div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:.9375rem;color:var(--dark);margin-bottom:3px;">${c.naslov}</div><div style="font-size:.8rem;color:var(--text-muted);display:flex;flex-wrap:wrap;gap:10px;"><span><i class="bi bi-person"></i> ${c.autor}</span><span><i class="bi bi-calendar3"></i> ${fmtDate(c.datum)}</span>${c.status==='na_cekanju'?`<span style="color:var(--warning);font-weight:600;"><i class="bi bi-hourglass-split"></i> Na čekanju</span>`:`<span style="color:var(--success);font-weight:600;"><i class="bi bi-check-circle-fill"></i> Objavljeno</span>`}</div></div>
           <div style="display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap;">
             ${c.status==='na_cekanju'?`<button class="btn btn-primary btn-sm" onclick="otvoriOdobriClanak(${c.id})"><i class="bi bi-check2"></i> Odobri</button>`:''}
-            <button class="btn btn-danger btn-sm" onclick="otvoriBrisiClanak(${c.id})"><i class="bi bi-trash3"></i></button>
+            <button class="btn btn-danger btn-sm" onclick="otvoriBrisiClanak(${c.id})"><i class="bi bi-trash3"></i> Obriši</button>
           </div>
         </div>`).join('');
     }
