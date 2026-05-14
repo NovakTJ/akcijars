@@ -543,11 +543,19 @@
 
     // Akcije organizatora na volonterima
     function orgPrihvatiVol(akcId, volId, btn) {
+      const a = AKCIJE.find(x => x.id == akcId);
+      const vec = (MOCK_VOLONTERI[akcId] || []).filter(v => v.status === 'prihvacen').length;
+      
+      if (a && vec >= a.maxVolontera) {
+        showToast('Nije moguće prihvatiti više volontera – dostignut je maksimalan broj.');
+        return;
+      }
+
       const vol = MOCK_VOLONTERI[akcId]?.find(v => v.id === volId);
       if (vol) { vol.status = 'prihvacen'; showToast(`${vol.ime} je prihvaćen/a. Email je poslat.`); }
-      const a = AKCIJE.find(x => x.id == akcId);
       if (a) renderPage(a);
     }
+    
     function orgOdbijVol(akcId, volId, btn) {
       const vol = MOCK_VOLONTERI[akcId]?.find(v => v.id === volId);
       if (vol) { vol.status = 'odbijen'; showToast(`Prijava ${vol.ime} je odbijena. Email je poslat.`); }
