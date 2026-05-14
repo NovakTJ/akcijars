@@ -7,14 +7,14 @@ Tim VolonTech
 
 ## Specifikacija scenarija upotrebe funkcionalnosti dodavanje sponzora akciji
 
-Verzija 1.0
+Verzija 1.1
 
 Istorija izmena
 
 | Datum | Verzija | Kratak opis | Autori |
 | :---- | :---- | :---- | :---- |
 | 10.4.2026. | 1.0 | Inicijalna verzija | Maša Nikolić |
-|  |  |  |  |
+| 13.5.2026 | 1.1 | Ispravka defekata nakon pregleda \- izmena naziva scenarija i dodavanje validacije vrednosti doprinosa  | Maša Nikolić |
 
 # 1\. Uvod
 
@@ -49,7 +49,7 @@ Sponzor može da pregleda objavljene akcije i pošalje ponudu o sponzorisanju od
 
 ## 2.2. Tok događaja
 
-### 2.2.1. Korisnik uspešno dodaje sebe kao sponzora akciji
+### 2.2.1. Sponzor uspešno šalje ponudu za sponzorstvo akcije
 
 1. Sponzor pregleda listu dostupnih akcija i pritiska na akciju za koju želi da pošalje ponudu.  
 2. Sistem prikazuje detalje izabrane akcije.  
@@ -65,14 +65,21 @@ Sponzor može da pregleda objavljene akcije i pošalje ponudu o sponzorisanju od
 6\.	Sistem prikazuje poruku o grešci i traži unos svih obaveznih podataka.  
 7\.	Sistem vraća korisnika na korak 5\.
 
-### 2.2.3. Sponzor odustaje od slanja ponude
+### 2.2.3. Sponzor šalje ponudu sa neispravnim vrednostima
+
+1-4. Isto kao u scenariju 2.2.1.  
+5\.	Sponzor u polje za vrednost doprinosa upisuje neispravnu vrednost (nulu, negativnu vrednost ili nenumerički simbol) i pritiska dugme „Pošalji“.  
+6\.	Sistem prikazuje poruku o grešci i traži unos ispravnih podataka.  
+7\.	Sistem vraća korisnika na korak 5\.
+
+### 2.2.4. Sponzor odustaje od slanja ponude
 
 1-4. Isto kao u scenariju 2.2.1.  
  5\. Sponzor pritiska dugme „Otkaži“.  
  6\. Sistem odbacuje unesene podatke o sponzorstvu.  
  7\. Sistem vraća sponzora na stranicu akcije bez slanja ponude.
 
-### 2.2.4. Sponzor pokušava da sponzoriše akciju na kojoj je već sponzor
+### 2.2.5. Sponzor pokušava da sponzoriše akciju na kojoj je već sponzor
 
 1. Sponzor pregleda listu dostupnih akcija i pritiska na akciju za koju je već evidentiran kao sponzor.  
 2. Sistem prikazuje detalje izabrane akcije.  
