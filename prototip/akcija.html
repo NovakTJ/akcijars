@@ -87,9 +87,19 @@
 
       // ── Sponzor kartica (SSU-7) ──────────────
       const vecPoslao = localStorage.getItem('sponzor_ponuda_' + a.id);
+      const vecJeSponzor = isSponzor && user?.organizacija && (a.sponzori || []).includes(user.organizacija);
       let sponzorHtml = '';
       if (isSponzor && a.status === 'otvorena') {
-        if (vecPoslao) {
+        if (vecJeSponzor) {
+          sponzorHtml = `
+          <div class="sidebar-card" style="border-color:var(--green-light);">
+            <h4><i class="bi bi-patch-check-fill" style="color:var(--green);"></i> Vaše sponzorstvo</h4>
+            <div class="alert alert-success" style="margin:0;">
+              <i class="bi bi-check-circle-fill"></i>
+              <span>Već ste sponzor ove akcije. Vaše sponzorstvo je <strong>odobreno</strong>.</span>
+            </div>
+          </div>`;
+        } else if (vecPoslao) {
           sponzorHtml = `
           <div class="sidebar-card" style="border-color:var(--green-light);">
             <h4><i class="bi bi-patch-check-fill" style="color:var(--green);"></i> Vaša ponuda</h4>
@@ -119,9 +129,14 @@
                   style="padding-left:28px;font-size:.875rem;">
               </div>
             </div>
-            <button class="btn btn-green" style="width:100%;" onclick="posaljiPonuduSidebar(${a.id})">
-              <i class="bi bi-send"></i> Pošalji ponudu
-            </button>
+            <div style="display:flex;gap:8px;margin-top:4px;">
+              <button class="btn btn-ghost btn-sm" style="flex:1;" onclick="otkaziPonudu(${a.id})">
+                Otkaži
+              </button>
+              <button class="btn btn-green btn-sm" style="flex:2;" onclick="posaljiPonuduSidebar(${a.id})">
+                <i class="bi bi-send"></i> Pošalji ponudu
+              </button>
+            </div>
             <p style="font-size:.75rem;color:var(--text-muted);margin-top:8px;text-align:center;">
               Organizator će pregledati vašu ponudu i odgovoriti emailom.
             </p>
@@ -605,20 +620,44 @@
     }
 
     function posaljiPonuduSidebar(id) {
-      const opis     = document.getElementById('sp-opis')?.value.trim();
-      const vrednost = parseFloat(document.getElementById('sp-vrednost')?.value);
-      const errEl    = document.getElementById('sp-error');
+      const opis        = document.getElementById('sp-opis')?.value.trim();
+      const vrednostRaw = document.getElementById('sp-vrednost')?.value.trim();
+      const errEl       = document.getElementById('sp-error');
       if (errEl) errEl.style.display = 'none';
 
-      if (!opis || !vrednost || vrednost <= 0) {
-        if (errEl) {
-          errEl.innerHTML = '<i class="bi bi-exclamation-circle"></i> Popunite sva polja.';
-          errEl.style.display = 'flex';
-        }
+      if (!opis && !vrednostRaw) {
+        if (errEl) { errEl.innerHTML = '<i class="bi bi-exclamation-circle"></i> Popunite sva obavezna polja.'; errEl.style.display = 'flex'; }
         return;
       }
+      if (!opis) {
+        if (errEl) { errEl.innerHTML = '<i class="bi bi-exclamation-circle"></i> Opis doprinosa je obavezan.'; errEl.style.display = 'flex'; }
+        return;
+      }
+      if (!vrednostRaw) {
+        if (errEl) { errEl.innerHTML = '<i class="bi bi-exclamation-circle"></i> Vrednost doprinosa je obavezna.'; errEl.style.display = 'flex'; }
+        return;
+      }
+
+      const vrednost = parseFloat(vrednostRaw);
+      if (isNaN(vrednost)) {
+        if (errEl) { errEl.innerHTML = '<i class="bi bi-exclamation-circle"></i> Vrednost mora biti broj.'; errEl.style.display = 'flex'; }
+        return;
+      }
+      if (vrednost === 0) {
+        if (errEl) { errEl.innerHTML = '<i class="bi bi-exclamation-circle"></i> Vrednost doprinosa ne može biti nula.'; errEl.style.display = 'flex'; }
+        return;
+      }
+      if (vrednost < 0) {
+        if (errEl) { errEl.innerHTML = '<i class="bi bi-exclamation-circle"></i> Vrednost doprinosa ne može biti negativna.'; errEl.style.display = 'flex'; }
+        return;
+      }
+
       localStorage.setItem('sponzor_ponuda_' + id, JSON.stringify({ opis, vrednost }));
       showToast('Ponuda je uspešno poslata organizatoru!');
+      renderPage(AKCIJE.find(a => a.id === id));
+    }
+    
+    function otkaziPonudu(id) {
       renderPage(AKCIJE.find(a => a.id === id));
     }
 

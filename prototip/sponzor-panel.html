@@ -7,20 +7,6 @@
   <link rel="stylesheet" href="styles.css">
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <style>
-    .notif-chip {
-      display:inline-flex; align-items:center; gap:6px;
-      padding:6px 12px; border-radius:20px; font-size:.8125rem; font-weight:500;
-      border:1px solid var(--border-light); background:var(--bg);
-      color:var(--text-secondary); cursor:pointer; transition:all .15s;
-      user-select:none;
-    }
-    .notif-chip:has(input:checked) {
-      background:var(--green-light); border-color:var(--green);
-      color:var(--green-hover); font-weight:600;
-    }
-    .notif-chip input { display:none; }
-  </style>
 </head>
 <body>
 
@@ -81,10 +67,6 @@
               <i class="bi bi-hourglass-split"></i> Ponude na čekanju
               <span id="badge-cekanje" style="background:var(--green);color:white;font-size:.7rem;padding:1px 6px;border-radius:10px;font-weight:700;">2</span>
             </button>
-            <button class="panel-tab" onclick="switchTab('obavestenja')" id="tab-obavestenja">
-              <i class="bi bi-bell"></i> Obaveštenja
-            </button>
-
           </div>
         </div>
       </div>
@@ -216,36 +198,6 @@
             <a href="akcije.html" class="btn btn-primary"><i class="bi bi-search"></i> Pregledaj akcije</a>
           </div>
         </div>
-
-        <!-- ── TAB: OBAVEŠTENJA ── -->
-        <div class="panel-section" id="section-obavestenja">
-          <div style="margin-bottom:22px;">
-            <h2 style="font-size:1.375rem;font-weight:800;margin-bottom:3px;">Preporuke akcija</h2>
-          </div>
-
-          <div class="panel-card" style="max-width:640px;">
-            <div class="panel-card-header">
-              <h3><i class="bi bi-bell-fill"></i> Obaveštenja</h3>
-            </div>
-            <div class="panel-card-body">
-              <div class="toggle-wrap" style="border-bottom:none;padding:0;">
-                <label class="toggle">
-                  <input type="checkbox" id="toggle-nove-akcije" checked onchange="saveObavestenja()">
-                  <span class="toggle-slider"></span>
-                </label>
-                <div>
-                  <div class="toggle-label">Aktiviraj preporuke akcija</div>
-                  <div class="toggle-desc">Sistem će vam automatski slati email preporuke za akcije koje traže sponzore, na osnovu kategorija koje vas zanimaju.</div>
-                </div>
-              </div>
-              <div id="obavestenja-saved" class="alert alert-success" style="display:none;margin-top:20px;margin-bottom:0;">
-                <i class="bi bi-check-circle-fill"></i> Podešavanja su sačuvana.
-              </div>
-            </div>
-          </div>
-
-        </div>
-
       </div>
     </div>
   </div>
@@ -449,13 +401,6 @@
       t.innerHTML = `<i class="bi bi-check-circle-fill" style="color:var(--green);font-size:1.1rem;"></i> ${msg}`;
       t.style.display = 'flex';
       setTimeout(() => t.style.display = 'none', 3500);
-    }
-
-    // ── Obaveštenja ──────────────────────────────
-    function saveObavestenja() {
-      const el = document.getElementById('obavestenja-saved');
-      el.style.display = 'flex';
-      setTimeout(() => el.style.display = 'none', 3000);
     }
 
     // ── Init ─────────────────────────────────────
