@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}AkcijaRS – Volonterski portal Srbije{% endblock %}
+{% block nav_home %}active{% endblock %}
+{% block nav_mobile_home %}active{% endblock %}
+
+{% block content %}
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="container">
+    <div class="hero-content">
+      <div class="hero-badge fade-up">
+        <span class="badge badge-teal" style="font-size:.875rem;padding:6px 14px;box-shadow:var(--shadow-sm);">
+          <i class="bi bi-lightning-charge-fill"></i>&nbsp; 10.000+ aktivnih volontera u Srbiji
+        </span>
+      </div>
+      <h1 class="hero-title fade-up-1">
+        Jedinstven portal<br>
+        <span class="gradient-text">AkcijaRS</span> za volonterske<br>
+        akcije u Srbiji
+      </h1>
+      <p class="hero-desc fade-up-2">
+        Pronađite akcije u vašoj blizini, prijavite se u par klikova i postanite deo zajednice koja menja svet oko sebe
+      </p>
+      <div class="hero-btns fade-up-3">
+        <a href="{% url 'akcije' %}" class="btn btn-primary btn-lg">
+          <i class="bi bi-search"></i> Pregledaj akcije
+        </a>
+        <a href="{% url 'registracija' %}" class="btn btn-ghost btn-lg">
+          Postani volonter <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats strip -->
+  <div class="stats-strip">
+    <div class="container">
+      <div class="stats-grid">
+        <div class="stat-item"><div class="stat-num">500+</div><div class="stat-label">Akcija</div></div>
+        <div class="stat-divider"></div>
+        <div class="stat-item"><div class="stat-num">10.000+</div><div class="stat-label">Volontera</div></div>
+        <div class="stat-divider"></div>
+        <div class="stat-item"><div class="stat-num">150+</div><div class="stat-label">Organizacija</div></div>
+        <div class="stat-divider"></div>
+        <div class="stat-item"><div class="stat-num">150.000+</div><div class="stat-label">Volonterskih sati</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── NADOLAZEĆE AKCIJE — popunjava Novak/Maša u commitu #10/#11 ── -->
+<section class="home-section" style="background:white;">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <h2 class="section-title">Nadolazeće akcije</h2>
+        <p class="section-subtitle">Pronađite akciju koja vam odgovara i prijavite se danas</p>
+      </div>
+      <a href="{% url 'akcije' %}" class="btn btn-ghost">Sve akcije <i class="bi bi-arrow-right"></i></a>
+    </div>
+    <div class="grid-3" id="featured-actions">
+      {% block featured_akcije %}
+      {# Ovaj blok popunjava commit #10 (Maša) kada doda model Akcija #}
+      {% endblock %}
+    </div>
+  </div>
+</section>
+
+<!-- ── KAKO UČESTVOVATI ── -->
+<section class="join-section">
+  <div class="container">
+    <h2 class="section-title text-center">Kako učestvovati?</h2>
+    <p class="section-subtitle text-center" style="color:#94a3b8;">Pridružite se na način koji vam najviše odgovara</p>
+    <div class="join-grid">
+      <div class="join-card featured fade-up-1">
+        <div class="join-badge">Najpopularnije</div>
+        <div class="join-icon teal"><i class="bi bi-person-heart"></i></div>
+        <h3>Volonter</h3>
+        <p>Pregledajte stotine akcija, prijavite se u par klikova i pratite vaše volonterske sate i lična dostignuća.</p>
+        <a href="{% url 'registracija' %}?uloga=volonter" class="btn btn-primary">Registruj se kao volonter</a>
+      </div>
+      <div class="join-card fade-up-2">
+        <div class="join-icon gradient"><i class="bi bi-people-fill"></i></div>
+        <h3>Organizator</h3>
+        <p>Kreirajte i upravljajte volonterskim akcijama, primajte prijave, upravljajte sponzorima i koordinišite učesnike.</p>
+        <a href="{% url 'registracija' %}?uloga=organizator" class="btn btn-secondary">Registruj se kao organizator</a>
+      </div>
+      <div class="join-card fade-up-3">
+        <div class="join-icon green"><i class="bi bi-patch-check"></i></div>
+        <h3>Sponzor</h3>
+        <p>Podržite volonterske akcije koje cenite i pratite ukupnu vrednost vašeg doprinosa zajednici u evrima.</p>
+        <a href="{% url 'registracija' %}?uloga=sponzor" class="btn btn-ghost" style="color:#94a3b8;border-color:#253545;">Registruj se kao sponzor</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── NAJNOVIJI ČLANCI — popunjava Maša u commitu #21 ── -->
+<section class="home-section" style="background:var(--bg);">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <h2 class="section-title">Najnoviji članci</h2>
+        <p class="section-subtitle">Vesti i izveštaji sa volonterskih akcija</p>
+      </div>
+      <a href="{% url 'clanci' %}" class="btn btn-ghost">Svi članci <i class="bi bi-arrow-right"></i></a>
+    </div>
+    <div class="grid-2" id="featured-articles">
+      {% block featured_clanci %}
+      {# Ovaj blok popunjava commit #21 (Maša) kada doda model Clanak #}
+      {% endblock %}
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA BANNER ── -->
+<section style="background:linear-gradient(135deg,var(--teal),var(--green));padding:60px 0;">
+  <div class="container" style="text-align:center;">
+    <h2 style="color:white;font-size:1.875rem;margin-bottom:12px;">Spreman/na da promeniš nešto?</h2>
+    <p style="color:rgba(255,255,255,0.85);font-size:1.0625rem;margin-bottom:28px;max-width:520px;margin-left:auto;margin-right:auto;">
+      Registruj se danas i postani deo 10.000+ volontera koji zajedno čine Srbiju boljim mestom.
+    </p>
+    <a href="{% url 'registracija' %}" class="btn btn-lg" style="background:white;color:var(--teal-hover);box-shadow:0 6px 28px rgba(0,0,0,0.2);">
+      <i class="bi bi-person-plus-fill"></i> Registruj se besplatno
+    </a>
+  </div>
+</section>
+
+{% endblock %}

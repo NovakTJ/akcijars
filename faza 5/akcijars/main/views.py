@@ -1,4 +1,6 @@
 from django.shortcuts import render
 
-# Create your views here.
 
+def home(request):
+    """Stub početna stranica — sadržaj dodaje Novak/Maša u kasnijim commitima."""
+    return render(request, 'home.html')
