@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'main.apps.MainConfig',
 ]
 
+AUTH_USER_MODEL = 'main.Korisnik' 
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -129,3 +131,5 @@ STATICFILES_DIRS = [BASE_DIR/'static']
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
