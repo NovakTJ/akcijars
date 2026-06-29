@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Registracija – AkcijaRS{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card wide">
+
+    <div class="auth-logo">
+      <img src="{% static 'images/logo.png' %}" alt="AkcijaRS" style="height:44px;width:auto;object-fit:contain;">
+    </div>
+
+    {% if uspeh %}
+      {# ── Uspešna registracija (SSU 1, 2.2.1 / 2.2.2) ── #}
+      <h1 class="auth-title">Kreirajte nalog</h1>
+      <div class="alert alert-success" style="display:flex;">
+        <i class="bi bi-check-circle-fill"></i>
+        <span>{{ poruka }}</span>
+      </div>
+      <div style="margin-top:18px;">
+        {% if uloga == 'volonter' %}
+          <a href="{% url 'prijava' %}" class="btn btn-primary btn-lg" style="width:100%;">
+            <i class="bi bi-box-arrow-in-right"></i> Prijavi se na sistem
+          </a>
+        {% else %}
+          <a href="{% url 'home' %}" class="btn btn-secondary btn-lg" style="width:100%;">
+            <i class="bi bi-house"></i> Nazad na početnu
+          </a>
+        {% endif %}
+      </div>
+    {% else %}
+      <h1 class="auth-title">Kreirajte nalog</h1>
+      <p class="auth-subtitle">Pridružite se zajednici volontera Srbije</p>
+
+      {# Role tabs #}
+      <div class="role-tabs" id="role-tabs">
+        <button type="button" class="role-tab {% if uloga == 'volonter' %}active{% endif %}" onclick="setRole('volonter', this)">
+          <i class="bi bi-person-heart"></i> Volonter
+        </button>
+        <button type="button" class="role-tab {% if uloga == 'organizator' %}active{% endif %}" onclick="setRole('organizator', this)">
+          <i class="bi bi-people"></i> Organizator
+        </button>
+        <button type="button" class="role-tab {% if uloga == 'sponzor' %}active{% endif %}" onclick="setRole('sponzor', this)">
+          <i class="bi bi-patch-check"></i> Sponzor
+        </button>
+      </div>
+
+      {# Napomena o odobrenju za organizatora/sponzora #}
+      <div id="approval-note" class="alert alert-info" style="{% if uloga == 'organizator' or uloga == 'sponzor' %}display:flex;{% else %}display:none;{% endif %}">
+        <i class="bi bi-info-circle-fill"></i>
+        <span>Nalog <strong id="approval-role">{% if uloga == 'sponzor' %}sponzora{% else %}organizatora{% endif %}</strong> mora biti odobren od strane administratora pre korišćenja sistema.</span>
+      </div>
+
+      {# Globalna greška (npr. nepopunjena obavezna polja) #}
+      {% if form.non_field_errors %}
+        <div class="alert alert-error" style="display:flex;">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          <span>{{ form.non_field_errors.0 }}</span>
+        </div>
+      {% endif %}
+
+      <form id="reg-form" method="post" action="{% url 'registracija' %}" novalidate>
+        {% csrf_token %}
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Ime <span class="req">*</span></label>
+            <input type="text" name="ime" class="form-control {% if form.ime.errors %}is-error{% endif %}"
+                   placeholder="Vaše ime" value="{{ form.ime.value|default:'' }}">
+            {% for greska in form.ime.errors %}
+              <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+            {% endfor %}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Prezime <span class="req">*</span></label>
+            <input type="text" name="prezime" class="form-control {% if form.prezime.errors %}is-error{% endif %}"
+                   placeholder="Vaše prezime" value="{{ form.prezime.value|default:'' }}">
+            {% for greska in form.prezime.errors %}
+              <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email adresa <span class="req">*</span></label>
+          <input type="email" name="email" class="form-control {% if form.email.errors %}is-error{% endif %}"
+                 placeholder="vase@email.com" value="{{ form.email.value|default:'' }}">
+          {% for greska in form.email.errors %}
+            <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Lozinka <span class="req">*</span></label>
+            <div class="password-toggle">
+              <input type="password" name="lozinka" id="lozinka" class="form-control {% if form.lozinka.errors %}is-error{% endif %}" placeholder="Min. 8 karaktera">
+              <button type="button" class="toggle-btn" onclick="togglePwd('lozinka',this)"><i class="bi bi-eye"></i></button>
+            </div>
+            <div class="form-hint">Minimum 8 karaktera, barem jedna cifra ili specijalni karakter.</div>
+            {% for greska in form.lozinka.errors %}
+              <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+            {% endfor %}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Potvrda lozinke <span class="req">*</span></label>
+            <div class="password-toggle">
+              <input type="password" name="lozinka2" id="lozinka2" class="form-control {% if form.lozinka2.errors %}is-error{% endif %}" placeholder="Ponovite lozinku">
+              <button type="button" class="toggle-btn" onclick="togglePwd('lozinka2',this)"><i class="bi bi-eye"></i></button>
+            </div>
+            {% for greska in form.lozinka2.errors %}
+              <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+            {% endfor %}
+          </div>
+        </div>
+
+        {# Dodatna polja za organizatora/sponzora #}
+        <div id="org-fields" style="{% if uloga == 'organizator' or uloga == 'sponzor' %}display:block;{% else %}display:none;{% endif %}">
+          <div class="divider" style="margin:4px 0 18px;"></div>
+          <div class="form-group">
+            <label class="form-label">Naziv organizacije <span class="req">*</span></label>
+            <input type="text" name="naziv_organizacije" class="form-control {% if form.naziv_organizacije.errors %}is-error{% endif %}"
+                   placeholder="Naziv vaše organizacije" value="{{ form.naziv_organizacije.value|default:'' }}">
+            {% for greska in form.naziv_organizacije.errors %}
+              <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+            {% endfor %}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Kontakt telefon <span class="req">*</span></label>
+            <input type="tel" name="br_telefona" class="form-control {% if form.br_telefona.errors %}is-error{% endif %}"
+                   placeholder="+381 11 123 4567" value="{{ form.br_telefona.value|default:'' }}">
+            <div class="form-hint">Dozvoljeni: cifre, razmaci, + i -</div>
+            {% for greska in form.br_telefona.errors %}
+              <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <input type="hidden" name="uloga" id="uloga" value="{{ uloga|default:'volonter' }}">
+
+        <button type="submit" class="btn btn-primary btn-lg" style="width:100%;margin-top:8px;">
+          <i class="bi bi-person-plus"></i> Registruj se
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        Već imate nalog? <a href="{% url 'prijava' %}">Prijavite se</a>
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function setRole(role, btn) {
+    document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('uloga').value = role;
+
+    const note = document.getElementById('approval-note');
+    const orgFields = document.getElementById('org-fields');
+    if (role === 'organizator' || role === 'sponzor') {
+      note.style.display = 'flex';
+      document.getElementById('approval-role').textContent =
+        role === 'organizator' ? 'organizatora' : 'sponzora';
+      orgFields.style.display = 'block';
+    } else {
+      note.style.display = 'none';
+      orgFields.style.display = 'none';
+    }
+  }
+
+  function togglePwd(fieldId, btn) {
+    const f = document.getElementById(fieldId);
+    if (f.type === 'password') { f.type = 'text'; btn.innerHTML = '<i class="bi bi-eye-slash"></i>'; }
+    else { f.type = 'password'; btn.innerHTML = '<i class="bi bi-eye"></i>'; }
+  }
+</script>
+{% endblock %}
