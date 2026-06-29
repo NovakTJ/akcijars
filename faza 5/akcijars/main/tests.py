@@ -1,3 +1,4 @@
+from django.core import mail
 from django.test import TestCase
 from django.urls import reverse
 
@@ -138,3 +139,27 @@ class RegistracijaTest(TestCase):
         self.client.post(self.url, dict(self.osnovni_podaci, email='petar@drugi.com'))
         imena = list(Korisnik.objects.values_list('korisnicko_ime', flat=True))
         self.assertEqual(len(imena), len(set(imena)))
+
+    # ── 2.2.1 / 2.2.2 — potvrda registracije se šalje na email (FZ 4.3.2) ──
+    def test_volonteru_se_salje_potvrda_na_email(self):
+        self.client.post(self.url, self.osnovni_podaci)
+        self.assertEqual(len(mail.outbox), 1)
+        poruka = mail.outbox[0]
+        self.assertEqual(poruka.to, ['petar@example.com'])
+        self.assertIn('potvrda registracije', poruka.subject)
+        self.assertIn('možete se odmah prijaviti', poruka.body)
+
+    def test_organizatoru_potvrda_pominje_odobrenje(self):
+        podaci = dict(self.osnovni_podaci, uloga='organizator',
+                      email='org@example.com',
+                      naziv_organizacije='Zeleni krug',
+                      br_telefona='+381 11 123 456')
+        self.client.post(self.url, podaci)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, ['org@example.com'])
+        self.assertIn('mora biti odobren', mail.outbox[0].body)
+
+    def test_neuspesna_registracija_ne_salje_email(self):
+        podaci = dict(self.osnovni_podaci, lozinka2='Drugacija1!')
+        self.client.post(self.url, podaci)
+        self.assertEqual(len(mail.outbox), 0)

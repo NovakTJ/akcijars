@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 
+from .emails import posalji_potvrdu_registracije
 from .forms import RegistracijaForm
 
 
@@ -27,7 +28,8 @@ def registracija(request):
             else:
                 poruka = ('Registracija je uspešna. Nalog čeka odobrenje '
                           'jednog od administratora.')
-            # TODO (commit #6): slanje potvrde registracije na email.
+            # SSU 1, 2.2.1/2.2.2 — potvrda registracije se šalje na email.
+            posalji_potvrdu_registracije(korisnik, uloga)
             return render(request, 'registracija.html', {
                 'uspeh': True,
                 'poruka': poruka,

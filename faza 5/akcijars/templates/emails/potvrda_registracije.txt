@@ -1,0 +1,15 @@
+Zdravo {{ korisnik.ime }},
+
+Hvala što ste se registrovali na AkcijaRS — portal volonterskih akcija u Srbiji.
+{% if ceka_odobrenje %}
+Vaš nalog je uspešno kreiran, ali pre korišćenja sistema mora biti odobren od
+strane jednog od administratora. O odluci ćete biti obavešteni.
+{% else %}
+Vaš nalog je uspešno kreiran i možete se odmah prijaviti na sistem.
+{% endif %}
+Email adresa za prijavu: {{ korisnik.email }}
+
+Ako se niste Vi registrovali, slobodno zanemarite ovu poruku.
+
+Srdačan pozdrav,
+Tim AkcijaRS
