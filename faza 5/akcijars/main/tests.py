@@ -163,3 +163,89 @@ class RegistracijaTest(TestCase):
         podaci = dict(self.osnovni_podaci, lozinka2='Drugacija1!')
         self.client.post(self.url, podaci)
         self.assertEqual(len(mail.outbox), 0)
+
+
+class PrijavaTest(TestCase):
+    """Testovi za scenario autorizacije korisnika (SSU 2)."""
+
+    def setUp(self):
+        self.url = reverse('prijava')
+        self.volonter = Korisnik.objects.create_user(
+            email='volonter@example.com', password='Lozinka1!',
+            korisnicko_ime='volonter', ime='Mila', prezime='Milić')
+        VolonterProfil.objects.create(korisnik=self.volonter)
+
+    def test_get_prikazuje_formu(self):
+        odgovor = self.client.get(self.url)
+        self.assertEqual(odgovor.status_code, 200)
+        self.assertTemplateUsed(odgovor, 'prijava.html')
+
+    # ── 2.2.1 — uspešna autorizacija ──
+    def test_uspesna_prijava_volontera(self):
+        odgovor = self.client.post(
+            self.url, {'email': 'volonter@example.com', 'lozinka': 'Lozinka1!'})
+        self.assertRedirects(odgovor, reverse('home'))
+        self.assertEqual(
+            int(self.client.session['_auth_user_id']), self.volonter.pk)
+
+    def test_prijava_email_case_insensitive(self):
+        odgovor = self.client.post(
+            self.url, {'email': 'VOLONTER@example.com', 'lozinka': 'Lozinka1!'})
+        self.assertIn('_auth_user_id', self.client.session)
+
+    # ── 2.2.2 — nepostojeća email adresa ──
+    def test_nepostojeci_email(self):
+        odgovor = self.client.post(
+            self.url, {'email': 'nema@example.com', 'lozinka': 'Lozinka1!'})
+        self.assertContains(odgovor, 'Email adresa ili lozinka nisu ispravni.')
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    # ── 2.2.3 — neispravna lozinka ──
+    def test_pogresna_lozinka(self):
+        odgovor = self.client.post(
+            self.url, {'email': 'volonter@example.com', 'lozinka': 'Pogresna1!'})
+        self.assertContains(odgovor, 'Email adresa ili lozinka nisu ispravni.')
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    # ── 2.2.4 — neodobren nalog organizatora/sponzora ──
+    def test_neodobren_organizator(self):
+        org = Korisnik.objects.create_user(
+            email='org@example.com', password='Lozinka1!',
+            korisnicko_ime='org', ime='Ognjen', prezime='Ognjenović')
+        OrganizatorProfil.objects.create(
+            korisnik=org, naziv_organizacije='Zeleni krug',
+            status=OrganizatorProfil.Status.NA_CEKANJU)
+        odgovor = self.client.post(
+            self.url, {'email': 'org@example.com', 'lozinka': 'Lozinka1!'})
+        self.assertContains(odgovor, 'Nalog čeka odobrenje administratora.')
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    def test_odobren_organizator_se_prijavljuje(self):
+        org = Korisnik.objects.create_user(
+            email='org2@example.com', password='Lozinka1!',
+            korisnicko_ime='org2', ime='Ognjen', prezime='Ognjenović')
+        OrganizatorProfil.objects.create(
+            korisnik=org, naziv_organizacije='Zeleni krug',
+            status=OrganizatorProfil.Status.ODOBREN)
+        odgovor = self.client.post(
+            self.url, {'email': 'org2@example.com', 'lozinka': 'Lozinka1!'})
+        self.assertRedirects(odgovor, reverse('home'))
+        self.assertIn('_auth_user_id', self.client.session)
+
+    def test_nepopunjena_polja(self):
+        odgovor = self.client.post(self.url, {'email': '', 'lozinka': ''})
+        self.assertContains(odgovor, 'Nisu uneta sva obavezna polja.')
+
+    # ── 2.2.5 — odjava korisnika ──
+    def test_odjava(self):
+        self.client.login(email='volonter@example.com', password='Lozinka1!')
+        self.assertIn('_auth_user_id', self.client.session)
+        odgovor = self.client.get(reverse('odjava'))
+        self.assertRedirects(odgovor, reverse('home'))
+        self.assertNotIn('_auth_user_id', self.client.session)
+
+    # ── 2.4 — preduslov: ulogovan korisnik ne vidi formu za prijavu ──
+    def test_ulogovan_korisnik_preusmeren(self):
+        self.client.login(email='volonter@example.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        self.assertRedirects(odgovor, reverse('home'))

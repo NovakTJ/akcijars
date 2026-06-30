@@ -1,6 +1,7 @@
 import re
 
 from django import forms
+from django.contrib.auth import authenticate
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
@@ -153,3 +154,43 @@ class RegistracijaForm(forms.Form):
             )
 
         return korisnik, uloga
+
+
+class PrijavaForm(forms.Form):
+    """
+    Forma za prijavu korisnika (SSU 2).
+
+    Polja su ``required=False`` da bismo sami kontrolisali poruke i
+    reprodukovali tačne tekstove iz SSU 2 (npr. jedinstvenu poruku
+    „Email adresa ili lozinka nisu ispravni.“ i za nepostojeći email i za
+    pogrešnu lozinku, tako da se ne otkriva da li email postoji).
+
+    Po uspešnoj validaciji autentifikovani ``Korisnik`` je dostupan kao
+    ``self.korisnik``.
+    """
+
+    email = forms.CharField(max_length=254, required=False)
+    lozinka = forms.CharField(required=False)
+
+    def clean(self):
+        cleaned = super().clean()
+        email = cleaned.get('email', '')
+        lozinka = cleaned.get('lozinka', '')
+
+        # Nepopunjena obavezna polja.
+        if not email or not lozinka:
+            raise ValidationError('Nisu uneta sva obavezna polja.')
+
+        # 2.2.2 / 2.2.3 — nepostojeći email ili pogrešna lozinka daju istu
+        # poruku (neaktivan nalog takođe vraća None).
+        korisnik = authenticate(email=email, password=lozinka)
+        if korisnik is None:
+            raise ValidationError('Email adresa ili lozinka nisu ispravni.')
+
+        # 2.2.4 — nalog organizatora/sponzora još nije odobren od strane
+        # administratora (pokriva i odbijene naloge).
+        if not korisnik.je_odobren:
+            raise ValidationError('Nalog čeka odobrenje administratora.')
+
+        self.korisnik = korisnik
+        return cleaned
