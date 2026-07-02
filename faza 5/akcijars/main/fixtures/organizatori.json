@@ -1,0 +1,145 @@
+[
+  {"model": "main.korisnik", "pk": 100, "fields": {
+    "email": "info@zelenibeograd.rs",
+    "korisnicko_ime": "zeleni_beograd",
+    "ime": "Zeleni",
+    "prezime": "Beograd",
+    "password": "!seed",
+    "is_active": true,
+    "is_staff": false,
+    "datum_registracije": "2026-01-01"
+  }},
+  {"model": "main.organizatorprofil", "pk": 100, "fields": {
+    "br_telefona": "+381 11 123 4567",
+    "naziv_organizacije": "Zeleni Beograd",
+    "status": "odobren"
+  }},
+
+  {"model": "main.korisnik", "pk": 101, "fields": {
+    "email": "kontakt@srcezazemun.rs",
+    "korisnicko_ime": "srce_za_zemun",
+    "ime": "Srce",
+    "prezime": "za Zemun",
+    "password": "!seed",
+    "is_active": true,
+    "is_staff": false,
+    "datum_registracije": "2026-01-01"
+  }},
+  {"model": "main.organizatorprofil", "pk": 101, "fields": {
+    "br_telefona": "+381 65 987 6543",
+    "naziv_organizacije": "Srce za Zemun",
+    "status": "odobren"
+  }},
+
+  {"model": "main.korisnik", "pk": 102, "fields": {
+    "email": "hello@artzasve.rs",
+    "korisnicko_ime": "art_za_sve",
+    "ime": "Art",
+    "prezime": "za Sve",
+    "password": "!seed",
+    "is_active": true,
+    "is_staff": false,
+    "datum_registracije": "2026-01-01"
+  }},
+  {"model": "main.organizatorprofil", "pk": 102, "fields": {
+    "br_telefona": "+381 63 555 1234",
+    "naziv_organizacije": "Art za Sve",
+    "status": "odobren"
+  }},
+
+  {"model": "main.korisnik", "pk": 103, "fields": {
+    "email": "info@znanjezasve.rs",
+    "korisnicko_ime": "znanje_za_sve",
+    "ime": "Znanje",
+    "prezime": "za Sve",
+    "password": "!seed",
+    "is_active": true,
+    "is_staff": false,
+    "datum_registracije": "2026-01-01"
+  }},
+  {"model": "main.organizatorprofil", "pk": 103, "fields": {
+    "br_telefona": "+381 69 111 2222",
+    "naziv_organizacije": "Znanje za Sve",
+    "status": "odobren"
+  }},
+
+  {"model": "main.korisnik", "pk": 104, "fields": {
+    "email": "bazar@hranazasve.rs",
+    "korisnicko_ime": "hrana_za_sve",
+    "ime": "Hrana",
+    "prezime": "za Sve",
+    "password": "!seed",
+    "is_active": true,
+    "is_staff": false,
+    "datum_registracije": "2026-01-01"
+  }},
+  {"model": "main.organizatorprofil", "pk": 104, "fields": {
+    "br_telefona": "+381 11 456 7890",
+    "naziv_organizacije": "Hrana za Sve",
+    "status": "odobren"
+  }},
+
+  {"model": "main.korisnik", "pk": 105, "fields": {
+    "email": "info@sportzadobro.rs",
+    "korisnicko_ime": "sport_za_dobro",
+    "ime": "Sport",
+    "prezime": "za Dobro",
+    "password": "!seed",
+    "is_active": true,
+    "is_staff": false,
+    "datum_registracije": "2026-01-01"
+  }},
+  {"model": "main.organizatorprofil", "pk": 105, "fields": {
+    "br_telefona": "+381 21 555 6789",
+    "naziv_organizacije": "Sport za Dobro",
+    "status": "odobren"
+  }},
+
+  {"model": "main.korisnik", "pk": 106, "fields": {
+    "email": "info@rukezadecu.rs",
+    "korisnicko_ime": "ruke_za_decu",
+    "ime": "Ruke",
+    "prezime": "za Decu",
+    "password": "!seed",
+    "is_active": true,
+    "is_staff": false,
+    "datum_registracije": "2026-01-01"
+  }},
+  {"model": "main.organizatorprofil", "pk": 106, "fields": {
+    "br_telefona": "+381 11 789 0123",
+    "naziv_organizacije": "Ruke za Decu",
+    "status": "odobren"
+  }},
+
+  {"model": "main.korisnik", "pk": 107, "fields": {
+    "email": "info@ekosubotica.rs",
+    "korisnicko_ime": "eko_subotica",
+    "ime": "Eko",
+    "prezime": "Subotica",
+    "password": "!seed",
+    "is_active": true,
+    "is_staff": false,
+    "datum_registracije": "2026-01-01"
+  }},
+  {"model": "main.organizatorprofil", "pk": 107, "fields": {
+    "br_telefona": "+381 24 555 1234",
+    "naziv_organizacije": "Eko Subotica",
+    "status": "odobren"
+  }},
+
+  {"model": "main.korisnik", "pk": 108, "fields": {
+    "email": "kontakt@srcezavojvodinu.rs",
+    "korisnicko_ime": "srce_za_vojvodinu",
+    "ime": "Srce",
+    "prezime": "za Vojvodinu",
+    "password": "!seed",
+    "is_active": true,
+    "is_staff": false,
+    "datum_registracije": "2026-01-01"
+  }},
+  {"model": "main.organizatorprofil", "pk": 108, "fields": {
+    "br_telefona": "+381 21 456 7890",
+    "naziv_organizacije": "Srce za Vojvodinu",
+    "status": "odobren"
+  }}
+]

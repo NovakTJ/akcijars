@@ -8,6 +8,8 @@ from .models import (
     OrganizatorProfil,
     SponzorProfil,
     AdministratorProfil,
+    KategorijaAkcije,
+    Akcija,
 )
 
 
@@ -128,3 +130,18 @@ class SponzorProfilAdmin(admin.ModelAdmin):
 class AdministratorProfilAdmin(admin.ModelAdmin):
     list_display = ('korisnik',)
     search_fields = ('korisnik__ime', 'korisnik__prezime', 'korisnik__email')
+
+
+@admin.register(KategorijaAkcije)
+class KategorijaAkcijeAdmin(admin.ModelAdmin):
+    list_display = ('naziv',)
+    search_fields = ('naziv',)
+
+
+@admin.register(Akcija)
+class AkcijaAdmin(admin.ModelAdmin):
+    list_display = ('naziv', 'organizator', 'kategorija', 'datum', 'vreme', 'lokacija', 'status')
+    list_filter = ('status', 'kategorija', 'datum')
+    search_fields = ('naziv', 'lokacija', 'organizator__naziv_organizacije')
+    ordering = ('-datum_kreiranja',)
+    readonly_fields = ('datum_kreiranja',)

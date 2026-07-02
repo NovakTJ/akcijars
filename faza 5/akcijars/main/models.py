@@ -244,3 +244,101 @@ class AdministratorProfil(models.Model):
 
     def __str__(self):
         return f'Administrator: {self.korisnik.get_full_name()}'
+
+
+class KategorijaAkcije(models.Model):
+    """Tabela KategorijaAkcije iz specifikacije baze."""
+
+    id_kat = models.AutoField(primary_key=True, db_column='IdKat')
+    naziv = models.CharField(
+        max_length=50,
+        unique=True,
+        verbose_name='Naziv',
+        db_column='Naziv',
+    )
+
+    class Meta:
+        db_table = 'KategorijaAkcije'
+        verbose_name = 'Kategorija akcije'
+        verbose_name_plural = 'Kategorije akcija'
+        ordering = ['naziv']
+
+    def __str__(self):
+        return self.naziv
+
+
+class Akcija(models.Model):
+    """Tabela Akcija iz specifikacije baze."""
+
+    class Status(models.TextChoices):
+        NA_CEKANJU = 'na_cekanju', 'Na čekanju'
+        ODOBRENA = 'odobrena', 'Odobrena'
+        ODBIJENA = 'odbijena', 'Odbijena'
+        AKTIVNA = 'aktivna', 'Aktivna'
+        POPUNJENA = 'popunjena', 'Popunjena'
+        ZAVRSENA = 'zavrsena', 'Završena'
+        OTKAZANA = 'otkazana', 'Otkazana'
+
+    id_akc = models.AutoField(primary_key=True, db_column='IdAkc')
+    organizator = models.ForeignKey(
+        OrganizatorProfil,
+        on_delete=models.CASCADE,
+        related_name='akcije',
+        db_column='IdKor',
+        verbose_name='Organizator',
+    )
+    kategorija = models.ForeignKey(
+        KategorijaAkcije,
+        on_delete=models.PROTECT,
+        related_name='akcije',
+        db_column='IdKat',
+        verbose_name='Kategorija',
+    )
+    naziv = models.CharField(max_length=100, verbose_name='Naziv', db_column='Naziv')
+    opis = models.CharField(max_length=1024, verbose_name='Opis', db_column='Opis')
+    datum = models.DateField(verbose_name='Datum', db_column='Datum')
+    vreme = models.TimeField(verbose_name='Vreme', db_column='Vreme')
+    lokacija = models.CharField(max_length=50, verbose_name='Lokacija', db_column='Lokacija')
+    max_br_volontera = models.PositiveIntegerField(
+        verbose_name='Maksimalan broj volontera',
+        db_column='MaxBrVolontera',
+    )
+    kontakt_email = models.EmailField(
+        max_length=50,
+        verbose_name='Kontakt email',
+        db_column='KontaktEmail',
+    )
+    kontakt_telefon = models.CharField(
+        max_length=20,
+        verbose_name='Kontakt telefon',
+        db_column='KontaktTelefon',
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.NA_CEKANJU,
+        verbose_name='Status',
+        db_column='Status',
+    )
+    datum_kreiranja = models.DateField(
+        default=timezone.now,
+        editable=False,
+        verbose_name='Datum kreiranja',
+        db_column='DatumKreiranja',
+    )
+    slika = models.ImageField(
+        upload_to='akcije/',
+        blank=True,
+        null=True,
+        verbose_name='Slika',
+        db_column='Slika',
+    )
+
+    class Meta:
+        db_table = 'Akcija'
+        verbose_name = 'Akcija'
+        verbose_name_plural = 'Akcije'
+        ordering = ['-datum_kreiranja']
+
+    def __str__(self):
+        return self.naziv
