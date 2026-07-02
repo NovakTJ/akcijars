@@ -33,6 +33,20 @@
     primeniFiltere();
   });
 
+  function resetujFiltere() {
+    form.reset();
+    form.querySelectorAll('select').forEach((s) => (s.value = ''));
+    primeniFiltere();
+  }
+
+  const clearBtn = document.getElementById('clear-all');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      resetujFiltere();
+    });
+  }
+
   form.querySelectorAll('select, input[type="date"]').forEach((el) => {
     el.addEventListener('change', primeniFiltere);
   });
@@ -45,9 +59,21 @@
 
   container.addEventListener('click', (e) => {
     const btn = e.target.closest('.page-btn[data-page]');
-    if (!btn || btn.disabled) return;
-    e.preventDefault();
-    primeniFiltere(btn.dataset.page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (btn && !btn.disabled) {
+      e.preventDefault();
+      primeniFiltere(btn.dataset.page);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    if (e.target.closest('#reset-filters')) {
+      e.preventDefault();
+      resetujFiltere();
+    }
+  });
+
+  // Sort select je unutar container-a (menja se pri svakom Ajax osvežavanju),
+  // pa listener ide na container preko delegacije.
+  container.addEventListener('change', (e) => {
+    if (e.target.matches('select[name="sort"]')) primeniFiltere();
   });
 })();

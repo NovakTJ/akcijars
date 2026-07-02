@@ -1,11 +1,30 @@
 {% load static %}
-<p id="results-info" style="font-size:.9rem;color:var(--text-muted);margin-bottom:18px;margin-top:18px;">
-  {% if strana.paginator.count %}
-    Prikazano {{ strana.start_index }}–{{ strana.end_index }} od {{ strana.paginator.count }} akcija
-  {% else %}
-    0 akcija pronađeno
-  {% endif %}
-</p>
+{% if greska_upita %}
+  <div class="alert alert-warning" style="margin-top:14px;">
+    <i class="bi bi-exclamation-triangle"></i> {{ greska_upita }}
+  </div>
+{% endif %}
+
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin:18px 0;">
+  <p id="results-info" style="font-size:.9rem;color:var(--text-muted);margin:0;">
+    {% if strana.paginator.count %}
+      Prikazano {{ strana.start_index }}–{{ strana.end_index }} od {{ strana.paginator.count }} akcija
+    {% else %}
+      0 akcija pronađeno
+    {% endif %}
+  </p>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span style="font-size:.8125rem;color:var(--text-muted);">Sortiraj:</span>
+    <select name="sort" form="filter-form" class="form-control" style="width:auto;padding:7px 32px 7px 10px;font-size:.875rem;">
+      <option value="datum_kacenja" {% if sortiranje == 'datum_kacenja' %}selected{% endif %}>Najnovije (datum kačenja)</option>
+      <option value="datum_odrzavanja" {% if sortiranje == 'datum_odrzavanja' %}selected{% endif %}>Najnovije (datum održavanja)</option>
+      {# TODO(#12, Novak): omogućiti kad je lokacija izabrana. #}
+      <option value="najblize" disabled>Najbliže</option>
+      {# TODO(#15, Maša): omogućiti kad postoji model Prijava sa brojanjem prihvaćenih. #}
+      <option value="slobodna_mesta" disabled>Slobodna mesta</option>
+    </select>
+  </div>
+</div>
 
 <div class="grid-3" id="actions-grid">
   {% for akcija in akcije %}
@@ -36,7 +55,12 @@
       </div>
     </div>
   {% empty %}
-    <p>Trenutno nema akcija.</p>
+    <div class="empty-state" style="grid-column:1/-1;text-align:center;padding:40px 20px;">
+      <div class="es-icon" style="font-size:2.5rem;">🔍</div>
+      <h3>Nema akcija koje odgovaraju zadatim kriterijumima</h3>
+      <p style="color:var(--text-muted);">Pokušajte da izmenite ili poništite filtere.</p>
+      <button type="button" class="btn btn-secondary" id="reset-filters">Poništi sve filtere</button>
+    </div>
   {% endfor %}
 </div>
 
@@ -47,8 +71,10 @@
   {% else %}
     <button class="page-btn" disabled>‹</button>
   {% endif %}
-  {% for broj in strana.paginator.page_range %}
-    {% if broj == strana.number %}
+  {% for broj in brojevi_paginacije %}
+    {% if broj is None %}
+      <span class="page-btn" style="border:none;pointer-events:none;color:var(--text-muted);">…</span>
+    {% elif broj == strana.number %}
       <button class="page-btn active" data-page="{{ broj }}">{{ broj }}</button>
     {% else %}
       <button class="page-btn" data-page="{{ broj }}">{{ broj }}</button>

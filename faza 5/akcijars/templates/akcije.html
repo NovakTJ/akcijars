@@ -17,8 +17,10 @@
   <div class="container">
 
     <div class="filter-bar">
-      {# TODO(#12, Novak): dodati filter po lokaciji + radius (Google Maps + haversine).
-         Prototip: faza 2/prototip/akcije.html linije 73–112. #}
+      {% comment %}
+        TODO(#12, Novak): dodati filter po lokaciji + radius (Google Maps + haversine).
+        Prototip: faza 2/prototip/akcije.html linije 73–112.
+      {% endcomment %}
       <form method="get" id="filter-form">
         <div class="filter-row" style="flex-wrap:wrap;gap:12px;">
           <div class="filter-group" style="flex:2;min-width:180px;">
@@ -51,7 +53,10 @@
           </div>
           <div class="filter-group" style="flex:0;">
             <label>&nbsp;</label>
-            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Traži</button>
+            <div style="display:flex;gap:6px;">
+              <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Traži</button>
+              <button type="reset" id="clear-all" class="btn btn-ghost" title="Poništi sve filtere"><i class="bi bi-x-lg"></i></button>
+            </div>
           </div>
         </div>
       </form>

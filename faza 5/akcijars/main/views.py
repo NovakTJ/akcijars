@@ -1,6 +1,29 @@
+import re
+
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.core.paginator import Paginator
 from django.shortcuts import render, redirect
+
+
+# SSU 3, otvoreno pitanje 2 — dozvoljena slova (uklj. srpske), cifre, razmaci.
+_DOZVOLJEN_UPIT = re.compile(r'^[a-zA-ZčćžšđČĆŽŠĐ0-9 ]*$')
+
+
+def _brojevi_paginacije(strana):
+    """
+    SSU 3, otvoreno pitanje 2 — kompaktna paginacija: 1, prethodna, trenutna,
+    sledeća, poslednja, bez dupliranja; None = elipse „…".
+    """
+    ukupno = strana.paginator.num_pages
+    trenutna = strana.number
+    kljucni = sorted({1, trenutna - 1, trenutna, trenutna + 1, ukupno}
+                     & set(range(1, ukupno + 1)))
+    rezultat = []
+    for i, broj in enumerate(kljucni):
+        if i > 0 and broj - kljucni[i - 1] > 1:
+            rezultat.append(None)
+        rezultat.append(broj)
+    return rezultat
 
 from .emails import posalji_potvrdu_registracije
 from .forms import PrijavaForm, RegistracijaForm
@@ -94,10 +117,17 @@ def lista_akcija(request):
     """Lista svih akcija sa filterima (SSU 3 / 5.3)."""
     akcije = Akcija.objects.select_related('organizator', 'kategorija').all()
 
-    q = request.GET.get('q', '').strip()
+    q = request.GET.get('q', '').strip()[:64]
     kategorija = request.GET.get('kategorija', '').strip()
     status = request.GET.get('status', '').strip()
     datum = request.GET.get('datum', '').strip()
+    sortiranje = request.GET.get('sort', 'datum_kacenja')
+
+    # SSU 3, 2.2.11 — neispravan upit se odbija, prikazuje se početni prikaz.
+    greska_upita = ''
+    if q and not _DOZVOLJEN_UPIT.match(q):
+        greska_upita = 'U upitu su dozvoljeni samo slova, cifre i razmaci.'
+        q = ''
 
     if q:
         akcije = akcije.filter(naziv__icontains=q) | akcije.filter(
@@ -110,13 +140,23 @@ def lista_akcija(request):
     if datum:
         akcije = akcije.filter(datum=datum)
 
-    # ako treba da se menja broj akcija po strani samo promeni broj na kraju sledeceg reda
-    paginator = Paginator(akcije.distinct().order_by('-datum_kreiranja'), 18)
+    # SSU 3, 2.2.8 — sortiranje. 'najblize' i 'slobodna_mesta' zavise od
+    # tuđih komitova (#12 lokacija — Novak, #15 model Prijava — Maša),
+    # do tada su u UI-u kao disabled opcije.
+    poredak = {
+        'datum_kacenja': '-datum_kreiranja',
+        'datum_odrzavanja': '-datum',
+    }.get(sortiranje, '-datum_kreiranja')
+
+    # SSU 3, otvoreno pitanje 1 — numActionsPerPage = 9.
+    paginator = Paginator(akcije.distinct().order_by(poredak), 9)
     strana = paginator.get_page(request.GET.get('page'))
 
     kontekst = {
         'akcije': strana.object_list,
         'strana': strana,
+        'brojevi_paginacije': _brojevi_paginacije(strana),
+        'greska_upita': greska_upita,
         'kategorije': KategorijaAkcije.objects.all(),
         'statusi': [
             (Akcija.Status.AKTIVNA, Akcija.Status.AKTIVNA.label),
@@ -125,6 +165,7 @@ def lista_akcija(request):
             (Akcija.Status.OTKAZANA, Akcija.Status.OTKAZANA.label),
         ],
         'filteri': {'q': q, 'kategorija': kategorija, 'status': status, 'datum': datum},
+        'sortiranje': sortiranje,
     }
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return render(request, '_akcije_grid.html', kontekst)
