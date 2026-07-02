@@ -1,0 +1,63 @@
+{% load static %}
+<p id="results-info" style="font-size:.9rem;color:var(--text-muted);margin-bottom:18px;margin-top:18px;">
+  {% if strana.paginator.count %}
+    Prikazano {{ strana.start_index }}–{{ strana.end_index }} od {{ strana.paginator.count }} akcija
+  {% else %}
+    0 akcija pronađeno
+  {% endif %}
+</p>
+
+<div class="grid-3" id="actions-grid">
+  {% for akcija in akcije %}
+    <div class="card">
+      <div class="card-img-placeholder" style="padding:0;overflow:hidden;">
+        {% if akcija.slika %}
+          <img src="{{ akcija.slika.url }}" style="width:100%;height:100%;object-fit:cover;display:block;">
+        {% else %}
+          <img src="{% static 'images/slikaAkcije.png' %}" style="width:100%;height:100%;object-fit:cover;display:block;">
+        {% endif %}
+      </div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="badge badge-teal">{{ akcija.kategorija.naziv }}</span>
+          <span class="badge badge-gray">{{ akcija.get_status_display }}</span>
+        </div>
+        <h3 class="card-title">{{ akcija.naziv }}</h3>
+        <div class="card-meta">
+          <span class="card-meta-item"><i class="bi bi-geo-alt"></i>{{ akcija.lokacija }}</span>
+          <span class="card-meta-item"><i class="bi bi-calendar3"></i>{{ akcija.datum }}</span>
+          <span class="card-meta-item"><i class="bi bi-clock"></i>{{ akcija.vreme|time:"H:i" }}</span>
+        </div>
+        <p class="card-excerpt">{{ akcija.opis }}</p>
+      </div>
+      <div class="card-footer">
+        <span class="card-meta-item"><i class="bi bi-building"></i>{{ akcija.organizator.naziv_organizacije }}</span>
+        <a href="#" class="btn btn-primary btn-sm">Pogledaj →</a>
+      </div>
+    </div>
+  {% empty %}
+    <p>Trenutno nema akcija.</p>
+  {% endfor %}
+</div>
+
+{% if strana.paginator.num_pages > 1 %}
+<div class="pagination" id="pagination">
+  {% if strana.has_previous %}
+    <button class="page-btn" data-page="{{ strana.previous_page_number }}">‹</button>
+  {% else %}
+    <button class="page-btn" disabled>‹</button>
+  {% endif %}
+  {% for broj in strana.paginator.page_range %}
+    {% if broj == strana.number %}
+      <button class="page-btn active" data-page="{{ broj }}">{{ broj }}</button>
+    {% else %}
+      <button class="page-btn" data-page="{{ broj }}">{{ broj }}</button>
+    {% endif %}
+  {% endfor %}
+  {% if strana.has_next %}
+    <button class="page-btn" data-page="{{ strana.next_page_number }}">›</button>
+  {% else %}
+    <button class="page-btn" disabled>›</button>
+  {% endif %}
+</div>
+{% endif %}

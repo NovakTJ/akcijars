@@ -1,8 +1,10 @@
 from django.contrib.auth import login as auth_login, logout as auth_logout
+from django.core.paginator import Paginator
 from django.shortcuts import render, redirect
 
 from .emails import posalji_potvrdu_registracije
 from .forms import PrijavaForm, RegistracijaForm
+from .models import Akcija, KategorijaAkcije
 
 
 def home(request):
@@ -88,6 +90,45 @@ def odjava(request):
     auth_logout(request)
     return redirect('home')
 
+def lista_akcija(request):
+    """Lista svih akcija sa filterima (SSU 3 / 5.3)."""
+    akcije = Akcija.objects.select_related('organizator', 'kategorija').all()
+
+    q = request.GET.get('q', '').strip()
+    kategorija = request.GET.get('kategorija', '').strip()
+    status = request.GET.get('status', '').strip()
+    datum = request.GET.get('datum', '').strip()
+
+    if q:
+        akcije = akcije.filter(naziv__icontains=q) | akcije.filter(
+            organizator__naziv_organizacije__icontains=q
+        )
+    if kategorija:
+        akcije = akcije.filter(kategorija_id=kategorija)
+    if status:
+        akcije = akcije.filter(status=status)
+    if datum:
+        akcije = akcije.filter(datum=datum)
+
+    # ako treba da se menja broj akcija po strani samo promeni broj na kraju sledeceg reda
+    paginator = Paginator(akcije.distinct().order_by('-datum_kreiranja'), 18)
+    strana = paginator.get_page(request.GET.get('page'))
+
+    kontekst = {
+        'akcije': strana.object_list,
+        'strana': strana,
+        'kategorije': KategorijaAkcije.objects.all(),
+        'statusi': [
+            (Akcija.Status.AKTIVNA, Akcija.Status.AKTIVNA.label),
+            (Akcija.Status.POPUNJENA, Akcija.Status.POPUNJENA.label),
+            (Akcija.Status.ZAVRSENA, Akcija.Status.ZAVRSENA.label),
+            (Akcija.Status.OTKAZANA, Akcija.Status.OTKAZANA.label),
+        ],
+        'filteri': {'q': q, 'kategorija': kategorija, 'status': status, 'datum': datum},
+    }
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render(request, '_akcije_grid.html', kontekst)
+    return render(request, 'akcije.html', kontekst)
 
 def _uskoro(request):
     """Privremeni placeholder dok se ne implementiraju odgovarajući commitovi."""

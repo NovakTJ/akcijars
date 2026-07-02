@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Akcije – AkcijaRS{% endblock %}
+{% block nav_akcije %}active{% endblock %}
+{% block nav_mobile_akcije %}active{% endblock %}
+
+{% block content %}
+<div style="padding-top:calc(var(--nav-h) + 36px);background:white;border-bottom:1px solid var(--border-light);">
+  <div class="container" style="padding-top:32px;padding-bottom:28px;">
+    <h1 style="font-size:1.875rem;font-weight:800;margin-bottom:4px;">Volonterske akcije</h1>
+    <p style="color:var(--text-secondary);">Pronađite akciju koja vam odgovara i prijavite se</p>
+  </div>
+</div>
+
+<div class="page-content" style="padding-top:32px;">
+  <div class="container">
+
+    <div class="filter-bar">
+      {# TODO(#12, Novak): dodati filter po lokaciji + radius (Google Maps + haversine).
+         Prototip: faza 2/prototip/akcije.html linije 73–112. #}
+      <form method="get" id="filter-form">
+        <div class="filter-row" style="flex-wrap:wrap;gap:12px;">
+          <div class="filter-group" style="flex:2;min-width:180px;">
+            <label>Pretraga</label>
+            <input name="q" type="text" class="form-control"
+                   placeholder="Naziv ili organizator..." maxlength="64"
+                   value="{{ filteri.q|default:'' }}">
+          </div>
+          <div class="filter-group" style="min-width:150px;">
+            <label>Kategorija</label>
+            <select name="kategorija" class="form-control">
+              <option value="">Sve kategorije</option>
+              {% for k in kategorije %}
+                <option value="{{ k.id_kat }}" {% if filteri.kategorija == k.id_kat|stringformat:"s" %}selected{% endif %}>{{ k.naziv }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="filter-group" style="min-width:130px;">
+            <label>Status</label>
+            <select name="status" class="form-control">
+              <option value="">Svi statusi</option>
+              {% for kod, naziv in statusi %}
+                <option value="{{ kod }}" {% if filteri.status == kod %}selected{% endif %}>{{ naziv }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="filter-group" style="min-width:140px;">
+            <label>Datum akcije</label>
+            <input name="datum" type="date" class="form-control" value="{{ filteri.datum|default:'' }}">
+          </div>
+          <div class="filter-group" style="flex:0;">
+            <label>&nbsp;</label>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Traži</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div id="akcije-container">
+      {% include '_akcije_grid.html' %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/akcije.js' %}"></script>
+{% endblock %}

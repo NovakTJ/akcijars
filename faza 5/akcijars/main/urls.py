@@ -13,6 +13,6 @@ urlpatterns = [
     # VAŽNO: kad dodaješ pravi view, IZMENI ovu liniju (zadrži isto name=),
     # ne dodaj novi path() sa istim name= — Django ne prijavljuje grešku, već
     # tiho koristi poslednji path sa tim imenom, pa {% url %} pokazuje na pogrešnu rutu.
-    path('akcije/', views._uskoro, name='akcije'),
+    path('akcije/', views.lista_akcija, name='akcije'),
     path('clanci/', views._uskoro, name='clanci'),
 ]
