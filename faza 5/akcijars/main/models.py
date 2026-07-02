@@ -274,7 +274,7 @@ class Akcija(models.Model):
         NA_CEKANJU = 'na_cekanju', 'Na čekanju'
         ODOBRENA = 'odobrena', 'Odobrena'
         ODBIJENA = 'odbijena', 'Odbijena'
-        AKTIVNA = 'aktivna', 'Aktivna'
+        AKTIVNA = 'aktivna', 'Otvorena'
         POPUNJENA = 'popunjena', 'Popunjena'
         ZAVRSENA = 'zavrsena', 'Završena'
         OTKAZANA = 'otkazana', 'Otkazana'
@@ -342,3 +342,12 @@ class Akcija(models.Model):
 
     def __str__(self):
         return self.naziv
+
+    @property
+    def badge_klasa(self):
+        return {
+            self.Status.AKTIVNA: 'badge-green',
+            self.Status.POPUNJENA: 'badge-warning',
+            self.Status.ZAVRSENA: 'badge-gray',
+            self.Status.OTKAZANA: 'badge-error',
+        }.get(self.status, 'badge-gray')

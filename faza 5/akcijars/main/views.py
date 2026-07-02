@@ -2,7 +2,7 @@ import re
 
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.core.paginator import Paginator
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 
 
 # SSU 3, otvoreno pitanje 2 — dozvoljena slova (uklj. srpske), cifre, razmaci.
@@ -170,6 +170,15 @@ def lista_akcija(request):
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return render(request, '_akcije_grid.html', kontekst)
     return render(request, 'akcije.html', kontekst)
+
+def detalj_akcije(request, id_akc):
+    """Detalj pojedinačne akcije (SSU 3, 2.2.1)."""
+    akcija = get_object_or_404(
+        Akcija.objects.select_related('organizator', 'kategorija'),
+        pk=id_akc,
+    )
+    return render(request, 'detalj_akcije.html', {'akcija': akcija})
+
 
 def _uskoro(request):
     """Privremeni placeholder dok se ne implementiraju odgovarajući commitovi."""

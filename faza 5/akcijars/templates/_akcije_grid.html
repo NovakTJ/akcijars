@@ -39,7 +39,7 @@
       <div class="card-body">
         <div class="card-meta">
           <span class="badge badge-teal">{{ akcija.kategorija.naziv }}</span>
-          <span class="badge badge-gray">{{ akcija.get_status_display }}</span>
+          <span class="badge {{ akcija.badge_klasa }}">{{ akcija.get_status_display }}</span>
         </div>
         <h3 class="card-title">{{ akcija.naziv }}</h3>
         <div class="card-meta">
@@ -51,7 +51,7 @@
       </div>
       <div class="card-footer">
         <span class="card-meta-item"><i class="bi bi-building"></i>{{ akcija.organizator.naziv_organizacije }}</span>
-        <a href="#" class="btn btn-primary btn-sm">Pogledaj →</a>
+        <a href="{% url 'detalj_akcije' akcija.id_akc %}" class="btn btn-primary btn-sm">Pogledaj →</a>
       </div>
     </div>
   {% empty %}

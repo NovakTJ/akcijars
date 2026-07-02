@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ akcija.naziv }} – AkcijaRS{% endblock %}
+{% block nav_akcije %}active{% endblock %}
+{% block nav_mobile_akcije %}active{% endblock %}
+
+{% block content %}
+<div class="page-content" style="padding-top:calc(var(--nav-h) + 24px);">
+  <div class="container">
+
+    <div class="breadcrumb">
+      <a href="{% url 'home' %}">Početna</a>
+      <i class="bi bi-chevron-right" style="font-size:.75rem;"></i>
+      <a href="{% url 'akcije' %}">Akcije</a>
+      <i class="bi bi-chevron-right" style="font-size:.75rem;"></i>
+      <span>{{ akcija.naziv }}</span>
+    </div>
+
+    <div class="action-detail-layout">
+      <div>
+        <div class="article-hero" style="padding:0;overflow:hidden;margin-bottom:24px;">
+          {% if akcija.slika %}
+            <img src="{{ akcija.slika.url }}" style="width:100%;height:100%;object-fit:cover;display:block;">
+          {% else %}
+            <img src="{% static 'images/slikaAkcije.png' %}" style="width:100%;height:100%;object-fit:cover;display:block;">
+          {% endif %}
+        </div>
+
+        <div class="article-header">
+          <div class="card-meta" style="margin-bottom:14px;">
+            <span class="badge badge-teal">{{ akcija.kategorija.naziv }}</span>
+            <span class="badge {{ akcija.badge_klasa }}">{{ akcija.get_status_display }}</span>
+          </div>
+          <h1 style="font-size:1.875rem;font-weight:800;margin-bottom:12px;line-height:1.3;">{{ akcija.naziv }}</h1>
+          <div class="card-meta">
+            <span class="card-meta-item"><i class="bi bi-building" style="color:var(--teal);"></i><strong>{{ akcija.organizator.naziv_organizacije }}</strong></span>
+            <span class="card-meta-item"><i class="bi bi-calendar3"></i>Objavljeno {{ akcija.datum_kreiranja|date:"j. F Y." }}</span>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="article-body">
+          <p>{{ akcija.opis|linebreaksbr }}</p>
+        </div>
+
+        {% comment %}
+          TODO(#18, Stefan): povezati sa modelom SponzorskaPonuda i prikazati
+          listu sponzora čija je ponuda prihvaćena. Prototip: faza 2/prototip/akcija.html linije 184–198.
+        {% endcomment %}
+        <div style="margin-top:32px;padding:20px 24px;background:var(--bg);border:1px dashed var(--border-light);border-radius:var(--radius-lg);color:var(--text-muted);font-size:.875rem;">
+          <i class="bi bi-patch-check"></i> Sponzori ove akcije — biće implementirano.
+        </div>
+      </div>
+
+      <div class="action-sidebar">
+        {% comment %}
+          TODO(#15, Maša): kartica sa prijavom volontera — dugme „Prijavi se",
+          statusi (prijavljen / prihvaćen / popunjena / neulogovan). Progres
+          bar treba da koristi broj prihvaćenih prijava iz modela Prijava.
+          Prototip: faza 2/prototip/akcija.html linije 55–86, 203–214.
+        {% endcomment %}
+        <div class="sidebar-card">
+          <h4>Prijava na akciju</h4>
+          <div class="progress-wrap" style="margin-bottom:16px;">
+            <div class="progress-label">
+              <span style="font-weight:600;color:var(--dark);">0 od {{ akcija.max_br_volontera }}</span>
+              <span style="color:var(--teal);font-weight:600;">0%</span>
+            </div>
+            <div class="progress-bar" style="height:8px;"><div class="progress-fill" style="width:0%"></div></div>
+          </div>
+          <div class="alert alert-info" style="margin-top:0;font-size:.85rem;">
+            <i class="bi bi-info-circle"></i>
+            <span>Prijava volontera — biće implementirano.</span>
+          </div>
+        </div>
+
+        <div class="sidebar-card">
+          <h4>Informacije</h4>
+          <div class="info-row">
+            <i class="bi bi-calendar3"></i>
+            <div><strong>Datum i vreme</strong><span>{{ akcija.datum|date:"j. F Y." }}, {{ akcija.vreme|time:"H:i" }}h</span></div>
+          </div>
+          <div class="info-row">
+            <i class="bi bi-geo-alt"></i>
+            <div><strong>Lokacija</strong><span>{{ akcija.lokacija }}</span></div>
+          </div>
+          <div class="info-row">
+            <i class="bi bi-people"></i>
+            <div><strong>Maksimalno volontera</strong><span>{{ akcija.max_br_volontera }}</span></div>
+          </div>
+          <div class="info-row">
+            <i class="bi bi-tag"></i>
+            <div><strong>Kategorija</strong><span>{{ akcija.kategorija.naziv }}</span></div>
+          </div>
+          <div class="info-row">
+            <i class="bi bi-envelope"></i>
+            <div><strong>Kontakt</strong><span>{{ akcija.kontakt_email }}</span></div>
+          </div>
+          <div class="info-row">
+            <i class="bi bi-telephone"></i>
+            <div><strong>Telefon</strong><span>{{ akcija.kontakt_telefon }}</span></div>
+          </div>
+          {% comment %}
+            TODO(#12, Novak): zameniti sa pravom Google Maps kartom sa markerom
+            na koordinatama akcije. Prototip: faza 2/prototip/akcija.html linije 246–250.
+          {% endcomment %}
+          <div class="map-placeholder">
+            <i class="bi bi-map"></i>
+            <span>Google Maps – {{ akcija.lokacija }}</span>
+            <small style="color:var(--text-muted);font-size:.75rem;">Integracija sa Google Maps API — biće implementirano.</small>
+          </div>
+        </div>
+
+        <div class="sidebar-card">
+          <h4>Organizator</h4>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--teal-light),var(--green-light));display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--teal-hover);font-size:.875rem;flex-shrink:0;">
+              {{ akcija.organizator.naziv_organizacije|slice:":1" }}
+            </div>
+            <div>
+              <div style="font-weight:700;color:var(--dark);font-size:.9375rem;">{{ akcija.organizator.naziv_organizacije }}</div>
+              <div style="font-size:.8rem;color:var(--text-muted);">Organizator</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
