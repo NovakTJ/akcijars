@@ -1,0 +1,77 @@
+{% load static %}
+{# SSU 6 — kartica prijave volontera. Rukuje svim stanjima iz specifikacije. #}
+<div class="sidebar-card" data-akcija-id="{{ akcija.id_akc }}">
+  <h4>Prijava na akciju</h4>
+
+  <div class="progress-wrap" style="margin-bottom:16px;">
+    <div class="progress-label">
+      <span style="font-weight:600;color:var(--dark);">{{ akcija.broj_prihvacenih }} od {{ akcija.max_br_volontera }}</span>
+      {% widthratio akcija.broj_prihvacenih akcija.max_br_volontera 100 as procenat %}
+      <span style="color:var(--teal);font-weight:600;">{{ procenat }}%</span>
+    </div>
+    <div class="progress-bar" style="height:8px;">
+      <div class="progress-fill" style="width:{{ procenat }}%"></div>
+    </div>
+  </div>
+
+  {% if akcija.status == 'otkazana' %}
+    <div class="alert alert-error" style="margin-top:0;">
+      <i class="bi bi-x-circle"></i><span>Ova akcija je otkazana.</span>
+    </div>
+
+  {% elif akcija.status == 'zavrsena' %}
+    <div class="alert alert-info" style="margin-top:0;">
+      <i class="bi bi-flag-fill"></i><span>Ova akcija je završena.</span>
+    </div>
+
+  {% elif not request.user.is_authenticated %}
+    <div class="alert alert-info" style="margin-top:0;">
+      <i class="bi bi-person-circle"></i>
+      <span><a href="{% url 'prijava' %}" style="font-weight:700;">Prijavite se</a> da biste se prijavili na akciju.</span>
+    </div>
+
+  {% elif not request.user.je_volonter %}
+    <div class="alert alert-info" style="margin-top:0;">
+      <i class="bi bi-info-circle"></i>
+      <span>Samo registrovani volonteri mogu se prijaviti na akcije.</span>
+    </div>
+
+  {% elif moja_prijava and moja_prijava.status == 'prihvacena' %}
+    <div class="alert alert-success" style="margin-top:0;">
+      <i class="bi bi-check-circle-fill"></i>
+      <span>Vaša prijava je <strong>prihvaćena</strong>! Vidimo se na akciji.</span>
+    </div>
+    <button type="button" class="btn btn-ghost" id="btn-odjavi" style="width:100%;margin-top:10px;">
+      <i class="bi bi-x-circle"></i> Odjavi se sa akcije
+    </button>
+
+  {% elif moja_prijava and moja_prijava.status == 'na_cekanju' %}
+    <div class="alert alert-success" style="margin-top:0;">
+      <i class="bi bi-check-circle-fill"></i>
+      <span>Uspešno ste se prijavili. Čekajte potvrdu organizatora.</span>
+    </div>
+    <button type="button" class="btn btn-ghost" id="btn-odjavi" style="width:100%;margin-top:10px;">
+      <i class="bi bi-x-circle"></i> Odjavi se sa akcije
+    </button>
+
+  {% elif moja_prijava and moja_prijava.status == 'odbijena' %}
+    <div class="alert alert-error" style="margin-top:0;">
+      <i class="bi bi-x-circle"></i>
+      <span>Vaša prijava je <strong>odbijena</strong>.</span>
+    </div>
+
+  {% elif akcija.status == 'popunjena' %}
+    <div class="alert alert-warning" style="margin-top:0;">
+      <i class="bi bi-people-fill"></i>
+      <span>Sva mesta na ovoj akciji su popunjena.</span>
+    </div>
+
+  {% else %}
+    <button type="button" class="btn btn-primary btn-lg" id="btn-prijavi" style="width:100%;">
+      <i class="bi bi-person-plus"></i> Prijavi se na akciju
+    </button>
+    <p style="font-size:.8rem;color:var(--text-muted);text-align:center;margin-top:8px;">
+      Slobodnih mesta: {{ akcija.slobodna_mesta }}
+    </p>
+  {% endif %}
+</div>

@@ -15,5 +15,7 @@ urlpatterns = [
     # tiho koristi poslednji path sa tim imenom, pa {% url %} pokazuje na pogrešnu rutu.
     path('akcije/', views.lista_akcija, name='akcije'),
     path('akcije/<int:id_akc>/', views.detalj_akcije, name='detalj_akcije'),
+    path('akcije/<int:id_akc>/prijavi/', views.prijavi_se, name='prijavi_se'),
+    path('akcije/<int:id_akc>/odjavi/', views.odjavi_se, name='odjavi_se'),
     path('clanci/', views._uskoro, name='clanci'),
 ]

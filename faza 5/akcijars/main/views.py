@@ -25,9 +25,13 @@ def _brojevi_paginacije(strana):
         rezultat.append(broj)
     return rezultat
 
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseBadRequest, HttpResponseForbidden
+from django.views.decorators.http import require_POST
+
 from .emails import posalji_potvrdu_registracije
 from .forms import PrijavaForm, RegistracijaForm
-from .models import Akcija, KategorijaAkcije
+from .models import Akcija, KategorijaAkcije, Prijava
 
 
 def home(request):
@@ -171,13 +175,66 @@ def lista_akcija(request):
         return render(request, '_akcije_grid.html', kontekst)
     return render(request, 'akcije.html', kontekst)
 
+def _moja_prijava(korisnik, akcija):
+    """Vraća Prijavu ulogovanog volontera za datu akciju, ili None."""
+    if not korisnik.is_authenticated or not korisnik.je_volonter:
+        return None
+    return Prijava.objects.filter(
+        korisnik=korisnik.volonter_profil, akcija=akcija
+    ).first()
+
+
 def detalj_akcije(request, id_akc):
     """Detalj pojedinačne akcije (SSU 3, 2.2.1)."""
     akcija = get_object_or_404(
         Akcija.objects.select_related('organizator', 'kategorija'),
         pk=id_akc,
     )
-    return render(request, 'detalj_akcije.html', {'akcija': akcija})
+    return render(request, 'detalj_akcije.html', {
+        'akcija': akcija,
+        'moja_prijava': _moja_prijava(request.user, akcija),
+    })
+
+
+@login_required
+@require_POST
+def prijavi_se(request, id_akc):
+    """Volonter se prijavljuje na akciju (SSU 6, 2.2.1). Vraća sidebar fragment."""
+    if not request.user.je_volonter:
+        return HttpResponseForbidden('Samo volonteri mogu da se prijave.')
+    akcija = get_object_or_404(Akcija, pk=id_akc)
+    if akcija.status != Akcija.Status.AKTIVNA:
+        return HttpResponseBadRequest('Prijava na ovu akciju nije moguća.')
+    Prijava.objects.get_or_create(
+        korisnik=request.user.volonter_profil,
+        akcija=akcija,
+        defaults={'status': Prijava.Status.NA_CEKANJU},
+    )
+    return render(request, '_prijava_sidebar.html', {
+        'akcija': akcija,
+        'moja_prijava': _moja_prijava(request.user, akcija),
+    })
+
+
+@login_required
+@require_POST
+def odjavi_se(request, id_akc):
+    """
+    Volonter se odjavljuje sa akcije (SSU 6, 2.2.2 i 2.2.3).
+    Odbijena prijava je konačna — ne dozvoljava se brisanje.
+    """
+    if not request.user.je_volonter:
+        return HttpResponseForbidden('Samo volonteri mogu da se odjave.')
+    akcija = get_object_or_404(Akcija, pk=id_akc)
+    prijava = Prijava.objects.filter(
+        korisnik=request.user.volonter_profil, akcija=akcija
+    ).first()
+    if prijava and prijava.status != Prijava.Status.ODBIJENA:
+        prijava.delete()
+    return render(request, '_prijava_sidebar.html', {
+        'akcija': akcija,
+        'moja_prijava': _moja_prijava(request.user, akcija),
+    })
 
 
 def _uskoro(request):

@@ -10,6 +10,7 @@ from .models import (
     AdministratorProfil,
     KategorijaAkcije,
     Akcija,
+    Prijava,
 )
 
 
@@ -145,3 +146,12 @@ class AkcijaAdmin(admin.ModelAdmin):
     search_fields = ('naziv', 'lokacija', 'organizator__naziv_organizacije')
     ordering = ('-datum_kreiranja',)
     readonly_fields = ('datum_kreiranja',)
+
+
+@admin.register(Prijava)
+class PrijavaAdmin(admin.ModelAdmin):
+    list_display = ('korisnik', 'akcija', 'status', 'datum_prijave', 'br_sati')
+    list_filter = ('status', 'datum_prijave')
+    search_fields = ('korisnik__korisnik__ime', 'korisnik__korisnik__prezime', 'akcija__naziv')
+
+

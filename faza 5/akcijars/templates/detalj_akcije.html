@@ -55,25 +55,10 @@
       </div>
 
       <div class="action-sidebar">
-        {% comment %}
-          TODO(#15, Maša): kartica sa prijavom volontera — dugme „Prijavi se",
-          statusi (prijavljen / prihvaćen / popunjena / neulogovan). Progres
-          bar treba da koristi broj prihvaćenih prijava iz modela Prijava.
-          Prototip: faza 2/prototip/akcija.html linije 55–86, 203–214.
-        {% endcomment %}
-        <div class="sidebar-card">
-          <h4>Prijava na akciju</h4>
-          <div class="progress-wrap" style="margin-bottom:16px;">
-            <div class="progress-label">
-              <span style="font-weight:600;color:var(--dark);">0 od {{ akcija.max_br_volontera }}</span>
-              <span style="color:var(--teal);font-weight:600;">0%</span>
-            </div>
-            <div class="progress-bar" style="height:8px;"><div class="progress-fill" style="width:0%"></div></div>
-          </div>
-          <div class="alert alert-info" style="margin-top:0;font-size:.85rem;">
-            <i class="bi bi-info-circle"></i>
-            <span>Prijava volontera — biće implementirano.</span>
-          </div>
+        <div id="prijava-container"
+             data-prijavi-url="{% url 'prijavi_se' akcija.id_akc %}"
+             data-odjavi-url="{% url 'odjavi_se' akcija.id_akc %}">
+          {% include '_prijava_sidebar.html' %}
         </div>
 
         <div class="sidebar-card">
@@ -130,4 +115,8 @@
 
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/detalj.js' %}"></script>
 {% endblock %}

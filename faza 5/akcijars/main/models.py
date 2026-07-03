@@ -351,3 +351,63 @@ class Akcija(models.Model):
             self.Status.ZAVRSENA: 'badge-gray',
             self.Status.OTKAZANA: 'badge-error',
         }.get(self.status, 'badge-gray')
+
+    @property
+    def broj_prihvacenih(self):
+        return self.prijave.filter(status=Prijava.Status.PRIHVACENA).count()
+
+    @property
+    def slobodna_mesta(self):
+        return max(0, self.max_br_volontera - self.broj_prihvacenih)
+
+
+class Prijava(models.Model):
+    """Tabela PrijavaVolontera iz specifikacije baze (3.8)."""
+
+    class Status(models.TextChoices):
+        NA_CEKANJU = 'na_cekanju', 'Na čekanju'
+        PRIHVACENA = 'prihvacena', 'Prihvaćena'
+        ODBIJENA = 'odbijena', 'Odbijena'
+
+    korisnik = models.ForeignKey(
+        VolonterProfil,
+        on_delete=models.CASCADE,
+        related_name='prijave',
+        db_column='IdKor',
+        verbose_name='Volonter',
+    )
+    akcija = models.ForeignKey(
+        Akcija,
+        on_delete=models.CASCADE,
+        related_name='prijave',
+        db_column='IdAkc',
+        verbose_name='Akcija',
+    )
+    datum_prijave = models.DateField(
+        default=timezone.now,
+        editable=False,
+        verbose_name='Datum prijave',
+        db_column='DatumPrijave',
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.NA_CEKANJU,
+        verbose_name='Status',
+        db_column='Status',
+    )
+    br_sati = models.PositiveIntegerField(
+        default=0,
+        verbose_name='Broj sati',
+        db_column='BrSati',
+    )
+
+    class Meta:
+        db_table = 'PrijavaVolontera'
+        verbose_name = 'Prijava volontera'
+        verbose_name_plural = 'Prijave volontera'
+        unique_together = ('korisnik', 'akcija')
+        ordering = ['-datum_prijave']
+
+    def __str__(self):
+        return f'{self.korisnik.korisnik.get_full_name()} → {self.akcija.naziv} ({self.get_status_display()})'
