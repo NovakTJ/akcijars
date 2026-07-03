@@ -37,3 +37,37 @@ def posalji_potvrdu_registracije(korisnik, uloga):
     )
     poruka.attach_alternative(html, 'text/html')
     return poruka.send(fail_silently=True)
+
+
+def posalji_odobrenje_naloga(korisnik):
+    """Obaveštava organizatora/sponzora da je nalog odobren (SSU 13, 2.2.1 korak 7)."""
+    from django.core.mail import send_mail
+    send_mail(
+        subject='AkcijaRS — Vaš nalog je odobren',
+        message=(
+            f'Poštovani/a {korisnik.get_full_name()},\n\n'
+            'Vaš nalog na platformi AkcijaRS je odobren od strane administratora.\n'
+            'Sada se možete prijaviti i koristiti sve funkcionalnosti sistema.\n\n'
+            'Srdačan pozdrav,\nTim AkcijaRS'
+        ),
+        from_email=None,
+        recipient_list=[korisnik.email],
+        fail_silently=True,
+    )
+
+
+def posalji_odbijanje_naloga(korisnik):
+    """Obaveštava organizatora/sponzora da je zahtev odbijen (SSU 13, 2.2.2 korak 7)."""
+    from django.core.mail import send_mail
+    send_mail(
+        subject='AkcijaRS — Zahtev za nalog odbijen',
+        message=(
+            f'Poštovani/a {korisnik.get_full_name()},\n\n'
+            'Nažalost, zahtev za kreiranje naloga na platformi AkcijaRS nije odobren.\n'
+            'Za dodatne informacije kontaktirajte administratore sistema.\n\n'
+            'Srdačan pozdrav,\nTim AkcijaRS'
+        ),
+        from_email=None,
+        recipient_list=[korisnik.email],
+        fail_silently=True,
+    )

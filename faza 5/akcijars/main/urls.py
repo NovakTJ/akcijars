@@ -18,4 +18,10 @@ urlpatterns = [
     path('akcije/<int:id_akc>/prijavi/', views.prijavi_se, name='prijavi_se'),
     path('akcije/<int:id_akc>/odjavi/', views.odjavi_se, name='odjavi_se'),
     path('clanci/', views._uskoro, name='clanci'),
+
+    # SSU 13 — admin panel i Ajax endpointi za upravljanje nalozima
+    path('admin-panel/', views.admin_panel, name='admin_panel'),
+    path('ajax/odobri-nalog/', views.ajax_odobri_nalog, name='ajax_odobri_nalog'),
+    path('ajax/odbij-nalog/', views.ajax_odbij_nalog, name='ajax_odbij_nalog'),
+    path('ajax/ukloni-korisnika/', views.ajax_ukloni_korisnika, name='ajax_ukloni_korisnika'),
 ]

@@ -1,8 +1,11 @@
+import json
 import re
 
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.core.paginator import Paginator
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.http import require_POST
 
 
 # SSU 3, otvoreno pitanje 2 — dozvoljena slova (uklj. srpske), cifre, razmaci.
@@ -25,13 +28,25 @@ def _brojevi_paginacije(strana):
         rezultat.append(broj)
     return rezultat
 
+<<<<<<< PATCH SET (c0466e feat: odobravanje i upravljanje nalozima (admin, Ajax))
+from .emails import (
+    posalji_potvrdu_registracije,
+    posalji_odobrenje_naloga,
+    posalji_odbijanje_naloga,
+)
+=======
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseBadRequest, HttpResponseForbidden
 from django.views.decorators.http import require_POST
 
 from .emails import posalji_potvrdu_registracije
+>>>>>>> BASE      (b711a7 prijava volontera na akciju, model, migracija i ajax)
 from .forms import PrijavaForm, RegistracijaForm
+<<<<<<< PATCH SET (c0466e feat: odobravanje i upravljanje nalozima (admin, Ajax))
+from .models import Akcija, KategorijaAkcije, Korisnik, OrganizatorProfil, SponzorProfil
+=======
 from .models import Akcija, KategorijaAkcije, Prijava
+>>>>>>> BASE      (b711a7 prijava volontera na akciju, model, migracija i ajax)
 
 
 def home(request):
@@ -43,10 +58,11 @@ def _pocetna_za_korisnika(korisnik):
     """
     Vraća naziv rute lične stranice u zavisnosti od uloge (SSU 2, 2.2.1).
 
-    Kontrolne table po ulogama (volonter/organizator/sponzor/admin) još nisu
-    implementirane, pa sve uloge za sada vode na početnu; ovde se uvode prave
-    rute kad odgovarajući paneli budu gotovi.
+    Kontrolne table po ulogama (volonter/organizator/sponzor/admin) — uvode se
+    prave rute kako odgovarajući paneli budu gotovi.
     """
+    if korisnik.je_admin:
+        return 'admin_panel'
     return 'home'
 
 
@@ -240,3 +256,188 @@ def odjavi_se(request, id_akc):
 def _uskoro(request):
     """Privremeni placeholder dok se ne implementiraju odgovarajući commitovi."""
     return render(request, 'uskoro.html')
+
+
+# ── SSU 13 — Upravljanje korisničkim nalozima ────────────────────────────────
+
+def admin_panel(request):
+    """
+    Admin kontrolna tabla (SSU 13).
+
+    Pristup samo za administratore; svi ostali se preusmeravaju na početnu.
+    """
+    if not request.user.is_authenticated or not request.user.je_admin:
+        return redirect('home')
+
+    org_zahtevi = (
+        OrganizatorProfil.objects
+        .filter(status=OrganizatorProfil.Status.NA_CEKANJU)
+        .select_related('korisnik')
+        .order_by('korisnik__datum_registracije')
+    )
+    sponzor_zahtevi = (
+        SponzorProfil.objects
+        .filter(status=SponzorProfil.Status.NA_CEKANJU)
+        .select_related('korisnik')
+        .order_by('korisnik__datum_registracije')
+    )
+
+    zahtevi = (
+        [{'korisnik': p.korisnik, 'tip': 'organizator', 'tip_display': 'Organizator',
+          'naziv_org': p.naziv_organizacije, 'br_tel': p.br_telefona}
+         for p in org_zahtevi]
+        + [{'korisnik': p.korisnik, 'tip': 'sponzor', 'tip_display': 'Sponzor',
+            'naziv_org': p.naziv_organizacije, 'br_tel': p.br_telefona}
+           for p in sponzor_zahtevi]
+    )
+
+    korisnici = (
+        Korisnik.objects
+        .prefetch_related(
+            'volonter_profil', 'organizator_profil',
+            'sponzor_profil', 'administrator_profil',
+        )
+        .order_by('-datum_registracije')
+    )
+
+    return render(request, 'admin_panel.html', {
+        'zahtevi': zahtevi,
+        'korisnici': korisnici,
+        'br_zahteva': len(zahtevi),
+        'br_korisnika': korisnici.count(),
+    })
+
+
+# ── SSU 26 — Ajax endpointi za admin panel ───────────────────────────────────
+
+def _parse_ajax_body(request):
+    """Parsira JSON telo Ajax zahteva; vraća (dict, None) ili (None, JsonResponse greška)."""
+    try:
+        return json.loads(request.body), None
+    except (json.JSONDecodeError, ValueError):
+        return None, JsonResponse({'error': 'Neispravan zahtev.'}, status=400)
+
+
+def _admin_check(request):
+    """Vraća None ako je korisnik admin, inače JsonResponse 403."""
+    if not request.user.is_authenticated or not request.user.je_admin:
+        return JsonResponse({'error': 'Nemate pristup.'}, status=403)
+    return None
+
+
+@require_POST
+def ajax_odobri_nalog(request):
+    """
+    Odobrava nalog organizatora ili sponzora (SSU 13, 2.2.1).
+
+    Prima JSON: {"korisnik_id": <int>}
+    Vraća JSON: {"success": true, "message": "..."}
+    """
+    if err := _admin_check(request):
+        return err
+
+    podaci, err = _parse_ajax_body(request)
+    if err:
+        return err
+
+    try:
+        korisnik_id = int(podaci['korisnik_id'])
+    except (KeyError, TypeError, ValueError):
+        return JsonResponse({'error': 'Neispravan zahtev.'}, status=400)
+
+    try:
+        korisnik = Korisnik.objects.get(pk=korisnik_id)
+    except Korisnik.DoesNotExist:
+        return JsonResponse({'error': 'Korisnik ne postoji.'}, status=404)
+
+    if korisnik.je_organizator and korisnik.organizator_profil.status == OrganizatorProfil.Status.NA_CEKANJU:
+        korisnik.organizator_profil.status = OrganizatorProfil.Status.ODOBREN
+        korisnik.organizator_profil.save(update_fields=['status'])
+    elif korisnik.je_sponzor and korisnik.sponzor_profil.status == SponzorProfil.Status.NA_CEKANJU:
+        korisnik.sponzor_profil.status = SponzorProfil.Status.ODOBREN
+        korisnik.sponzor_profil.save(update_fields=['status'])
+    else:
+        return JsonResponse({'error': 'Nalog nije na čekanju.'}, status=400)
+
+    posalji_odobrenje_naloga(korisnik)
+    return JsonResponse({
+        'success': True,
+        'message': f'Nalog za „{korisnik.get_full_name()}“ je odobren. Email je poslat.',
+    })
+
+
+@require_POST
+def ajax_odbij_nalog(request):
+    """
+    Odbija zahtev za nalog (SSU 13, 2.2.2).
+
+    Prima JSON: {"korisnik_id": <int>}
+    Vraća JSON: {"success": true, "message": "..."}
+    """
+    if err := _admin_check(request):
+        return err
+
+    podaci, err = _parse_ajax_body(request)
+    if err:
+        return err
+
+    try:
+        korisnik_id = int(podaci['korisnik_id'])
+    except (KeyError, TypeError, ValueError):
+        return JsonResponse({'error': 'Neispravan zahtev.'}, status=400)
+
+    try:
+        korisnik = Korisnik.objects.get(pk=korisnik_id)
+    except Korisnik.DoesNotExist:
+        return JsonResponse({'error': 'Korisnik ne postoji.'}, status=404)
+
+    if korisnik.je_organizator and korisnik.organizator_profil.status == OrganizatorProfil.Status.NA_CEKANJU:
+        korisnik.organizator_profil.status = OrganizatorProfil.Status.ODBIJEN
+        korisnik.organizator_profil.save(update_fields=['status'])
+    elif korisnik.je_sponzor and korisnik.sponzor_profil.status == SponzorProfil.Status.NA_CEKANJU:
+        korisnik.sponzor_profil.status = SponzorProfil.Status.ODBIJEN
+        korisnik.sponzor_profil.save(update_fields=['status'])
+    else:
+        return JsonResponse({'error': 'Nalog nije na čekanju.'}, status=400)
+
+    posalji_odbijanje_naloga(korisnik)
+    return JsonResponse({
+        'success': True,
+        'message': f'Zahtev za „{korisnik.get_full_name()}“ je odbijen.',
+    })
+
+
+@require_POST
+def ajax_ukloni_korisnika(request):
+    """
+    Uklanja nalog korisnika (SSU 13, 2.2.3).
+
+    Prima JSON: {"korisnik_id": <int>}
+    Vraća JSON: {"success": true, "message": "..."}
+    """
+    if err := _admin_check(request):
+        return err
+
+    podaci, err = _parse_ajax_body(request)
+    if err:
+        return err
+
+    try:
+        korisnik_id = int(podaci['korisnik_id'])
+    except (KeyError, TypeError, ValueError):
+        return JsonResponse({'error': 'Neispravan zahtev.'}, status=400)
+
+    if request.user.pk == korisnik_id:
+        return JsonResponse({'error': 'Ne možete ukloniti sopstveni nalog.'}, status=400)
+
+    try:
+        korisnik = Korisnik.objects.get(pk=korisnik_id)
+    except Korisnik.DoesNotExist:
+        return JsonResponse({'error': 'Korisnik ne postoji.'}, status=404)
+
+    ime = korisnik.get_full_name()
+    korisnik.delete()
+    return JsonResponse({
+        'success': True,
+        'message': f'Nalog korisnika „{ime}“ je uklonjen.',
+    })

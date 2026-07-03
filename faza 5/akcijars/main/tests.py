@@ -1,3 +1,5 @@
+import json
+
 from django.core import mail
 from django.test import TestCase
 from django.urls import reverse
@@ -7,6 +9,7 @@ from .models import (
     VolonterProfil,
     OrganizatorProfil,
     SponzorProfil,
+    AdministratorProfil,
 )
 
 
@@ -249,3 +252,167 @@ class PrijavaTest(TestCase):
         self.client.login(email='volonter@example.com', password='Lozinka1!')
         odgovor = self.client.get(self.url)
         self.assertRedirects(odgovor, reverse('home'))
+
+
+class AdminPanelTest(TestCase):
+    """Testovi za SSU 13 — upravljanje korisničkim nalozima."""
+
+    def setUp(self):
+        self.admin = Korisnik.objects.create_user(
+            email='admin@example.com', password='Admin123!',
+            korisnicko_ime='admin', ime='Admin', prezime='Adminović')
+        AdministratorProfil.objects.create(korisnik=self.admin)
+
+        self.org = Korisnik.objects.create_user(
+            email='org@example.com', password='Lozinka1!',
+            korisnicko_ime='org', ime='Ognjen', prezime='Ognjenović')
+        self.org_profil = OrganizatorProfil.objects.create(
+            korisnik=self.org,
+            naziv_organizacije='Zeleni krug',
+            status=OrganizatorProfil.Status.NA_CEKANJU,
+        )
+
+        self.sponzor = Korisnik.objects.create_user(
+            email='sponzor@example.com', password='Lozinka1!',
+            korisnicko_ime='sponzor', ime='Sara', prezime='Sarić')
+        self.sponzor_profil = SponzorProfil.objects.create(
+            korisnik=self.sponzor,
+            naziv_organizacije='ProNatura',
+            status=SponzorProfil.Status.NA_CEKANJU,
+        )
+
+        self.volonter = Korisnik.objects.create_user(
+            email='vol@example.com', password='Lozinka1!',
+            korisnicko_ime='vol', ime='Vanja', prezime='Vanić')
+        VolonterProfil.objects.create(korisnik=self.volonter)
+
+    def _prijavi_admina(self):
+        self.client.login(email='admin@example.com', password='Admin123!')
+
+    def _ajax_post(self, url_name, podaci):
+        return self.client.post(
+            reverse(url_name),
+            data=json.dumps(podaci),
+            content_type='application/json',
+        )
+
+    # ── Pristup admin panelu ──
+
+    def test_admin_panel_dostupan_adminu(self):
+        self._prijavi_admina()
+        odgovor = self.client.get(reverse('admin_panel'))
+        self.assertEqual(odgovor.status_code, 200)
+        self.assertTemplateUsed(odgovor, 'admin_panel.html')
+
+    def test_admin_panel_nedostupan_volonteru(self):
+        self.client.login(email='vol@example.com', password='Lozinka1!')
+        odgovor = self.client.get(reverse('admin_panel'))
+        self.assertRedirects(odgovor, reverse('home'))
+
+    def test_admin_panel_nedostupan_anonimnom(self):
+        odgovor = self.client.get(reverse('admin_panel'))
+        self.assertRedirects(odgovor, reverse('home'))
+
+    def test_admin_panel_prikazuje_zahteve(self):
+        self._prijavi_admina()
+        odgovor = self.client.get(reverse('admin_panel'))
+        self.assertContains(odgovor, 'Zeleni krug')
+        self.assertContains(odgovor, 'ProNatura')
+
+    # ── Odobravanje naloga (SSU 13, 2.2.1) ──
+
+    def test_ajax_odobri_organizatora(self):
+        self._prijavi_admina()
+        odgovor = self._ajax_post('ajax_odobri_nalog', {'korisnik_id': self.org.pk})
+        self.assertEqual(odgovor.status_code, 200)
+        data = json.loads(odgovor.content)
+        self.assertTrue(data['success'])
+        self.org_profil.refresh_from_db()
+        self.assertEqual(self.org_profil.status, OrganizatorProfil.Status.ODOBREN)
+
+    def test_ajax_odobri_sponzora(self):
+        self._prijavi_admina()
+        odgovor = self._ajax_post('ajax_odobri_nalog', {'korisnik_id': self.sponzor.pk})
+        self.assertEqual(odgovor.status_code, 200)
+        self.sponzor_profil.refresh_from_db()
+        self.assertEqual(self.sponzor_profil.status, SponzorProfil.Status.ODOBREN)
+
+    def test_ajax_odobri_salje_email(self):
+        self._prijavi_admina()
+        self._ajax_post('ajax_odobri_nalog', {'korisnik_id': self.org.pk})
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('odobren', mail.outbox[0].subject)
+        self.assertEqual(mail.outbox[0].to, ['org@example.com'])
+
+    def test_odobren_organizator_moze_da_se_uloguje(self):
+        self._prijavi_admina()
+        self._ajax_post('ajax_odobri_nalog', {'korisnik_id': self.org.pk})
+        self.client.logout()
+        odgovor = self.client.post(
+            reverse('prijava'), {'email': 'org@example.com', 'lozinka': 'Lozinka1!'})
+        self.assertRedirects(odgovor, reverse('home'))
+
+    # ── Odbijanje naloga (SSU 13, 2.2.2) ──
+
+    def test_ajax_odbij_organizatora(self):
+        self._prijavi_admina()
+        odgovor = self._ajax_post('ajax_odbij_nalog', {'korisnik_id': self.org.pk})
+        self.assertEqual(odgovor.status_code, 200)
+        data = json.loads(odgovor.content)
+        self.assertTrue(data['success'])
+        self.org_profil.refresh_from_db()
+        self.assertEqual(self.org_profil.status, OrganizatorProfil.Status.ODBIJEN)
+
+    def test_ajax_odbij_salje_email(self):
+        self._prijavi_admina()
+        self._ajax_post('ajax_odbij_nalog', {'korisnik_id': self.org.pk})
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn('odbijen', mail.outbox[0].subject)
+
+    def test_odbijen_organizator_ne_moze_da_se_uloguje(self):
+        self._prijavi_admina()
+        self._ajax_post('ajax_odbij_nalog', {'korisnik_id': self.org.pk})
+        self.client.logout()
+        odgovor = self.client.post(
+            reverse('prijava'), {'email': 'org@example.com', 'lozinka': 'Lozinka1!'})
+        self.assertContains(odgovor, 'Nalog čeka odobrenje administratora.')
+
+    # ── Uklanjanje korisnika (SSU 13, 2.2.3) ──
+
+    def test_ajax_ukloni_korisnika(self):
+        self._prijavi_admina()
+        odgovor = self._ajax_post('ajax_ukloni_korisnika', {'korisnik_id': self.volonter.pk})
+        self.assertEqual(odgovor.status_code, 200)
+        data = json.loads(odgovor.content)
+        self.assertTrue(data['success'])
+        self.assertFalse(Korisnik.objects.filter(pk=self.volonter.pk).exists())
+
+    def test_admin_ne_moze_ukloniti_sopstveni_nalog(self):
+        self._prijavi_admina()
+        odgovor = self._ajax_post('ajax_ukloni_korisnika', {'korisnik_id': self.admin.pk})
+        self.assertEqual(odgovor.status_code, 400)
+        data = json.loads(odgovor.content)
+        self.assertIn('error', data)
+        self.assertTrue(Korisnik.objects.filter(pk=self.admin.pk).exists())
+
+    def test_ajax_ukloni_ne_pronalazi_nepostojeci_nalog(self):
+        self._prijavi_admina()
+        odgovor = self._ajax_post('ajax_ukloni_korisnika', {'korisnik_id': 99999})
+        self.assertEqual(odgovor.status_code, 404)
+
+    # ── Zaštita Ajax endpointa ──
+
+    def test_ajax_odbija_nonautentifikovanog(self):
+        odgovor = self._ajax_post('ajax_odobri_nalog', {'korisnik_id': self.org.pk})
+        self.assertEqual(odgovor.status_code, 403)
+
+    def test_ajax_odbija_volontera(self):
+        self.client.login(email='vol@example.com', password='Lozinka1!')
+        odgovor = self._ajax_post('ajax_odobri_nalog', {'korisnik_id': self.org.pk})
+        self.assertEqual(odgovor.status_code, 403)
+
+    def test_neodobren_organizator_ne_moze_da_se_uloguje(self):
+        odgovor = self.client.post(
+            reverse('prijava'), {'email': 'org@example.com', 'lozinka': 'Lozinka1!'})
+        self.assertContains(odgovor, 'Nalog čeka odobrenje administratora.')
+        self.assertNotIn('_auth_user_id', self.client.session)

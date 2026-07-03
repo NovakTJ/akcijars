@@ -1,0 +1,496 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Admin panel – AkcijaRS{% endblock %}
+
+{% block content %}
+<div class="panel-page">
+
+  <!-- ── HEADER ── -->
+  <div class="panel-header">
+    <div class="panel-header-bg"
+         style="background:radial-gradient(ellipse 50% 80% at 90% 50%,rgba(0,151,178,.18) 0%,transparent 60%),
+                           radial-gradient(ellipse 40% 60% at 10% 50%,rgba(126,217,87,.1) 0%,transparent 60%);">
+    </div>
+    <div class="container panel-header-inner">
+      <div class="panel-user-row">
+        <div class="panel-avatar">{{ request.user.ime|slice:":1" }}</div>
+        <div class="panel-user-info">
+          <h2>{{ request.user.get_full_name }}</h2>
+          <p>{{ request.user.email }}</p>
+          <span class="panel-role-badge">
+            <i class="bi bi-shield-check-fill"></i> Administrator
+          </span>
+        </div>
+      </div>
+    </div>
+    <div class="panel-stats">
+      <div class="panel-stat">
+        <div class="panel-stat-num teal" id="stat-zahtevi">{{ br_zahteva }}</div>
+        <div class="panel-stat-label">Zahtevi za naloge</div>
+      </div>
+      <div class="panel-stat">
+        <div class="panel-stat-num green" id="stat-kor">{{ br_korisnika }}</div>
+        <div class="panel-stat-label">Ukupno korisnika</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TABOVI ── -->
+  <div class="panel-tabs">
+    <div class="container">
+      <div class="panel-tabs-inner">
+        <button class="panel-tab active" data-tab="pregled" onclick="switchTab('pregled')">
+          <i class="bi bi-grid-1x2"></i> Pregled
+        </button>
+        <button class="panel-tab" data-tab="zahtevi" onclick="switchTab('zahtevi')">
+          <i class="bi bi-person-check"></i> Zahtevi za naloge
+          <span class="badge badge-warning" id="badge-zahtevi"{% if not br_zahteva %} style="display:none"{% endif %}>
+            {{ br_zahteva }}
+          </span>
+        </button>
+        <button class="panel-tab" data-tab="korisnici" onclick="switchTab('korisnici')">
+          <i class="bi bi-people"></i> Korisnici
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SADRŽAJ ── -->
+  <div class="panel-body">
+    <div class="container">
+
+      <!-- ─ PREGLED ─ -->
+      <div class="panel-section active" id="sec-pregled">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Pregled sistema</h2>
+            <p class="section-subtitle">Brzi uvid u stanje platforme</p>
+          </div>
+        </div>
+
+        <div class="overview-grid">
+          <div class="ov-card" onclick="switchTab('zahtevi')">
+            <div class="ov-icon">👤</div>
+            <div class="ov-num teal" id="ov-zahtevi">{{ br_zahteva }}</div>
+            <div class="ov-label">Zahtevi za naloge</div>
+          </div>
+          <div class="ov-card" onclick="switchTab('korisnici')">
+            <div class="ov-icon">🌱</div>
+            <div class="ov-num green" id="ov-kor">{{ br_korisnika }}</div>
+            <div class="ov-label">Ukupno korisnika</div>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="panel-card-header">
+            <h3><i class="bi bi-person-check"></i> Zahtevi za naloge</h3>
+          </div>
+          <div id="pregled-zahtevi-lista">
+            {% for z in zahtevi %}
+            <div data-zahtev-id="{{ z.korisnik.pk }}"
+                 style="display:flex;align-items:center;gap:12px;padding:13px 22px;
+                        border-bottom:1px solid var(--border-light);flex-wrap:wrap;">
+              <div class="req-avatar" style="width:36px;height:36px;font-size:.875rem;">
+                {{ z.korisnik.ime|slice:":1" }}{{ z.korisnik.prezime|slice:":1" }}
+              </div>
+              <div style="flex:1;min-width:120px;">
+                <div style="font-weight:700;font-size:.875rem;color:var(--dark);">
+                  {{ z.korisnik.get_full_name }}
+                </div>
+                <div style="font-size:.775rem;color:var(--text-muted);">
+                  {{ z.tip_display }} · {{ z.korisnik.datum_registracije|date:"d.m.Y." }}
+                </div>
+              </div>
+              <div style="display:flex;gap:6px;">
+                <button class="btn btn-primary btn-sm"
+                        data-id="{{ z.korisnik.pk }}"
+                        data-name="{{ z.korisnik.get_full_name }}"
+                        onclick="otvoriOdobri(this.dataset.id, this.dataset.name)">
+                  <i class="bi bi-check2"></i> Odobri
+                </button>
+                <button class="btn btn-danger btn-sm"
+                        data-id="{{ z.korisnik.pk }}"
+                        data-name="{{ z.korisnik.get_full_name }}"
+                        onclick="otvoriOdbij(this.dataset.id, this.dataset.name)">
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </div>
+            </div>
+            {% empty %}
+            <div id="pregled-zahtevi-empty"
+                 style="padding:18px 22px;font-size:.875rem;color:var(--text-muted);">
+              <i class="bi bi-check2-circle"></i> Nema novih zahteva.
+            </div>
+            {% endfor %}
+          </div>
+          {% if zahtevi %}
+          <div id="pregled-zahtevi-empty"
+               style="display:none;padding:18px 22px;font-size:.875rem;color:var(--text-muted);">
+            <i class="bi bi-check2-circle"></i> Nema novih zahteva.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- ─ ZAHTEVI ZA NALOGE ─ -->
+      <div class="panel-section" id="sec-zahtevi">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Zahtevi za naloge</h2>
+            <p class="section-subtitle">Organizatori i sponzori čiji nalozi čekaju odobrenje</p>
+          </div>
+        </div>
+
+        <div id="zahtevi-lista">
+          {% for z in zahtevi %}
+          <div class="req-card" data-zahtev-id="{{ z.korisnik.pk }}">
+            <div class="req-card-body">
+              <div class="req-avatar">
+                {{ z.korisnik.ime|slice:":1" }}{{ z.korisnik.prezime|slice:":1" }}
+              </div>
+              <div class="req-info">
+                <div class="req-name">{{ z.korisnik.get_full_name }}</div>
+                <div class="req-meta">
+                  <span class="badge {% if z.tip == 'organizator' %}badge-teal{% else %}badge-green{% endif %}">
+                    <i class="bi {% if z.tip == 'organizator' %}bi-building{% else %}bi-cash-coin{% endif %}"></i>
+                    {{ z.tip_display }}
+                  </span>
+                  <span>{{ z.naziv_org }}</span>
+                  <span><i class="bi bi-envelope"></i> {{ z.korisnik.email }}</span>
+                  <span><i class="bi bi-calendar3"></i> {{ z.korisnik.datum_registracije|date:"d.m.Y." }}</span>
+                </div>
+              </div>
+              <div class="req-actions">
+                <button class="btn btn-primary btn-sm"
+                        data-id="{{ z.korisnik.pk }}"
+                        data-name="{{ z.korisnik.get_full_name }}"
+                        onclick="otvoriOdobri(this.dataset.id, this.dataset.name)">
+                  <i class="bi bi-check2"></i> Odobri
+                </button>
+                <button class="btn btn-danger btn-sm"
+                        data-id="{{ z.korisnik.pk }}"
+                        data-name="{{ z.korisnik.get_full_name }}"
+                        onclick="otvoriOdbij(this.dataset.id, this.dataset.name)">
+                  <i class="bi bi-x-lg"></i> Odbij
+                </button>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div id="zahtevi-empty" class="empty-state"{% if zahtevi %} style="display:none"{% endif %}>
+          <div class="es-icon"><i class="bi bi-check2-circle"></i></div>
+          <h3>Nema zahteva</h3>
+          <p>Svi zahtevi su obrađeni.</p>
+        </div>
+      </div>
+
+      <!-- ─ KORISNICI ─ -->
+      <div class="panel-section" id="sec-korisnici">
+        <div class="section-header" style="flex-wrap:wrap;gap:14px;">
+          <div>
+            <h2 class="section-title">Upravljanje korisnicima</h2>
+            <p class="section-subtitle">Pregled i upravljanje svim registrovanim korisnicima</p>
+          </div>
+          <div class="sw-admin">
+            <div class="search-wrap">
+              <input class="form-control" id="kor-search" type="text"
+                     placeholder="Pretraži po imenu ili korisničkom imenu…"
+                     oninput="filterKorisnici(this.value)">
+              <button class="search-clear"
+                      onclick="document.getElementById('kor-search').value='';filterKorisnici('');">
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-card" style="overflow:hidden;">
+          <table class="activity-table" style="width:100%;">
+            <thead>
+              <tr>
+                <th>Korisnik</th>
+                <th>Tip</th>
+                <th>Datum reg.</th>
+                <th>Status</th>
+                <th style="text-align:right;">Akcija</th>
+              </tr>
+            </thead>
+            <tbody id="kor-tbody">
+              {% for k in korisnici %}
+              <tr id="kor-{{ k.pk }}"
+                  data-name="{{ k.get_full_name|lower }} {{ k.korisnicko_ime|lower }}">
+                <td>
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <div class="user-avatar">
+                      {{ k.ime|slice:":1" }}{{ k.prezime|slice:":1" }}
+                    </div>
+                    <div>
+                      <div style="font-weight:600;color:var(--dark);font-size:.9rem;">
+                        {{ k.get_full_name }}
+                      </div>
+                      <div style="font-size:.775rem;color:var(--text-muted);">
+                        @{{ k.korisnicko_ime }}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  {% if k.je_admin %}
+                    <span class="badge badge-teal"><i class="bi bi-shield-check-fill"></i> Administrator</span>
+                  {% elif k.je_organizator %}
+                    <span class="badge badge-teal"><i class="bi bi-building"></i> Organizator</span>
+                  {% elif k.je_sponzor %}
+                    <span class="badge badge-green"><i class="bi bi-cash-coin"></i> Sponzor</span>
+                  {% elif k.je_volonter %}
+                    <span class="badge badge-gray"><i class="bi bi-person"></i> Volonter</span>
+                  {% endif %}
+                </td>
+                <td style="font-size:.85rem;color:var(--text-muted);">
+                  {{ k.datum_registracije|date:"d.m.Y." }}
+                </td>
+                <td>
+                  {% if k.je_admin or k.je_volonter %}
+                    <span class="badge badge-green">
+                      <i class="bi bi-check-circle-fill"></i> Aktivan
+                    </span>
+                  {% elif k.je_organizator %}
+                    {% if k.organizator_profil.status == 'odobren' %}
+                      <span class="badge badge-green"><i class="bi bi-check-circle-fill"></i> Aktivan</span>
+                    {% elif k.organizator_profil.status == 'na_cekanju' %}
+                      <span class="badge badge-warning"><i class="bi bi-hourglass-split"></i> Na čekanju</span>
+                    {% else %}
+                      <span class="badge badge-gray"><i class="bi bi-x-circle-fill"></i> Odbijen</span>
+                    {% endif %}
+                  {% elif k.je_sponzor %}
+                    {% if k.sponzor_profil.status == 'odobren' %}
+                      <span class="badge badge-green"><i class="bi bi-check-circle-fill"></i> Aktivan</span>
+                    {% elif k.sponzor_profil.status == 'na_cekanju' %}
+                      <span class="badge badge-warning"><i class="bi bi-hourglass-split"></i> Na čekanju</span>
+                    {% else %}
+                      <span class="badge badge-gray"><i class="bi bi-x-circle-fill"></i> Odbijen</span>
+                    {% endif %}
+                  {% endif %}
+                </td>
+                <td style="text-align:right;">
+                  {% if not k.je_admin and k.pk != request.user.pk %}
+                  <button class="btn btn-danger btn-sm"
+                          data-id="{{ k.pk }}"
+                          data-name="{{ k.get_full_name }}"
+                          onclick="otvoriUkloni(this.dataset.id, this.dataset.name)">
+                    <i class="bi bi-trash3"></i> Ukloni
+                  </button>
+                  {% endif %}
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="5" style="text-align:center;padding:28px;color:var(--text-muted);">
+                  Nema registrovanih korisnika.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <div id="kor-empty" class="empty-state" style="display:none;padding:36px 20px;">
+            <div class="es-icon"><i class="bi bi-search"></i></div>
+            <h3>Nema rezultata</h3>
+            <p>Pokušajte sa drugim pojmom pretrage.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── MODALI ── -->
+<div class="modal-overlay" id="modal-odobri">
+  <div class="modal-box">
+    <h3><i class="bi bi-check-circle-fill" style="color:var(--success)"></i> Odobri nalog</h3>
+    <p id="modal-odobri-txt"></p>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeModal('modal-odobri')">Otkaži</button>
+      <button class="btn btn-primary" onclick="potvrdiOdobri()">
+        <i class="bi bi-check2"></i> Odobri
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-odbij">
+  <div class="modal-box">
+    <h3><i class="bi bi-x-circle-fill" style="color:var(--error)"></i> Odbij zahtev</h3>
+    <p id="modal-odbij-txt"></p>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeModal('modal-odbij')">Otkaži</button>
+      <button class="btn btn-danger" onclick="potvrdiOdbij()">
+        <i class="bi bi-x-lg"></i> Odbij
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-ukloni">
+  <div class="modal-box">
+    <h3><i class="bi bi-exclamation-triangle-fill" style="color:var(--error)"></i> Ukloni nalog</h3>
+    <p id="modal-ukloni-txt"></p>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeModal('modal-ukloni')">Otkaži</button>
+      <button class="btn btn-danger" onclick="potvrdiUkloni()">
+        <i class="bi bi-trash3"></i> Ukloni
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // ── Brojači (inicijalizovani iz Django konteksta) ──
+  let brZahteva = {{ br_zahteva }};
+  let brKorisnika = {{ br_korisnika }};
+
+  // ── Tabovi ──
+  function switchTab(tab) {
+    document.querySelectorAll('.panel-tab').forEach(b =>
+      b.classList.toggle('active', b.dataset.tab === tab));
+    document.querySelectorAll('.panel-section').forEach(s =>
+      s.classList.remove('active'));
+    document.getElementById('sec-' + tab).classList.add('active');
+  }
+
+  // ── Modali ──
+  function openModal(id)  { document.getElementById(id).classList.add('open'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+  document.querySelectorAll('.modal-overlay').forEach(m =>
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
+
+  // ── Toast notifikacije ──
+  function showToast(msg, ok = true) {
+    const t = document.createElement('div');
+    t.className = 'toast ' + (ok ? 'ok' : 'err');
+    t.innerHTML = '<i class="bi bi-' + (ok ? 'check-circle-fill' : 'exclamation-circle-fill') + '"></i> ' + msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }
+
+  // ── Ažuriranje brojača zahteva ──
+  function updateBrojacZahteva(delta) {
+    brZahteva += delta;
+    document.getElementById('stat-zahtevi').textContent = brZahteva;
+    document.getElementById('ov-zahtevi').textContent = brZahteva;
+    const badge = document.getElementById('badge-zahtevi');
+    badge.textContent = brZahteva;
+    badge.style.display = brZahteva > 0 ? '' : 'none';
+  }
+
+  // ── Uklanjanje zahteva iz DOM-a ──
+  function ukloniZahtevIzDoma(korisnikId) {
+    document.querySelectorAll('[data-zahtev-id="' + korisnikId + '"]')
+      .forEach(el => el.remove());
+    updateBrojacZahteva(-1);
+
+    // Prikaži empty state ako više nema zahteva
+    if (brZahteva <= 0) {
+      document.getElementById('zahtevi-empty').style.display = '';
+      document.getElementById('pregled-zahtevi-empty').style.display = '';
+    }
+  }
+
+  // ── Uklanjanje korisnika iz DOM-a ──
+  function ukloniKorisnikaIzDoma(korisnikId) {
+    const row = document.getElementById('kor-' + korisnikId);
+    if (row) row.remove();
+    brKorisnika--;
+    document.getElementById('stat-kor').textContent = brKorisnika;
+    document.getElementById('ov-kor').textContent = brKorisnika;
+  }
+
+  // ── ODOBRI NALOG ──
+  let pendingOdobriId = null;
+
+  function otvoriOdobri(id, ime) {
+    pendingOdobriId = id;
+    document.getElementById('modal-odobri-txt').textContent =
+      'Da li ste sigurni da želite da odobrite nalog za „' + ime + '"?';
+    openModal('modal-odobri');
+  }
+
+  async function potvrdiOdobri() {
+    closeModal('modal-odobri');
+    try {
+      const data = await apiFetch('{% url "ajax_odobri_nalog" %}', {
+        method: 'POST',
+        body: JSON.stringify({ korisnik_id: Number(pendingOdobriId) }),
+      });
+      ukloniZahtevIzDoma(pendingOdobriId);
+      showToast(data.message, true);
+    } catch (e) {
+      showToast(e.message || 'Greška pri odobravanju.', false);
+    }
+  }
+
+  // ── ODBIJ NALOG ──
+  let pendingOdbijId = null;
+
+  function otvoriOdbij(id, ime) {
+    pendingOdbijId = id;
+    document.getElementById('modal-odbij-txt').textContent =
+      'Da li ste sigurni da želite da odbijete zahtev za nalog „' + ime + '"?';
+    openModal('modal-odbij');
+  }
+
+  async function potvrdiOdbij() {
+    closeModal('modal-odbij');
+    try {
+      const data = await apiFetch('{% url "ajax_odbij_nalog" %}', {
+        method: 'POST',
+        body: JSON.stringify({ korisnik_id: Number(pendingOdbijId) }),
+      });
+      ukloniZahtevIzDoma(pendingOdbijId);
+      showToast(data.message, true);
+    } catch (e) {
+      showToast(e.message || 'Greška pri odbijanju.', false);
+    }
+  }
+
+  // ── UKLONI KORISNIKA ──
+  let pendingUkloniId = null;
+
+  function otvoriUkloni(id, ime) {
+    pendingUkloniId = id;
+    document.getElementById('modal-ukloni-txt').textContent =
+      'Da li ste sigurni da želite da uklonite nalog korisnika „' + ime + '"? Ova akcija je nepovratna.';
+    openModal('modal-ukloni');
+  }
+
+  async function potvrdiUkloni() {
+    closeModal('modal-ukloni');
+    try {
+      const data = await apiFetch('{% url "ajax_ukloni_korisnika" %}', {
+        method: 'POST',
+        body: JSON.stringify({ korisnik_id: Number(pendingUkloniId) }),
+      });
+      ukloniKorisnikaIzDoma(pendingUkloniId);
+      showToast(data.message, true);
+    } catch (e) {
+      showToast(e.message || 'Greška pri uklanjanju.', false);
+    }
+  }
+
+  // ── PRETRAGA KORISNIKA (client-side) ──
+  function filterKorisnici(v) {
+    const q = v.toLowerCase();
+    let imaVidljivih = false;
+    document.querySelectorAll('#kor-tbody tr[data-name]').forEach(tr => {
+      const match = !q || (tr.dataset.name || '').includes(q);
+      tr.style.display = match ? '' : 'none';
+      if (match) imaVidljivih = true;
+    });
+    document.getElementById('kor-empty').style.display = imaVidljivih ? 'none' : '';
+  }
+</script>
+{% endblock %}
