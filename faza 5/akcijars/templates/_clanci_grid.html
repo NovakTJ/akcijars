@@ -1,0 +1,70 @@
+{% load static %}
+{% if greska_upita %}
+  <div class="alert alert-warning" style="margin-top:14px;">
+    <i class="bi bi-exclamation-triangle"></i> {{ greska_upita }}
+  </div>
+{% endif %}
+
+<p id="results-info-clanci" style="font-size:.9rem;color:var(--text-muted);margin:18px 0;">
+  {% if strana.paginator.count %}
+    Prikazano {{ strana.start_index }}–{{ strana.end_index }} od {{ strana.paginator.count }} članaka
+  {% else %}
+    0 članaka pronađeno
+  {% endif %}
+</p>
+
+<div class="grid-3" id="clanci-grid">
+  {% for clanak in clanci %}
+    <a href="{% url 'detalj_clanka' clanak.id_cla %}" class="card" style="text-decoration:none;color:inherit;">
+      <div class="card-img-placeholder" style="padding:0;overflow:hidden;">
+        {% if clanak.glavna_slika %}
+          <img src="{{ clanak.glavna_slika.url }}" style="width:100%;height:100%;object-fit:cover;display:block;">
+        {% else %}
+          <img src="{% static 'images/slikaAkcije.png' %}" style="width:100%;height:100%;object-fit:cover;display:block;">
+        {% endif %}
+      </div>
+      <div class="card-body">
+        <div class="card-meta">
+          <span class="badge badge-teal">{{ clanak.kategorija.naziv }}</span>
+        </div>
+        <h3 class="card-title">{{ clanak.naslov }}</h3>
+        <div class="card-meta">
+          <span class="card-meta-item"><i class="bi bi-building"></i>{{ clanak.autor.naziv_organizacije }}</span>
+          <span class="card-meta-item"><i class="bi bi-calendar3"></i>{{ clanak.datum_kreiranja|date:"j. F Y." }}</span>
+        </div>
+        <p class="card-excerpt">{{ clanak.tekst|truncatechars:180 }}</p>
+      </div>
+    </a>
+  {% empty %}
+    <div class="empty-state" style="grid-column:1/-1;text-align:center;padding:40px 20px;">
+      <div class="es-icon" style="font-size:2.5rem;">🔍</div>
+      <h3>Nema članaka koji odgovaraju zadatim kriterijumima</h3>
+      <p style="color:var(--text-muted);">Pokušajte da izmenite ili poništite filtere.</p>
+      <button type="button" class="btn btn-secondary" id="reset-filters-clanci">Poništi sve filtere</button>
+    </div>
+  {% endfor %}
+</div>
+
+{% if strana.paginator.num_pages > 1 %}
+<div class="pagination" id="pagination-clanci">
+  {% if strana.has_previous %}
+    <button class="page-btn" data-page="{{ strana.previous_page_number }}">‹</button>
+  {% else %}
+    <button class="page-btn" disabled>‹</button>
+  {% endif %}
+  {% for broj in brojevi_paginacije %}
+    {% if broj is None %}
+      <span class="page-btn" style="border:none;pointer-events:none;color:var(--text-muted);">…</span>
+    {% elif broj == strana.number %}
+      <button class="page-btn active" data-page="{{ broj }}">{{ broj }}</button>
+    {% else %}
+      <button class="page-btn" data-page="{{ broj }}">{{ broj }}</button>
+    {% endif %}
+  {% endfor %}
+  {% if strana.has_next %}
+    <button class="page-btn" data-page="{{ strana.next_page_number }}">›</button>
+  {% else %}
+    <button class="page-btn" disabled>›</button>
+  {% endif %}
+</div>
+{% endif %}

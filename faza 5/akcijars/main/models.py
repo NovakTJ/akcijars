@@ -1,6 +1,23 @@
 from django.db import models
+from django.db.models import Case, IntegerField, Value, When
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils import timezone
+
+
+class _OstaloNaKrajuManager(models.Manager):
+    """
+    Default menadžer za kategorije: sortira abecedno, ali „Ostalo" uvek na
+    dnu (bez obzira koliko je novih kategorija dodato ili kojim redom).
+    """
+
+    def get_queryset(self):
+        return super().get_queryset().annotate(
+            _ostalo=Case(
+                When(naziv__iexact='Ostalo', then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        ).order_by('_ostalo', 'naziv')
 
 
 class KorisnikManager(BaseUserManager):
@@ -257,11 +274,12 @@ class KategorijaAkcije(models.Model):
         db_column='Naziv',
     )
 
+    objects = _OstaloNaKrajuManager()
+
     class Meta:
         db_table = 'KategorijaAkcije'
         verbose_name = 'Kategorija akcije'
         verbose_name_plural = 'Kategorije akcija'
-        ordering = ['naziv']
 
     def __str__(self):
         return self.naziv
@@ -411,3 +429,111 @@ class Prijava(models.Model):
 
     def __str__(self):
         return f'{self.korisnik.korisnik.get_full_name()} → {self.akcija.naziv} ({self.get_status_display()})'
+
+
+class KategorijaClanka(models.Model):
+    """Kategorija članka (SSU 4, 2.2.3 — filter po kategoriji)."""
+
+    id_kat = models.AutoField(primary_key=True, db_column='IdKat')
+    naziv = models.CharField(
+        max_length=50,
+        unique=True,
+        verbose_name='Naziv',
+        db_column='Naziv',
+    )
+
+    objects = _OstaloNaKrajuManager()
+
+    class Meta:
+        db_table = 'KategorijaClanka'
+        verbose_name = 'Kategorija članka'
+        verbose_name_plural = 'Kategorije članaka'
+
+    def __str__(self):
+        return self.naziv
+
+
+class Clanak(models.Model):
+    """
+    Tabela Clanak iz specifikacije baze (3.10).
+
+    Napomena: spec.baze ne pominje kategoriju na članku; dodato je FK polje
+    zbog SSU 4 (filter po kategoriji) — svesna deviacija u odnosu na 3.10.
+    """
+
+    class Status(models.TextChoices):
+        NA_CEKANJU = 'na_cekanju', 'Na čekanju'
+        OBJAVLJEN = 'objavljen', 'Objavljen'
+        ODBIJEN = 'odbijen', 'Odbijen'
+
+    id_cla = models.AutoField(primary_key=True, db_column='IdCla')
+    autor = models.ForeignKey(
+        OrganizatorProfil,
+        on_delete=models.CASCADE,
+        related_name='clanci',
+        db_column='IdKor',
+        verbose_name='Autor',
+    )
+    kategorija = models.ForeignKey(
+        KategorijaClanka,
+        on_delete=models.PROTECT,
+        related_name='clanci',
+        db_column='IdKat',
+        verbose_name='Kategorija',
+    )
+    naslov = models.CharField(max_length=200, verbose_name='Naslov', db_column='Naslov')
+    tekst = models.TextField(verbose_name='Tekst', db_column='Tekst')
+    datum_kreiranja = models.DateField(
+        default=timezone.now,
+        editable=False,
+        verbose_name='Datum kreiranja',
+        db_column='DatumKreiranja',
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.NA_CEKANJU,
+        verbose_name='Status',
+        db_column='Status',
+    )
+    glavna_slika = models.ImageField(
+        upload_to='clanci/',
+        blank=True,
+        null=True,
+        verbose_name='Glavna slika (cover)',
+    )
+
+    class Meta:
+        db_table = 'Clanak'
+        verbose_name = 'Članak'
+        verbose_name_plural = 'Članci'
+        ordering = ['-datum_kreiranja']
+
+    def __str__(self):
+        return self.naslov
+
+
+class SlikaClanka(models.Model):
+    """Slike koje pripadaju članku (spec.baze 3.11) — može ih biti više po članku."""
+
+    id_sli = models.AutoField(primary_key=True, db_column='IdSli')
+    clanak = models.ForeignKey(
+        Clanak,
+        on_delete=models.CASCADE,
+        related_name='slike',
+        db_column='IdCla',
+        verbose_name='Članak',
+    )
+    slika = models.ImageField(
+        upload_to='clanci/',
+        verbose_name='Slika',
+        db_column='Putanja',
+    )
+
+    class Meta:
+        db_table = 'SlikaClanka'
+        verbose_name = 'Slika članka'
+        verbose_name_plural = 'Slike članaka'
+
+    def __str__(self):
+        return f'Slika {self.id_sli} — {self.clanak.naslov}'

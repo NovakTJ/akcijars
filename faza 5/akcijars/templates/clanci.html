@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Članci – AkcijaRS{% endblock %}
+{% block nav_clanci %}active{% endblock %}
+{% block nav_mobile_clanci %}active{% endblock %}
+
+{% block content %}
+<div style="padding-top:calc(var(--nav-h) + 36px);background:white;border-bottom:1px solid var(--border-light);">
+  <div class="container" style="padding-top:32px;padding-bottom:28px;">
+    <h1 style="font-size:1.875rem;font-weight:800;margin-bottom:4px;">Članci</h1>
+    <p style="color:var(--text-secondary);">Vesti i obaveštenja o volonterskim akcijama</p>
+  </div>
+</div>
+
+<div class="page-content" style="padding-top:32px;">
+  <div class="container">
+
+    <div class="filter-bar">
+      <form method="get" id="filter-form-clanci">
+        <div class="filter-row" style="flex-wrap:wrap;gap:12px;">
+          <div class="filter-group" style="flex:2;min-width:180px;">
+            <label>Pretraga</label>
+            <input name="q" type="text" class="form-control"
+                   placeholder="Naslov ili organizator..." maxlength="64"
+                   value="{{ filteri.q|default:'' }}">
+          </div>
+          <div class="filter-group" style="min-width:150px;">
+            <label>Kategorija</label>
+            <select name="kategorija" class="form-control">
+              <option value="">Sve kategorije</option>
+              {% for k in kategorije %}
+                <option value="{{ k.id_kat }}" {% if filteri.kategorija == k.id_kat|stringformat:"s" %}selected{% endif %}>{{ k.naziv }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="filter-group" style="flex:0;">
+            <label>&nbsp;</label>
+            <div style="display:flex;gap:6px;">
+              <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Traži</button>
+              <button type="reset" id="clear-all-clanci" class="btn btn-ghost" title="Poništi sve filtere"><i class="bi bi-x-lg"></i></button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div id="clanci-container">
+      {% include '_clanci_grid.html' %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/clanci.js' %}"></script>
+{% endblock %}

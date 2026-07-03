@@ -40,7 +40,9 @@ from .emails import (
 from .forms import PrijavaForm, RegistracijaForm
 from .models import (
     Akcija,
+    Clanak,
     KategorijaAkcije,
+    KategorijaClanka,
     Korisnik,
     OrganizatorProfil,
     Prijava,
@@ -325,6 +327,52 @@ def odjavi_se(request, id_akc):
         'akcija': akcija,
         'moja_prijava': _moja_prijava(request.user, akcija),
     })
+
+
+def lista_clanaka(request):
+    """
+    Javna lista objavljenih članaka sa filterima (SSU 4).
+
+    Prikazuju se samo članci sa status='objavljen'. Autori vide svoje na čekanju
+    i odbijene članke na sopstvenom profilu (poseban commit).
+    """
+    clanci = (
+        Clanak.objects
+        .select_related('autor', 'kategorija')
+        .filter(status=Clanak.Status.OBJAVLJEN)
+    )
+
+    q = request.GET.get('q', '').strip()[:64]
+    kategorija = request.GET.get('kategorija', '').strip()
+
+    # SSU 4, 2.2.7 — neispravan upit se odbija, prikazuje se početni prikaz.
+    greska_upita = ''
+    if q and not _DOZVOLJEN_UPIT.match(q):
+        greska_upita = 'U upitu su dozvoljeni samo slova, cifre i razmaci.'
+        q = ''
+
+    if q:
+        clanci = clanci.filter(naslov__icontains=q) | clanci.filter(
+            autor__naziv_organizacije__icontains=q
+        )
+    if kategorija:
+        clanci = clanci.filter(kategorija_id=kategorija)
+
+    # SSU 4, otvoreno pitanje 1 — numArticlesPerPage = 9.
+    paginator = Paginator(clanci.distinct().order_by('-datum_kreiranja'), 9)
+    strana = paginator.get_page(request.GET.get('page'))
+
+    kontekst = {
+        'clanci': strana.object_list,
+        'strana': strana,
+        'brojevi_paginacije': _brojevi_paginacije(strana),
+        'greska_upita': greska_upita,
+        'kategorije': KategorijaClanka.objects.all(),
+        'filteri': {'q': q, 'kategorija': kategorija},
+    }
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render(request, '_clanci_grid.html', kontekst)
+    return render(request, 'clanci.html', kontekst)
 
 
 def _uskoro(request):

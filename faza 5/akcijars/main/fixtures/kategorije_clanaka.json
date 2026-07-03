@@ -1,0 +1,11 @@
+[
+  {"model": "main.kategorijaclanka", "pk": 1, "fields": {"naziv": "Ekologija"}},
+  {"model": "main.kategorijaclanka", "pk": 2, "fields": {"naziv": "Socijalna pomoć"}},
+  {"model": "main.kategorijaclanka", "pk": 3, "fields": {"naziv": "Obrazovanje"}},
+  {"model": "main.kategorijaclanka", "pk": 4, "fields": {"naziv": "Zdravlje"}},
+  {"model": "main.kategorijaclanka", "pk": 5, "fields": {"naziv": "Humanitarne akcije"}},
+  {"model": "main.kategorijaclanka", "pk": 6, "fields": {"naziv": "Umetnost i kultura"}},
+  {"model": "main.kategorijaclanka", "pk": 7, "fields": {"naziv": "Sport i rekreacija"}},
+  {"model": "main.kategorijaclanka", "pk": 8, "fields": {"naziv": "Vesti"}},
+  {"model": "main.kategorijaclanka", "pk": 9, "fields": {"naziv": "Ostalo"}}
+]

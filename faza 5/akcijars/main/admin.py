@@ -11,6 +11,9 @@ from .models import (
     KategorijaAkcije,
     Akcija,
     Prijava,
+    KategorijaClanka,
+    Clanak,
+    SlikaClanka,
 )
 
 
@@ -153,5 +156,32 @@ class PrijavaAdmin(admin.ModelAdmin):
     list_display = ('korisnik', 'akcija', 'status', 'datum_prijave', 'br_sati')
     list_filter = ('status', 'datum_prijave')
     search_fields = ('korisnik__korisnik__ime', 'korisnik__korisnik__prezime', 'akcija__naziv')
+
+
+@admin.register(KategorijaClanka)
+class KategorijaClankaAdmin(admin.ModelAdmin):
+    list_display = ('naziv',)
+    search_fields = ('naziv',)
+
+
+class SlikaClankaInline(admin.TabularInline):
+    model = SlikaClanka
+    extra = 1
+
+
+@admin.register(Clanak)
+class ClanakAdmin(admin.ModelAdmin):
+    list_display = ('naslov', 'autor', 'kategorija', 'status', 'datum_kreiranja')
+    list_filter = ('status', 'kategorija', 'datum_kreiranja')
+    search_fields = ('naslov', 'autor__naziv_organizacije')
+    ordering = ('-datum_kreiranja',)
+    readonly_fields = ('datum_kreiranja',)
+    inlines = [SlikaClankaInline]
+
+
+@admin.register(SlikaClanka)
+class SlikaClankaAdmin(admin.ModelAdmin):
+    list_display = ('id_sli', 'clanak', 'slika')
+    search_fields = ('clanak__naslov',)
 
 
