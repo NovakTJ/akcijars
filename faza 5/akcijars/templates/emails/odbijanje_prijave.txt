@@ -1,0 +1,9 @@
+Zdravo {{ volonter.ime }},
+
+Nažalost, Vaša prijava za akciju „{{ akcija.naziv }}" nije prihvaćena.
+
+Zahvaljujemo se na interesovanju i pozivamo Vas da se prijavite za neku od
+drugih akcija dostupnih na AkcijaRS.
+
+Srdačan pozdrav,
+Tim AkcijaRS

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 
 from .models import (
     Korisnik,
@@ -56,7 +56,7 @@ class KorisnikAdmin(UserAdmin):
     @admin.display(description='Status')
     def status_badge(self, obj):
         if obj.je_volonter or obj.je_admin:
-            return format_html('<span style="color:green">✔ Aktivan</span>')
+            return mark_safe('<span style="color:green">✔ Aktivan</span>')
         if obj.je_organizator:
             status = obj.organizator_profil.status
         elif obj.je_sponzor:
@@ -65,10 +65,10 @@ class KorisnikAdmin(UserAdmin):
             return '—'
 
         if status == 'odobren':
-            return format_html('<span style="color:green">✔ Odobren</span>')
+            return mark_safe('<span style="color:green">✔ Odobren</span>')
         if status == 'odbijen':
-            return format_html('<span style="color:red">✗ Odbijen</span>')
-        return format_html('<span style="color:orange">⏳ Na čekanju</span>')
+            return mark_safe('<span style="color:red">✗ Odbijen</span>')
+        return mark_safe('<span style="color:orange">⏳ Na čekanju</span>')
 
     actions = ['odobri_naloge', 'odbij_naloge', 'deaktiviraj_naloge']
 

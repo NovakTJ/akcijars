@@ -2,9 +2,11 @@ import json
 import re
 
 from django.contrib.auth import login as auth_login, logout as auth_logout
+from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.http import JsonResponse
+from django.http import HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 
 
@@ -28,25 +30,22 @@ def _brojevi_paginacije(strana):
         rezultat.append(broj)
     return rezultat
 
-<<<<<<< PATCH SET (c0466e feat: odobravanje i upravljanje nalozima (admin, Ajax))
 from .emails import (
-    posalji_potvrdu_registracije,
-    posalji_odobrenje_naloga,
     posalji_odbijanje_naloga,
+    posalji_odbijanje_prijave,
+    posalji_odobrenje_naloga,
+    posalji_potvrdu_registracije,
+    posalji_prihvatanje_prijave,
 )
-=======
-from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseBadRequest, HttpResponseForbidden
-from django.views.decorators.http import require_POST
-
-from .emails import posalji_potvrdu_registracije
->>>>>>> BASE      (b711a7 prijava volontera na akciju, model, migracija i ajax)
 from .forms import PrijavaForm, RegistracijaForm
-<<<<<<< PATCH SET (c0466e feat: odobravanje i upravljanje nalozima (admin, Ajax))
-from .models import Akcija, KategorijaAkcije, Korisnik, OrganizatorProfil, SponzorProfil
-=======
-from .models import Akcija, KategorijaAkcije, Prijava
->>>>>>> BASE      (b711a7 prijava volontera na akciju, model, migracija i ajax)
+from .models import (
+    Akcija,
+    KategorijaAkcije,
+    Korisnik,
+    OrganizatorProfil,
+    Prijava,
+    SponzorProfil,
+)
 
 
 def home(request):
@@ -206,10 +205,14 @@ def detalj_akcije(request, id_akc):
         Akcija.objects.select_related('organizator', 'kategorija'),
         pk=id_akc,
     )
-    return render(request, 'detalj_akcije.html', {
+    kontekst = {
         'akcija': akcija,
         'moja_prijava': _moja_prijava(request.user, akcija),
-    })
+    }
+    if _je_organizator_akcije(request.user, akcija):
+        kontekst.update(_org_kontekst(akcija))
+        kontekst['prikazi_org_panel'] = True
+    return render(request, 'detalj_akcije.html', kontekst)
 
 
 @login_required
@@ -230,6 +233,77 @@ def prijavi_se(request, id_akc):
         'akcija': akcija,
         'moja_prijava': _moja_prijava(request.user, akcija),
     })
+
+
+def _je_organizator_akcije(korisnik, akcija):
+    return (
+        korisnik.is_authenticated
+        and korisnik.je_organizator
+        and akcija.organizator_id == korisnik.pk
+    )
+
+
+def _org_kontekst(akcija):
+    """Kontekst za _org_prijave.html panel."""
+    prijave = akcija.prijave.select_related('korisnik__korisnik')
+    return {
+        'akcija': akcija,
+        'prijave_na_cekanju': prijave.filter(status=Prijava.Status.NA_CEKANJU),
+        'prijave_prihvacene': prijave.filter(status=Prijava.Status.PRIHVACENA),
+    }
+
+
+def _org_ajax_odgovor(request, akcija):
+    """
+    Zajednički Ajax odgovor za prihvati/odbij: HTML fragmenti za org panel i
+    za sidebar (progres i status akcije mogu da se menjaju istovremeno).
+    """
+    panel = render_to_string('_org_prijave.html', _org_kontekst(akcija), request=request)
+    sidebar = render_to_string('_prijava_sidebar.html', {
+        'akcija': akcija,
+        'moja_prijava': _moja_prijava(request.user, akcija),
+    }, request=request)
+    return JsonResponse({'panel': panel, 'sidebar': sidebar})
+
+
+@login_required
+@require_POST
+def prihvati_prijavu(request, id_akc, id_kor):
+    """Organizator prihvata prijavu (SSU 18, 2.2.1 i 2.2.4)."""
+    akcija = get_object_or_404(Akcija, pk=id_akc)
+    if not _je_organizator_akcije(request.user, akcija):
+        return HttpResponseForbidden('Samo organizator akcije može ovo da uradi.')
+    if akcija.status in (Akcija.Status.POPUNJENA, Akcija.Status.ZAVRSENA, Akcija.Status.OTKAZANA):
+        # SSU 18, 2.2.5 — poruka ide korisniku kroz UI (renderujemo je u panelu).
+        return _org_ajax_odgovor(request, akcija)
+    prijava = get_object_or_404(
+        Prijava, akcija=akcija, korisnik_id=id_kor, status=Prijava.Status.NA_CEKANJU
+    )
+    prijava.status = Prijava.Status.PRIHVACENA
+    prijava.save(update_fields=['status'])
+    posalji_prihvatanje_prijave(prijava)
+    # SSU 18, 2.2.4 — akcija se automatski prebacuje u „popunjena" pri
+    # prihvatanju poslednjeg volontera.
+    if akcija.broj_prihvacenih >= akcija.max_br_volontera:
+        akcija.status = Akcija.Status.POPUNJENA
+        akcija.save(update_fields=['status'])
+    return _org_ajax_odgovor(request, akcija)
+
+
+@login_required
+@require_POST
+def odbij_prijavu(request, id_akc, id_kor):
+    """Organizator odbija prijavu (SSU 18, 2.2.2)."""
+    akcija = get_object_or_404(Akcija, pk=id_akc)
+    if not _je_organizator_akcije(request.user, akcija):
+        return HttpResponseForbidden('Samo organizator akcije može ovo da uradi.')
+    prijava = get_object_or_404(
+        Prijava, akcija=akcija, korisnik_id=id_kor, status=Prijava.Status.NA_CEKANJU
+    )
+    prijava.status = Prijava.Status.ODBIJENA
+    prijava.save(update_fields=['status'])
+    posalji_odbijanje_prijave(prijava)
+    return _org_ajax_odgovor(request, akcija)
 
 
 @login_required

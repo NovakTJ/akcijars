@@ -1,0 +1,81 @@
+{# SSU 18 — panel za upravljanje prijavama (vidljiv samo organizatoru akcije). #}
+
+{% if akcija.status == 'popunjena' %}
+  <div class="alert alert-warning" style="margin-bottom:20px;">
+    <i class="bi bi-people-fill"></i>
+    <span>Nije moguće prihvatiti više volontera — dostignut je maksimalan broj.</span>
+  </div>
+{% elif akcija.status == 'zavrsena' %}
+  <div class="alert alert-info" style="margin-bottom:20px;">
+    <i class="bi bi-flag-fill"></i>
+    <span>Akcija je završena — nove prijave nisu prihvatljive.</span>
+  </div>
+{% elif akcija.status == 'otkazana' %}
+  <div class="alert alert-error" style="margin-bottom:20px;">
+    <i class="bi bi-x-circle"></i>
+    <span>Akcija je otkazana.</span>
+  </div>
+{% endif %}
+
+{% if not prijave_na_cekanju and not prijave_prihvacene %}
+  <p style="color:var(--text-muted);">Trenutno nema pristiglih prijava za volontiranje.</p>
+{% else %}
+
+  {% if prijave_na_cekanju %}
+    <div style="margin-bottom:20px;">
+      <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+        <span style="width:8px;height:8px;border-radius:50%;background:#f59e0b;display:inline-block;"></span> Na čekanju
+      </div>
+      {% for prijava in prijave_na_cekanju %}
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:white;border:1px solid var(--border-light);border-radius:var(--radius-sm);margin-bottom:8px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--teal-light),var(--green-light));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;color:var(--teal-hover);">
+              {{ prijava.korisnik.korisnik.ime|slice:":1" }}
+            </div>
+            <div>
+              <div style="font-weight:600;font-size:.9rem;">{{ prijava.korisnik.korisnik.get_full_name }}</div>
+              <div style="font-size:.75rem;color:var(--text-muted);">{{ prijava.korisnik.korisnik.email }}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;">
+            {% if akcija.status == 'aktivna' %}
+              <button type="button" class="btn btn-sm btn-prihvati" data-korisnik-id="{{ prijava.korisnik_id }}"
+                      style="background:rgba(93,201,93,.15);color:var(--green-hover);border:1px solid rgba(93,201,93,.3);">
+                <i class="bi bi-check"></i> Prihvati
+              </button>
+              <button type="button" class="btn btn-sm btn-odbij" data-korisnik-id="{{ prijava.korisnik_id }}"
+                      style="background:var(--error-bg);color:var(--error);border:1px solid #fca5a5;">
+                <i class="bi bi-x"></i> Odbij
+              </button>
+            {% else %}
+              <span class="badge badge-gray">Zaključano</span>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% if prijave_prihvacene %}
+    <div style="margin-bottom:20px;">
+      <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;"></span> Prihvaćeni
+      </div>
+      {% for prijava in prijave_prihvacene %}
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:white;border:1px solid var(--border-light);border-radius:var(--radius-sm);margin-bottom:8px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--teal-light),var(--green-light));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;color:var(--teal-hover);">
+              {{ prijava.korisnik.korisnik.ime|slice:":1" }}
+            </div>
+            <div>
+              <div style="font-weight:600;font-size:.9rem;">{{ prijava.korisnik.korisnik.get_full_name }}</div>
+              <div style="font-size:.75rem;color:var(--text-muted);">{{ prijava.korisnik.korisnik.email }}</div>
+            </div>
+          </div>
+          <span class="badge badge-green">Prihvaćen</span>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+{% endif %}

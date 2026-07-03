@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="sr">
+<body style="font-family:Arial,Helvetica,sans-serif;color:#1f2937;line-height:1.6;">
+  <div style="max-width:560px;margin:0 auto;padding:24px;">
+    <h2 style="color:#0f766e;margin:0 0 16px;">Vaša prijava je prihvaćena</h2>
+
+    <p>Zdravo {{ volonter.ime }},</p>
+
+    <p>Vaša prijava za akciju <strong>„{{ akcija.naziv }}"</strong> je
+       <strong style="color:#059669;">prihvaćena</strong>.</p>
+
+    <p><strong>Detalji akcije:</strong></p>
+    <ul>
+      <li>Datum: {{ akcija.datum|date:"j. F Y." }} u {{ akcija.vreme|time:"H:i" }}</li>
+      <li>Lokacija: {{ akcija.lokacija }}</li>
+      <li>Organizator: {{ akcija.organizator.naziv_organizacije }}</li>
+      <li>Kontakt: {{ akcija.kontakt_email }} · {{ akcija.kontakt_telefon }}</li>
+    </ul>
+
+    <p>Vidimo se na akciji!</p>
+
+    <p style="margin-top:24px;">Srdačan pozdrav,<br>Tim AkcijaRS</p>
+  </div>
+</body>
+</html>

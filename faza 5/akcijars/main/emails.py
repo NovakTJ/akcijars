@@ -71,3 +71,38 @@ def posalji_odbijanje_naloga(korisnik):
         recipient_list=[korisnik.email],
         fail_silently=True,
     )
+
+
+def _posalji_odgovor_na_prijavu(prijava, naslov, template_base):
+    """Zajednička logika za slanje mejla o odluci organizatora (SSU 18)."""
+    volonter = prijava.korisnik.korisnik
+    kontekst = {'volonter': volonter, 'akcija': prijava.akcija}
+
+    tekst = render_to_string(f'emails/{template_base}.txt', kontekst)
+    html = render_to_string(f'emails/{template_base}.html', kontekst)
+
+    poruka = EmailMultiAlternatives(
+        subject=naslov,
+        body=tekst,
+        to=[volonter.email],
+    )
+    poruka.attach_alternative(html, 'text/html')
+    return poruka.send(fail_silently=True)
+
+
+def posalji_prihvatanje_prijave(prijava):
+    """Obaveštava volontera da je njegova prijava prihvaćena (SSU 18, 2.2.1)."""
+    return _posalji_odgovor_na_prijavu(
+        prijava,
+        naslov=f'Prijava prihvaćena — {prijava.akcija.naziv}',
+        template_base='prihvatanje_prijave',
+    )
+
+
+def posalji_odbijanje_prijave(prijava):
+    """Obaveštava volontera da njegova prijava nije prihvaćena (SSU 18, 2.2.2)."""
+    return _posalji_odgovor_na_prijavu(
+        prijava,
+        naslov=f'Odgovor na prijavu — {prijava.akcija.naziv}',
+        template_base='odbijanje_prijave',
+    )
