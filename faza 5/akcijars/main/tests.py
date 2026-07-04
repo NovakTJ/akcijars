@@ -710,3 +710,173 @@ class OdlukaPonudaTest(TestCase):
         odgovor = self.client.get(reverse('detalj_akcije', kwargs={'id_akc': self.akcija.pk}))
         self.assertEqual(odgovor.status_code, 200)
         self.assertNotContains(odgovor, 'Sponzori ove akcije')
+
+
+class SponzorPanelTest(TestCase):
+    """Testovi za sponzorski panel (SSU 16)."""
+
+    def setUp(self):
+        kategorija = KategorijaAkcije.objects.create(naziv='Ekologija')
+
+        org_korisnik = Korisnik.objects.create_user(
+            email='org@primer.com', password='Lozinka1!',
+            korisnicko_ime='org_primer', ime='Org', prezime='Orgić')
+        self.org_profil = OrganizatorProfil.objects.create(
+            korisnik=org_korisnik,
+            naziv_organizacije='Zeleni krug',
+            status=OrganizatorProfil.Status.ODOBREN,
+        )
+
+        self.akcija = Akcija.objects.create(
+            organizator=self.org_profil,
+            kategorija=kategorija,
+            naziv='Test akcija',
+            opis='Opis',
+            datum='2026-06-01',
+            vreme='10:00',
+            lokacija='Beograd',
+            max_br_volontera=10,
+            kontakt_email='org@primer.com',
+            kontakt_telefon='011-111',
+            status=Akcija.Status.AKTIVNA,
+        )
+
+        # Sponzor 1 — ima ponude sva tri statusa
+        self.sponzor1 = Korisnik.objects.create_user(
+            email='sponzor1@primer.com', password='Lozinka1!',
+            korisnicko_ime='sponzor1', ime='Sara', prezime='Sarić')
+        self.sponzor1_profil = SponzorProfil.objects.create(
+            korisnik=self.sponzor1,
+            naziv_organizacije='ProNatura',
+            status=SponzorProfil.Status.ODOBREN,
+        )
+        self.ponuda_prihvacena = SponzorskaPonuda.objects.create(
+            sponzor=self.sponzor1_profil, akcija=self.akcija,
+            vrednost=800, opis='Oprema',
+            status=SponzorskaPonuda.Status.PRIHVACENA,
+        )
+        self.ponuda_na_cekanju = SponzorskaPonuda.objects.create(
+            sponzor=self.sponzor1_profil,
+            akcija=Akcija.objects.create(
+                organizator=self.org_profil, kategorija=kategorija,
+                naziv='Druga akcija', opis='Opis',
+                datum='2026-07-01', vreme='10:00', lokacija='Niš',
+                max_br_volontera=5, kontakt_email='org@primer.com',
+                kontakt_telefon='011-222', status=Akcija.Status.AKTIVNA,
+            ),
+            vrednost=300, opis='Čekanje',
+            status=SponzorskaPonuda.Status.NA_CEKANJU,
+        )
+        self.ponuda_odbijena = SponzorskaPonuda.objects.create(
+            sponzor=self.sponzor1_profil,
+            akcija=Akcija.objects.create(
+                organizator=self.org_profil, kategorija=kategorija,
+                naziv='Treća akcija', opis='Opis',
+                datum='2026-08-01', vreme='10:00', lokacija='NiS',
+                max_br_volontera=5, kontakt_email='org@primer.com',
+                kontakt_telefon='011-333', status=Akcija.Status.AKTIVNA,
+            ),
+            vrednost=200, opis='Odbijeno',
+            status=SponzorskaPonuda.Status.ODBIJENA,
+        )
+
+        # Sponzor 2 — tuđe ponude, ne smiju biti vidljive sponzoru1
+        self.sponzor2 = Korisnik.objects.create_user(
+            email='sponzor2@primer.com', password='Lozinka1!',
+            korisnicko_ime='sponzor2', ime='Bojan', prezime='Bojić')
+        self.sponzor2_profil = SponzorProfil.objects.create(
+            korisnik=self.sponzor2,
+            naziv_organizacije='EkoFirma',
+            status=SponzorProfil.Status.ODOBREN,
+        )
+        SponzorskaPonuda.objects.create(
+            sponzor=self.sponzor2_profil, akcija=self.akcija,
+            vrednost=9999, opis='Tuđa ponuda',
+            status=SponzorskaPonuda.Status.PRIHVACENA,
+        )
+
+        self.volonter = Korisnik.objects.create_user(
+            email='vol@primer.com', password='Lozinka1!',
+            korisnicko_ime='vol_primer', ime='Vanja', prezime='Vanić')
+        VolonterProfil.objects.create(korisnik=self.volonter)
+
+        self.url = reverse('sponzor_panel')
+
+    # ── Pristup ──────────────────────────────────────────────────────────────
+
+    def test_sponzor_vidi_panel(self):
+        self.client.login(email='sponzor1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        self.assertEqual(odgovor.status_code, 200)
+        self.assertTemplateUsed(odgovor, 'sponzor_panel.html')
+
+    def test_anoniman_ne_vidi_panel(self):
+        odgovor = self.client.get(self.url)
+        self.assertNotEqual(odgovor.status_code, 200)
+
+    def test_volonter_preusmeren_na_pocetnu(self):
+        self.client.login(email='vol@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        self.assertRedirects(odgovor, reverse('home'))
+
+    # ── Sponzor vidi samo svoje ponude ───────────────────────────────────────
+
+    def test_sponzor_vidi_samo_svoje_prihvacene(self):
+        self.client.login(email='sponzor1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        prihvacene = list(odgovor.context['ponude_prihvacene'])
+        self.assertEqual(len(prihvacene), 1)
+        self.assertEqual(prihvacene[0].pk, self.ponuda_prihvacena.pk)
+
+    def test_sponzor_ne_vidi_tude_ponude(self):
+        self.client.login(email='sponzor1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        svi_pk = (
+            [p.pk for p in odgovor.context['ponude_prihvacene']]
+            + [p.pk for p in odgovor.context['ponude_na_cekanju']]
+            + [p.pk for p in odgovor.context['ponude_odbijene']]
+        )
+        tude = SponzorskaPonuda.objects.filter(sponzor=self.sponzor2_profil)
+        for t in tude:
+            self.assertNotIn(t.pk, svi_pk)
+
+    def test_sponzor_vidi_ponude_na_cekanju(self):
+        self.client.login(email='sponzor1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        na_cekanju = list(odgovor.context['ponude_na_cekanju'])
+        self.assertEqual(len(na_cekanju), 1)
+        self.assertEqual(na_cekanju[0].pk, self.ponuda_na_cekanju.pk)
+
+    def test_sponzor_vidi_odbijene_ponude(self):
+        self.client.login(email='sponzor1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        odbijene = list(odgovor.context['ponude_odbijene'])
+        self.assertEqual(len(odbijene), 1)
+        self.assertEqual(odbijene[0].pk, self.ponuda_odbijena.pk)
+
+    # ── Ukupan doprinos ───────────────────────────────────────────────────────
+
+    def test_ukupan_doprinos_je_suma_prihvacenih(self):
+        self.client.login(email='sponzor1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        self.assertEqual(odgovor.context['ukupan_doprinos'], 800)
+
+    def test_ukupan_doprinos_ne_ukljucuje_cekanje_ni_odbijene(self):
+        self.client.login(email='sponzor1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        # Vrednosti 300 (čekanje) i 200 (odbijena) ne smeju biti uključene
+        self.assertNotEqual(odgovor.context['ukupan_doprinos'], 1300)
+
+    def test_ukupan_doprinos_nula_bez_prihvacenih(self):
+        self.client.login(email='sponzor2@primer.com', password='Lozinka1!')
+        # Sponzor2 ima jednu prihvaćenu ali je to 9999
+        odgovor = self.client.get(self.url)
+        self.assertEqual(odgovor.context['ukupan_doprinos'], 9999)
+
+    # ── Login redirekcija za sponzora ─────────────────────────────────────────
+
+    def test_sponzor_se_loguje_na_panel(self):
+        odgovor = self.client.post(
+            reverse('prijava'),
+            {'email': 'sponzor1@primer.com', 'lozinka': 'Lozinka1!'})
+        self.assertRedirects(odgovor, self.url)

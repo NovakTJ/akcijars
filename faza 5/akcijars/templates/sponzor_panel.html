@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Sponzor panel – AkcijaRS{% endblock %}
+
+{% block content %}
+<div class="panel-page">
+
+  <!-- ── HEADER ── -->
+  <div class="panel-header">
+    <div class="panel-header-bg"
+         style="background:
+           radial-gradient(ellipse 50% 80% at 90% 50%,rgba(126,217,87,.18) 0%,transparent 60%),
+           radial-gradient(ellipse 40% 60% at 10% 50%,rgba(0,151,178,.12) 0%,transparent 60%);">
+    </div>
+    <div class="container panel-header-inner">
+
+      <div class="panel-user-row">
+        <div class="panel-avatar" style="background:linear-gradient(135deg,var(--green),#3db84a);">
+          {{ request.user.ime|slice:":1" }}
+        </div>
+        <div class="panel-user-info">
+          <h2>{{ request.user.get_full_name }}</h2>
+          <p>{{ request.user.email }}</p>
+          <p style="font-size:.85rem;color:var(--green);font-weight:600;margin-top:2px;">
+            {{ request.user.sponzor_profil.naziv_organizacije }}
+          </p>
+          <span class="panel-role-badge"
+                style="background:rgba(126,217,87,.2);border-color:rgba(126,217,87,.4);color:#3d8c2a;">
+            <i class="bi bi-patch-check-fill"></i> Sponzor
+          </span>
+        </div>
+      </div>
+
+      <div class="panel-stats">
+        <div class="panel-stat">
+          <div class="panel-stat-num green">{{ ukupan_doprinos }}</div>
+          <div class="panel-stat-label">Ukupan doprinos (EUR)</div>
+        </div>
+        <div class="panel-stat">
+          <div class="panel-stat-num teal">{{ br_prihvacenih }}</div>
+          <div class="panel-stat-label">Podržanih akcija</div>
+        </div>
+        <div class="panel-stat">
+          <div class="panel-stat-num">{{ br_na_cekanju }}</div>
+          <div class="panel-stat-label">Ponuda na čekanju</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="panel-tabs">
+      <div class="container">
+        <div class="panel-tabs-inner">
+          <button class="panel-tab active" data-tab="pregled" onclick="switchTab('pregled')">
+            <i class="bi bi-grid-1x2"></i> Pregled
+          </button>
+          <button class="panel-tab" data-tab="sponzorstva" onclick="switchTab('sponzorstva')">
+            <i class="bi bi-trophy"></i> Podržane akcije
+          </button>
+          <button class="panel-tab" data-tab="cekanje" onclick="switchTab('cekanje')">
+            <i class="bi bi-hourglass-split"></i> Ponude na čekanju
+            {% if br_na_cekanju %}
+            <span class="badge badge-warning" style="font-size:.7rem;padding:1px 6px;">{{ br_na_cekanju }}</span>
+            {% endif %}
+          </button>
+          <button class="panel-tab" data-tab="odbijene" onclick="switchTab('odbijene')">
+            <i class="bi bi-x-circle"></i> Odbijene ponude
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PANEL BODY ── -->
+  <div class="panel-body">
+    <div class="container">
+
+      <!-- ─ TAB: PREGLED ─ -->
+      <div class="panel-section active" id="sec-pregled">
+
+        <div class="grid-2" style="gap:20px;margin-bottom:20px;">
+
+          <!-- Ukupan doprinos -->
+          <div class="panel-card">
+            <div class="panel-card-header">
+              <h3><i class="bi bi-currency-euro"></i> Ukupan doprinos</h3>
+            </div>
+            <div class="panel-card-body">
+              <div style="text-align:center;padding:16px 0;">
+                <div style="font-family:var(--font-display);font-size:3rem;font-weight:800;color:var(--green);line-height:1;">
+                  {{ ukupan_doprinos }}
+                </div>
+                <div style="font-size:1rem;color:var(--text-secondary);margin-top:4px;font-weight:600;">EUR ukupno</div>
+                <div style="margin-top:20px;display:flex;justify-content:center;gap:28px;">
+                  <div style="text-align:center;">
+                    <div style="font-family:var(--font-display);font-size:1.25rem;font-weight:700;color:var(--dark);">{{ br_prihvacenih }}</div>
+                    <div style="font-size:.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Prihvaćene</div>
+                  </div>
+                  <div style="width:1px;background:var(--border-light);"></div>
+                  <div style="text-align:center;">
+                    <div style="font-family:var(--font-display);font-size:1.25rem;font-weight:700;color:var(--warning);">{{ br_na_cekanju }}</div>
+                    <div style="font-size:.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Na čekanju</div>
+                  </div>
+                  <div style="width:1px;background:var(--border-light);"></div>
+                  <div style="text-align:center;">
+                    <div style="font-family:var(--font-display);font-size:1.25rem;font-weight:700;color:var(--error);">{{ br_odbijenih }}</div>
+                    <div style="font-size:.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;">Odbijene</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ponude na čekanju – brzi prikaz -->
+          <div class="panel-card">
+            <div class="panel-card-header">
+              <h3><i class="bi bi-hourglass-split"></i> Ponude na čekanju</h3>
+              <button class="btn btn-ghost btn-sm" onclick="switchTab('cekanje')">Sve →</button>
+            </div>
+            {% for p in ponude_na_cekanju|slice:":3" %}
+            <div style="padding:14px 20px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;justify-content:space-between;gap:12px;">
+              <div>
+                <div style="font-weight:600;font-size:.9rem;color:var(--dark);margin-bottom:2px;">{{ p.akcija.naziv }}</div>
+                <div style="font-size:.8rem;color:var(--text-muted);">Poslano {{ p.datum_slanja|date:"d.m.Y." }}</div>
+              </div>
+              <div style="text-align:right;flex-shrink:0;">
+                <div style="font-family:var(--font-display);font-weight:700;color:var(--green-hover);">{{ p.vrednost }} €</div>
+                <span class="badge status-pending" style="font-size:.7rem;margin-top:3px;">Na čekanju</span>
+              </div>
+            </div>
+            {% empty %}
+            <div style="padding:24px;text-align:center;color:var(--text-muted);font-size:.9rem;">
+              Nema ponuda na čekanju
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Poslednja sponzorstva -->
+        <div class="panel-card">
+          <div class="panel-card-header">
+            <h3><i class="bi bi-trophy"></i> Poslednja sponzorstva</h3>
+            <button class="btn btn-ghost btn-sm" onclick="switchTab('sponzorstva')">Sve →</button>
+          </div>
+          {% if ponude_prihvacene %}
+          <div style="overflow-x:auto;">
+            <table class="activity-table">
+              <thead>
+                <tr>
+                  <th>Akcija</th>
+                  <th>Organizator</th>
+                  <th style="text-align:right;">Vrednost (EUR)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in ponude_prihvacene|slice:":3" %}
+                <tr>
+                  <td>
+                    <a href="{% url 'detalj_akcije' p.akcija.pk %}"
+                       style="font-weight:600;color:var(--dark);">{{ p.akcija.naziv }}</a>
+                  </td>
+                  <td style="color:var(--text-secondary);">{{ p.akcija.organizator.naziv_organizacije }}</td>
+                  <td class="hours-cell" style="text-align:right;color:var(--green-hover);">{{ p.vrednost }} €</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div style="padding:24px;text-align:center;color:var(--text-muted);font-size:.9rem;">
+            Još niste podržali nijednu akciju.
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- CTA -->
+        <div style="margin-top:20px;background:linear-gradient(135deg,var(--green-hover),#4a9e30);border-radius:var(--radius-lg);padding:28px 32px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;">
+          <div>
+            <h3 style="color:white;font-size:1.125rem;margin-bottom:4px;">Podržite novu akciju</h3>
+            <p style="color:rgba(255,255,255,.8);font-size:.9rem;">Pregledajte otvorene akcije i pošaljite ponudu za sponzorstvo.</p>
+          </div>
+          <a href="{% url 'akcije' %}" class="btn btn-lg"
+             style="background:white;color:var(--green-hover);flex-shrink:0;text-decoration:none;">
+            <i class="bi bi-search"></i> Pregledaj akcije
+          </a>
+        </div>
+      </div>
+
+      <!-- ─ TAB: PODRŽANE AKCIJE ─ -->
+      <div class="panel-section" id="sec-sponzorstva">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h2 style="font-size:1.375rem;font-weight:800;margin-bottom:3px;">Podržane akcije</h2>
+            <p style="color:var(--text-secondary);font-size:.9rem;">Akcije koje ste podržali i vrednost doprinosa</p>
+          </div>
+          {% if ukupan_doprinos %}
+          <div style="background:#edfae4;border:1px solid #b9f0a0;border-radius:var(--radius);padding:12px 20px;text-align:center;">
+            <div style="font-family:var(--font-display);font-size:1.75rem;font-weight:800;color:var(--green-hover);line-height:1;">
+              {{ ukupan_doprinos }} €
+            </div>
+            <div style="font-size:.75rem;color:var(--green-hover);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:2px;">
+              ukupan doprinos
+            </div>
+          </div>
+          {% endif %}
+        </div>
+
+        {% if ponude_prihvacene %}
+        <div class="panel-card">
+          <div style="overflow-x:auto;">
+            <table class="activity-table">
+              <thead>
+                <tr>
+                  <th>Akcija</th>
+                  <th>Organizator</th>
+                  <th>Datum</th>
+                  <th>Opis doprinosa</th>
+                  <th style="text-align:right;">Vrednost (EUR)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in ponude_prihvacene %}
+                <tr>
+                  <td>
+                    <a href="{% url 'detalj_akcije' p.akcija.pk %}"
+                       style="font-weight:600;color:var(--dark);">{{ p.akcija.naziv }}</a>
+                  </td>
+                  <td style="color:var(--text-secondary);">{{ p.akcija.organizator.naziv_organizacije }}</td>
+                  <td style="color:var(--text-muted);white-space:nowrap;">{{ p.akcija.datum|date:"d.m.Y." }}</td>
+                  <td style="color:var(--text-secondary);max-width:240px;font-size:.875rem;">{{ p.opis }}</td>
+                  <td class="hours-cell" style="text-align:right;color:var(--green-hover);white-space:nowrap;">{{ p.vrednost }} €</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <div class="es-icon">💼</div>
+          <h3>Još uvek niste podržali nijednu akciju.</h3>
+          <p>Pronađite akciju i pošaljite prvu ponudu za sponzorstvo!</p>
+          <a href="{% url 'akcije' %}" class="btn btn-primary">
+            <i class="bi bi-search"></i> Pregledaj akcije
+          </a>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- ─ TAB: PONUDE NA ČEKANJU ─ -->
+      <div class="panel-section" id="sec-cekanje">
+        <div style="margin-bottom:22px;">
+          <h2 style="font-size:1.375rem;font-weight:800;margin-bottom:3px;">Ponude na čekanju</h2>
+          <p style="color:var(--text-secondary);font-size:.9rem;">Ponude koje čekaju odgovor organizatora</p>
+        </div>
+
+        {% if ponude_na_cekanju %}
+        {% for p in ponude_na_cekanju %}
+        <div class="panel-card" style="margin-bottom:16px;">
+          <div style="display:flex;gap:0;">
+            <div style="width:8px;flex-shrink:0;background:var(--warning);border-radius:var(--radius-lg) 0 0 var(--radius-lg);"></div>
+            <div style="flex:1;padding:20px 24px;">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+                <div style="flex:1;min-width:0;">
+                  <div style="margin-bottom:6px;">
+                    <span class="badge status-pending"><i class="bi bi-hourglass-split"></i> Čeka odgovor organizatora</span>
+                  </div>
+                  <h3 style="font-size:1.0625rem;font-weight:700;margin-bottom:8px;">
+                    <a href="{% url 'detalj_akcije' p.akcija.pk %}" style="color:var(--dark);">{{ p.akcija.naziv }}</a>
+                  </h3>
+                  <div style="display:flex;flex-wrap:wrap;gap:14px;margin-bottom:10px;">
+                    <span class="card-meta-item"><i class="bi bi-building"></i>{{ p.akcija.organizator.naziv_organizacije }}</span>
+                    <span class="card-meta-item"><i class="bi bi-calendar3"></i>Poslano {{ p.datum_slanja|date:"d.m.Y." }}</span>
+                  </div>
+                  <div style="background:var(--bg);border-radius:var(--radius-sm);padding:10px 14px;display:inline-block;">
+                    <div style="font-size:.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Opis doprinosa</div>
+                    <div style="font-size:.9rem;color:var(--text);">{{ p.opis }}</div>
+                  </div>
+                </div>
+                <div style="text-align:right;flex-shrink:0;">
+                  <div style="font-family:var(--font-display);font-size:1.75rem;font-weight:800;color:var(--green-hover);">{{ p.vrednost }} €</div>
+                  <div style="font-size:.75rem;color:var(--text-muted);margin-bottom:4px;">procenjena vrednost</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="empty-state">
+          <div class="es-icon">✅</div>
+          <h3>Nema ponuda na čekanju.</h3>
+          <p>Sve vaše ponude su obrađene. Pronađite novu akciju!</p>
+          <a href="{% url 'akcije' %}" class="btn btn-primary"><i class="bi bi-search"></i> Pregledaj akcije</a>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- ─ TAB: ODBIJENE PONUDE ─ -->
+      <div class="panel-section" id="sec-odbijene">
+        <div style="margin-bottom:22px;">
+          <h2 style="font-size:1.375rem;font-weight:800;margin-bottom:3px;">Odbijene ponude</h2>
+          <p style="color:var(--text-secondary);font-size:.9rem;">Ponude koje su odbijene od strane organizatora</p>
+        </div>
+
+        {% if ponude_odbijene %}
+        <div class="panel-card">
+          <div style="overflow-x:auto;">
+            <table class="activity-table">
+              <thead>
+                <tr>
+                  <th>Akcija</th>
+                  <th>Organizator</th>
+                  <th>Datum</th>
+                  <th>Opis doprinosa</th>
+                  <th style="text-align:right;">Vrednost (EUR)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for p in ponude_odbijene %}
+                <tr>
+                  <td>
+                    <a href="{% url 'detalj_akcije' p.akcija.pk %}"
+                       style="font-weight:600;color:var(--dark);">{{ p.akcija.naziv }}</a>
+                  </td>
+                  <td style="color:var(--text-secondary);">{{ p.akcija.organizator.naziv_organizacije }}</td>
+                  <td style="color:var(--text-muted);white-space:nowrap;">{{ p.datum_slanja|date:"d.m.Y." }}</td>
+                  <td style="color:var(--text-secondary);max-width:240px;font-size:.875rem;">{{ p.opis }}</td>
+                  <td class="hours-cell" style="text-align:right;color:var(--error);white-space:nowrap;">{{ p.vrednost }} €</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <div class="es-icon">🎉</div>
+          <h3>Nema odbijenih ponuda.</h3>
+          <p>Sve vaše ponude su prihvaćene ili još uvek čekaju odgovor.</p>
+        </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  function switchTab(tab) {
+    document.querySelectorAll('.panel-tab').forEach(b =>
+      b.classList.toggle('active', b.dataset.tab === tab));
+    document.querySelectorAll('.panel-section').forEach(s =>
+      s.classList.remove('active'));
+    document.getElementById('sec-' + tab).classList.add('active');
+  }
+</script>
+{% endblock %}

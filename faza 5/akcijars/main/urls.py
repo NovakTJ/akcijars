@@ -31,6 +31,9 @@ urlpatterns = [
     # pogrešnu rutu). Link iz liste članaka već koristi {% url 'detalj_clanka' %}.
     path('clanci/<int:id_cla>/', views._uskoro, name='detalj_clanka'),
 
+    # SSU 16 — sponzorski panel
+    path('sponzor-panel/', views.sponzor_panel, name='sponzor_panel'),
+
     # SSU 13 — admin panel i Ajax endpointi za upravljanje nalozima
     path('admin-panel/', views.admin_panel, name='admin_panel'),
     path('ajax/odobri-nalog/', views.ajax_odobri_nalog, name='ajax_odobri_nalog'),

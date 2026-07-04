@@ -4,6 +4,7 @@ import re
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.db.models import Sum
 from django.http import HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
@@ -65,6 +66,8 @@ def _pocetna_za_korisnika(korisnik):
     """
     if korisnik.je_admin:
         return 'admin_panel'
+    if korisnik.je_sponzor:
+        return 'sponzor_panel'
     return 'home'
 
 
@@ -467,6 +470,34 @@ def lista_clanaka(request):
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return render(request, '_clanci_grid.html', kontekst)
     return render(request, 'clanci.html', kontekst)
+
+
+@login_required
+def sponzor_panel(request):
+    """Sponzorski panel (SSU 16)."""
+    if not request.user.je_sponzor:
+        return redirect('home')
+
+    sponzor = request.user.sponzor_profil
+    ponude = SponzorskaPonuda.objects.filter(
+        sponzor=sponzor
+    ).select_related('akcija', 'akcija__organizator')
+
+    prihvacene = ponude.filter(status=SponzorskaPonuda.Status.PRIHVACENA)
+    na_cekanju = ponude.filter(status=SponzorskaPonuda.Status.NA_CEKANJU)
+    odbijene = ponude.filter(status=SponzorskaPonuda.Status.ODBIJENA)
+
+    ukupan_doprinos = prihvacene.aggregate(total=Sum('vrednost'))['total'] or 0
+
+    return render(request, 'sponzor_panel.html', {
+        'ponude_prihvacene': prihvacene,
+        'ponude_na_cekanju': na_cekanju,
+        'ponude_odbijene': odbijene,
+        'ukupan_doprinos': ukupan_doprinos,
+        'br_prihvacenih': prihvacene.count(),
+        'br_na_cekanju': na_cekanju.count(),
+        'br_odbijenih': odbijene.count(),
+    })
 
 
 def _uskoro(request):
