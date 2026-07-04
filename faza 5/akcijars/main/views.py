@@ -631,11 +631,28 @@ def admin_panel(request):
         .order_by('-datum_registracije')
     )
 
+    akcije_na_cekanju = (
+        Akcija.objects
+        .filter(status=Akcija.Status.NA_CEKANJU)
+        .select_related('organizator', 'kategorija')
+        .order_by('datum_kreiranja')
+    )
+    clanci_na_cekanju = (
+        Clanak.objects
+        .filter(status=Clanak.Status.NA_CEKANJU)
+        .select_related('autor', 'kategorija')
+        .order_by('datum_kreiranja')
+    )
+
     return render(request, 'admin_panel.html', {
         'zahtevi': zahtevi,
         'korisnici': korisnici,
         'br_zahteva': len(zahtevi),
         'br_korisnika': korisnici.count(),
+        'akcije_na_cekanju': akcije_na_cekanju,
+        'clanci_na_cekanju': clanci_na_cekanju,
+        'br_akcija_na_cekanju': akcije_na_cekanju.count(),
+        'br_clanaka_na_cekanju': clanci_na_cekanju.count(),
     })
 
 
@@ -693,7 +710,7 @@ def ajax_odobri_nalog(request):
     posalji_odobrenje_naloga(korisnik)
     return JsonResponse({
         'success': True,
-        'message': f'Nalog za „{korisnik.get_full_name()}“ je odobren. Email je poslat.',
+        'message': f'Nalog za „{korisnik.get_full_name()}" je odobren. Email je poslat.',
     })
 
 
@@ -734,7 +751,7 @@ def ajax_odbij_nalog(request):
     posalji_odbijanje_naloga(korisnik)
     return JsonResponse({
         'success': True,
-        'message': f'Zahtev za „{korisnik.get_full_name()}“ je odbijen.',
+        'message': f'Zahtev za „{korisnik.get_full_name()}" je odbijen.',
     })
 
 
@@ -770,5 +787,127 @@ def ajax_ukloni_korisnika(request):
     korisnik.delete()
     return JsonResponse({
         'success': True,
-        'message': f'Nalog korisnika „{ime}“ je uklonjen.',
+        'message': f'Nalog korisnika „{ime}" je uklonjen.',
+    })
+
+
+# ── Admin: upravljanje akcijama ──────────────────────────────────────────────
+
+@require_POST
+def ajax_odobri_akciju(request):
+    """Odobrava akciju na cekanju (menja status u odobrena)."""
+    if err := _admin_check(request):
+        return err
+
+    podaci, err = _parse_ajax_body(request)
+    if err:
+        return err
+
+    try:
+        akcija_id = int(podaci['akcija_id'])
+    except (KeyError, TypeError, ValueError):
+        return JsonResponse({'error': 'Neispravan zahtev.'}, status=400)
+
+    try:
+        akcija = Akcija.objects.get(pk=akcija_id)
+    except Akcija.DoesNotExist:
+        return JsonResponse({'error': 'Akcija ne postoji.'}, status=404)
+
+    if akcija.status != Akcija.Status.NA_CEKANJU:
+        return JsonResponse({'error': 'Akcija nije na čekanju.'}, status=400)
+
+    akcija.status = Akcija.Status.ODOBRENA
+    akcija.save(update_fields=['status'])
+    return JsonResponse({
+        'success': True,
+        'message': f'Akcija „{akcija.naziv}" je odobrena.',
+    })
+
+
+@require_POST
+def ajax_obrisi_akciju(request):
+    """Briše akciju na čekanju."""
+    if err := _admin_check(request):
+        return err
+
+    podaci, err = _parse_ajax_body(request)
+    if err:
+        return err
+
+    try:
+        akcija_id = int(podaci['akcija_id'])
+    except (KeyError, TypeError, ValueError):
+        return JsonResponse({'error': 'Neispravan zahtev.'}, status=400)
+
+    try:
+        akcija = Akcija.objects.get(pk=akcija_id, status=Akcija.Status.NA_CEKANJU)
+    except Akcija.DoesNotExist:
+        return JsonResponse({'error': 'Akcija ne postoji ili nije na čekanju.'}, status=404)
+
+    naziv = akcija.naziv
+    akcija.delete()
+    return JsonResponse({
+        'success': True,
+        'message': f'Akcija „{naziv}" je obrisana.',
+    })
+
+
+# ── Admin: upravljanje člancima ──────────────────────────────────────────────
+
+@require_POST
+def ajax_odobri_clanak(request):
+    """Objavljuje članak na čekanju (menja status u 'objavljen')."""
+    if err := _admin_check(request):
+        return err
+
+    podaci, err = _parse_ajax_body(request)
+    if err:
+        return err
+
+    try:
+        clanak_id = int(podaci['clanak_id'])
+    except (KeyError, TypeError, ValueError):
+        return JsonResponse({'error': 'Neispravan zahtev.'}, status=400)
+
+    try:
+        clanak = Clanak.objects.get(pk=clanak_id)
+    except Clanak.DoesNotExist:
+        return JsonResponse({'error': 'Članak ne postoji.'}, status=404)
+
+    if clanak.status != Clanak.Status.NA_CEKANJU:
+        return JsonResponse({'error': 'Članak nije na čekanju.'}, status=400)
+
+    clanak.status = Clanak.Status.OBJAVLJEN
+    clanak.save(update_fields=['status'])
+    return JsonResponse({
+        'success': True,
+        'message': f'Članak „{clanak.naslov}" je objavljen.',
+    })
+
+
+@require_POST
+def ajax_obrisi_clanak(request):
+    """Briše članak na čekanju."""
+    if err := _admin_check(request):
+        return err
+
+    podaci, err = _parse_ajax_body(request)
+    if err:
+        return err
+
+    try:
+        clanak_id = int(podaci['clanak_id'])
+    except (KeyError, TypeError, ValueError):
+        return JsonResponse({'error': 'Neispravan zahtev.'}, status=400)
+
+    try:
+        clanak = Clanak.objects.get(pk=clanak_id, status=Clanak.Status.NA_CEKANJU)
+    except Clanak.DoesNotExist:
+        return JsonResponse({'error': 'Članak ne postoji ili nije na čekanju.'}, status=404)
+
+    naslov = clanak.naslov
+    clanak.delete()
+    return JsonResponse({
+        'success': True,
+        'message': f'Članak „{naslov}" je obrisan.',
     })

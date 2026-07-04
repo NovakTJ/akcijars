@@ -30,6 +30,14 @@
         <div class="panel-stat-label">Zahtevi za naloge</div>
       </div>
       <div class="panel-stat">
+        <div class="panel-stat-num teal" id="stat-akcije">{{ br_akcija_na_cekanju }}</div>
+        <div class="panel-stat-label">Akcije na čekanju</div>
+      </div>
+      <div class="panel-stat">
+        <div class="panel-stat-num teal" id="stat-clanci">{{ br_clanaka_na_cekanju }}</div>
+        <div class="panel-stat-label">Članci na čekanju</div>
+      </div>
+      <div class="panel-stat">
         <div class="panel-stat-num green" id="stat-kor">{{ br_korisnika }}</div>
         <div class="panel-stat-label">Ukupno korisnika</div>
       </div>
@@ -51,6 +59,18 @@
         </button>
         <button class="panel-tab" data-tab="korisnici" onclick="switchTab('korisnici')">
           <i class="bi bi-people"></i> Korisnici
+        </button>
+        <button class="panel-tab" data-tab="akcije" onclick="switchTab('akcije')">
+          <i class="bi bi-calendar-check"></i> Akcije
+          <span class="badge badge-warning" id="badge-akcije"{% if not br_akcija_na_cekanju %} style="display:none"{% endif %}>
+            {{ br_akcija_na_cekanju }}
+          </span>
+        </button>
+        <button class="panel-tab" data-tab="clanci" onclick="switchTab('clanci')">
+          <i class="bi bi-newspaper"></i> Članci
+          <span class="badge badge-warning" id="badge-clanci"{% if not br_clanaka_na_cekanju %} style="display:none"{% endif %}>
+            {{ br_clanaka_na_cekanju }}
+          </span>
         </button>
       </div>
     </div>
@@ -74,6 +94,16 @@
             <div class="ov-icon">👤</div>
             <div class="ov-num teal" id="ov-zahtevi">{{ br_zahteva }}</div>
             <div class="ov-label">Zahtevi za naloge</div>
+          </div>
+          <div class="ov-card" onclick="switchTab('akcije')">
+            <div class="ov-icon">📋</div>
+            <div class="ov-num teal" id="ov-akcije">{{ br_akcija_na_cekanju }}</div>
+            <div class="ov-label">Akcije na čekanju</div>
+          </div>
+          <div class="ov-card" onclick="switchTab('clanci')">
+            <div class="ov-icon">📰</div>
+            <div class="ov-num teal" id="ov-clanci">{{ br_clanaka_na_cekanju }}</div>
+            <div class="ov-label">Članci na čekanju</div>
           </div>
           <div class="ov-card" onclick="switchTab('korisnici')">
             <div class="ov-icon">🌱</div>
@@ -302,6 +332,123 @@
         </div>
       </div>
 
+      <!-- ─ AKCIJE ─ -->
+      <div class="panel-section" id="sec-akcije">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Akcije na čekanju</h2>
+            <p class="section-subtitle">Akcije organizatora koje čekaju odobrenje</p>
+          </div>
+        </div>
+
+        <div class="panel-card" style="overflow:hidden;">
+          <table class="activity-table" style="width:100%;">
+            <thead>
+              <tr>
+                <th>Naziv akcije</th>
+                <th>Organizator</th>
+                <th>Datum</th>
+                <th>Lokacija</th>
+                <th style="text-align:right;">Akcija</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for a in akcije_na_cekanju %}
+              <tr data-akcija-id="{{ a.id_akc }}">
+                <td>
+                  <div style="font-weight:600;color:var(--dark);font-size:.9rem;">{{ a.naziv }}</div>
+                  <div style="font-size:.775rem;color:var(--text-muted);">{{ a.kategorija.naziv }}</div>
+                </td>
+                <td style="font-size:.85rem;">{{ a.organizator.naziv_organizacije }}</td>
+                <td style="font-size:.85rem;color:var(--text-muted);">{{ a.datum|date:"d.m.Y." }}</td>
+                <td style="font-size:.85rem;color:var(--text-muted);">{{ a.lokacija }}</td>
+                <td style="text-align:right;">
+                  <div style="display:flex;gap:6px;justify-content:flex-end;">
+                    <button class="btn btn-primary btn-sm"
+                            data-id="{{ a.id_akc }}"
+                            data-naziv="{{ a.naziv }}"
+                            onclick="otvoriOdobriAkciju(this.dataset.id, this.dataset.naziv)">
+                      <i class="bi bi-check2"></i> Odobri
+                    </button>
+                    <button class="btn btn-danger btn-sm"
+                            data-id="{{ a.id_akc }}"
+                            data-naziv="{{ a.naziv }}"
+                            onclick="otvoriObrisiAkciju(this.dataset.id, this.dataset.naziv)">
+                      <i class="bi bi-trash3"></i> Obriši
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <div id="akcije-empty" class="empty-state"{% if akcije_na_cekanju %} style="display:none"{% endif %}
+               style="padding:36px 20px;">
+            <div class="es-icon"><i class="bi bi-calendar-check"></i></div>
+            <h3>Nema akcija</h3>
+            <p>Sve akcije su obrađene.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─ ČLANCI ─ -->
+      <div class="panel-section" id="sec-clanci">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Članci na čekanju</h2>
+            <p class="section-subtitle">Članci organizatora koji čekaju objavu</p>
+          </div>
+        </div>
+
+        <div class="panel-card" style="overflow:hidden;">
+          <table class="activity-table" style="width:100%;">
+            <thead>
+              <tr>
+                <th>Naslov članka</th>
+                <th>Autor</th>
+                <th>Kategorija</th>
+                <th>Datum</th>
+                <th style="text-align:right;">Akcija</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in clanci_na_cekanju %}
+              <tr data-clanak-id="{{ c.id_cla }}">
+                <td>
+                  <div style="font-weight:600;color:var(--dark);font-size:.9rem;">{{ c.naslov }}</div>
+                </td>
+                <td style="font-size:.85rem;">{{ c.autor.naziv_organizacije }}</td>
+                <td style="font-size:.85rem;color:var(--text-muted);">{{ c.kategorija.naziv }}</td>
+                <td style="font-size:.85rem;color:var(--text-muted);">{{ c.datum_kreiranja|date:"d.m.Y." }}</td>
+                <td style="text-align:right;">
+                  <div style="display:flex;gap:6px;justify-content:flex-end;">
+                    <button class="btn btn-primary btn-sm"
+                            data-id="{{ c.id_cla }}"
+                            data-naslov="{{ c.naslov }}"
+                            onclick="otvoriOdobriClanak(this.dataset.id, this.dataset.naslov)">
+                      <i class="bi bi-check2"></i> Objavi
+                    </button>
+                    <button class="btn btn-danger btn-sm"
+                            data-id="{{ c.id_cla }}"
+                            data-naslov="{{ c.naslov }}"
+                            onclick="otvoriObrisiClanak(this.dataset.id, this.dataset.naslov)">
+                      <i class="bi bi-trash3"></i> Obriši
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          <div id="clanci-empty" class="empty-state"{% if clanci_na_cekanju %} style="display:none"{% endif %}
+               style="padding:36px 20px;">
+            <div class="es-icon"><i class="bi bi-newspaper"></i></div>
+            <h3>Nema članaka</h3>
+            <p>Svi članci su obrađeni.</p>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -345,6 +492,58 @@
     </div>
   </div>
 </div>
+
+<div class="modal-overlay" id="modal-odobri-akciju">
+  <div class="modal-box">
+    <h3><i class="bi bi-check-circle-fill" style="color:var(--success)"></i> Odobri akciju</h3>
+    <p id="modal-odobri-akciju-txt"></p>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeModal('modal-odobri-akciju')">Otkaži</button>
+      <button class="btn btn-primary" onclick="potvrdiOdobriAkciju()">
+        <i class="bi bi-check2"></i> Odobri
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-obrisi-akciju">
+  <div class="modal-box">
+    <h3><i class="bi bi-exclamation-triangle-fill" style="color:var(--error)"></i> Obriši akciju</h3>
+    <p id="modal-obrisi-akciju-txt"></p>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeModal('modal-obrisi-akciju')">Otkaži</button>
+      <button class="btn btn-danger" onclick="potvrdiObrisiAkciju()">
+        <i class="bi bi-trash3"></i> Obriši
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-odobri-clanak">
+  <div class="modal-box">
+    <h3><i class="bi bi-check-circle-fill" style="color:var(--success)"></i> Objavi članak</h3>
+    <p id="modal-odobri-clanak-txt"></p>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeModal('modal-odobri-clanak')">Otkaži</button>
+      <button class="btn btn-primary" onclick="potvrdiOdobriClanak()">
+        <i class="bi bi-check2"></i> Objavi
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-obrisi-clanak">
+  <div class="modal-box">
+    <h3><i class="bi bi-exclamation-triangle-fill" style="color:var(--error)"></i> Obriši članak</h3>
+    <p id="modal-obrisi-clanak-txt"></p>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeModal('modal-obrisi-clanak')">Otkaži</button>
+      <button class="btn btn-danger" onclick="potvrdiObrisiClanak()">
+        <i class="bi bi-trash3"></i> Obriši
+      </button>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -352,6 +551,8 @@
   // ── Brojači (inicijalizovani iz Django konteksta) ──
   let brZahteva = {{ br_zahteva }};
   let brKorisnika = {{ br_korisnika }};
+  let brAkcijaNCekanju = {{ br_akcija_na_cekanju }};
+  let brClanakNCekanju = {{ br_clanaka_na_cekanju }};
 
   // ── Tabovi ──
   function switchTab(tab) {
@@ -491,6 +692,140 @@
       if (match) imaVidljivih = true;
     });
     document.getElementById('kor-empty').style.display = imaVidljivih ? 'none' : '';
+  }
+
+  // ── Ažuriranje brojača akcija ──
+  function updateBrojacAkcija(delta) {
+    brAkcijaNCekanju += delta;
+    document.getElementById('stat-akcije').textContent = brAkcijaNCekanju;
+    document.getElementById('ov-akcije').textContent = brAkcijaNCekanju;
+    const badge = document.getElementById('badge-akcije');
+    badge.textContent = brAkcijaNCekanju;
+    badge.style.display = brAkcijaNCekanju > 0 ? '' : 'none';
+  }
+
+  function ukloniAkcijuIzDoma(akcijaId) {
+    document.querySelectorAll('[data-akcija-id="' + akcijaId + '"]')
+      .forEach(el => el.remove());
+    updateBrojacAkcija(-1);
+    if (brAkcijaNCekanju <= 0) {
+      document.getElementById('akcije-empty').style.display = '';
+    }
+  }
+
+  // ── ODOBRI AKCIJU ──
+  let pendingOdobriAkcijaId = null;
+
+  function otvoriOdobriAkciju(id, naziv) {
+    pendingOdobriAkcijaId = id;
+    document.getElementById('modal-odobri-akciju-txt').textContent =
+      'Da li ste sigurni da želite da odobrite akciju „' + naziv + '"?';
+    openModal('modal-odobri-akciju');
+  }
+
+  async function potvrdiOdobriAkciju() {
+    closeModal('modal-odobri-akciju');
+    try {
+      const data = await apiFetch('{% url "ajax_odobri_akciju" %}', {
+        method: 'POST',
+        body: JSON.stringify({ akcija_id: Number(pendingOdobriAkcijaId) }),
+      });
+      ukloniAkcijuIzDoma(pendingOdobriAkcijaId);
+      showToast(data.message, true);
+    } catch (e) {
+      showToast(e.message || 'Greška pri odobravanju akcije.', false);
+    }
+  }
+
+  // ── OBRIŠI AKCIJU ──
+  let pendingObrisiAkcijaId = null;
+
+  function otvoriObrisiAkciju(id, naziv) {
+    pendingObrisiAkcijaId = id;
+    document.getElementById('modal-obrisi-akciju-txt').textContent =
+      'Da li ste sigurni da želite da obrišete akciju „' + naziv + '"? Ova akcija je nepovratna.';
+    openModal('modal-obrisi-akciju');
+  }
+
+  async function potvrdiObrisiAkciju() {
+    closeModal('modal-obrisi-akciju');
+    try {
+      const data = await apiFetch('{% url "ajax_obrisi_akciju" %}', {
+        method: 'POST',
+        body: JSON.stringify({ akcija_id: Number(pendingObrisiAkcijaId) }),
+      });
+      ukloniAkcijuIzDoma(pendingObrisiAkcijaId);
+      showToast(data.message, true);
+    } catch (e) {
+      showToast(e.message || 'Greška pri brisanju akcije.', false);
+    }
+  }
+
+  // ── Ažuriranje brojača članaka ──
+  function updateBrojacClanaka(delta) {
+    brClanakNCekanju += delta;
+    document.getElementById('stat-clanci').textContent = brClanakNCekanju;
+    document.getElementById('ov-clanci').textContent = brClanakNCekanju;
+    const badge = document.getElementById('badge-clanci');
+    badge.textContent = brClanakNCekanju;
+    badge.style.display = brClanakNCekanju > 0 ? '' : 'none';
+  }
+
+  function ukloniClanakIzDoma(clanakId) {
+    document.querySelectorAll('[data-clanak-id="' + clanakId + '"]')
+      .forEach(el => el.remove());
+    updateBrojacClanaka(-1);
+    if (brClanakNCekanju <= 0) {
+      document.getElementById('clanci-empty').style.display = '';
+    }
+  }
+
+  // ── ODOBRI ČLANAK ──
+  let pendingOdobriClanakId = null;
+
+  function otvoriOdobriClanak(id, naslov) {
+    pendingOdobriClanakId = id;
+    document.getElementById('modal-odobri-clanak-txt').textContent =
+      'Da li ste sigurni da želite da objavite članak „' + naslov + '"?';
+    openModal('modal-odobri-clanak');
+  }
+
+  async function potvrdiOdobriClanak() {
+    closeModal('modal-odobri-clanak');
+    try {
+      const data = await apiFetch('{% url "ajax_odobri_clanak" %}', {
+        method: 'POST',
+        body: JSON.stringify({ clanak_id: Number(pendingOdobriClanakId) }),
+      });
+      ukloniClanakIzDoma(pendingOdobriClanakId);
+      showToast(data.message, true);
+    } catch (e) {
+      showToast(e.message || 'Greška pri objavljivanju članka.', false);
+    }
+  }
+
+  // ── OBRIŠI ČLANAK ──
+  let pendingObrisiClanakId = null;
+
+  function otvoriObrisiClanak(id, naslov) {
+    pendingObrisiClanakId = id;
+    document.getElementById('modal-obrisi-clanak-txt').textContent =
+      'Da li ste sigurni da želite da obrišete članak „' + naslov + '"? Ova akcija je nepovratna.';
+    openModal('modal-obrisi-clanak');
+  }
+
+  async function potvrdiObrisiClanak() {
+    closeModal('modal-obrisi-clanak');
+    try {
+      const data = await apiFetch('{% url "ajax_obrisi_clanak" %}', {
+        method: 'POST',
+        body: JSON.stringify({ clanak_id: Number(pendingObrisiClanakId) }),
+      });
+      ukloniClanakIzDoma(pendingObrisiClanakId);
+      showToast(data.message, true);
+    } catch (e) {
+      showToast(e.message || 'Greška pri brisanju članka.', false);
+    }
   }
 </script>
 {% endblock %}

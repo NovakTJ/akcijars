@@ -38,4 +38,10 @@ urlpatterns = [
     path('ajax/odobri-nalog/', views.ajax_odobri_nalog, name='ajax_odobri_nalog'),
     path('ajax/odbij-nalog/', views.ajax_odbij_nalog, name='ajax_odbij_nalog'),
     path('ajax/ukloni-korisnika/', views.ajax_ukloni_korisnika, name='ajax_ukloni_korisnika'),
+
+    # Admin: upravljanje akcijama i člancima na čekanju
+    path('ajax/odobri-akciju/', views.ajax_odobri_akciju, name='ajax_odobri_akciju'),
+    path('ajax/obrisi-akciju/', views.ajax_obrisi_akciju, name='ajax_obrisi_akciju'),
+    path('ajax/odobri-clanak/', views.ajax_odobri_clanak, name='ajax_odobri_clanak'),
+    path('ajax/obrisi-clanak/', views.ajax_obrisi_clanak, name='ajax_obrisi_clanak'),
 ]

@@ -426,6 +426,189 @@ class AdminPanelTest(TestCase):
         self.assertNotIn('_auth_user_id', self.client.session)
 
 
+class AdminAkcijeClancakTest(TestCase):
+    """Testovi za admin upravljanje akcijama i člancima na čekanju."""
+
+    def setUp(self):
+        self.admin = Korisnik.objects.create_user(
+            email='admin@example.com', password='Admin123!',
+            korisnicko_ime='admin', ime='Admin', prezime='Adminović')
+        AdministratorProfil.objects.create(korisnik=self.admin)
+
+        kat_akcije = KategorijaAkcije.objects.create(naziv='Ekologija')
+        kat_clanka = KategorijaClanka.objects.create(naziv='Opšte')
+
+        org = Korisnik.objects.create_user(
+            email='org@example.com', password='Lozinka1!',
+            korisnicko_ime='org', ime='Org', prezime='Orgić')
+        self.org_profil = OrganizatorProfil.objects.create(
+            korisnik=org, naziv_organizacije='Zeleni krug',
+            status=OrganizatorProfil.Status.ODOBREN)
+
+        self.akcija = Akcija.objects.create(
+            organizator=self.org_profil, kategorija=kat_akcije,
+            naziv='Test akcija na čekanju', opis='Opis',
+            datum=timezone.now().date(), vreme='10:00', lokacija='Beograd',
+            max_br_volontera=10, kontakt_email='org@example.com',
+            kontakt_telefon='011-111', status=Akcija.Status.NA_CEKANJU)
+
+        self.clanak = Clanak.objects.create(
+            autor=self.org_profil, kategorija=kat_clanka,
+            naslov='Test članak na čekanju', tekst='Tekst.',
+            status=Clanak.Status.NA_CEKANJU)
+
+        vol = Korisnik.objects.create_user(
+            email='vol@example.com', password='Lozinka1!',
+            korisnicko_ime='vol', ime='Vanja', prezime='Vanić')
+        VolonterProfil.objects.create(korisnik=vol)
+
+    def _prijavi_admina(self):
+        self.client.login(email='admin@example.com', password='Admin123!')
+
+    def _ajax_post(self, url_name, podaci):
+        return self.client.post(
+            reverse(url_name),
+            data=json.dumps(podaci),
+            content_type='application/json',
+        )
+
+    # ── Admin panel prikazuje akcije i članke ──
+
+    def test_panel_prikazuje_akcije_na_cekanju(self):
+        self._prijavi_admina()
+        odgovor = self.client.get(reverse('admin_panel'))
+        self.assertContains(odgovor, 'Test akcija na čekanju')
+
+    def test_panel_prikazuje_clanke_na_cekanju(self):
+        self._prijavi_admina()
+        odgovor = self.client.get(reverse('admin_panel'))
+        self.assertContains(odgovor, 'Test članak na čekanju')
+
+    def test_panel_kontekst_sadrzi_akcije_i_clanke(self):
+        self._prijavi_admina()
+        odgovor = self.client.get(reverse('admin_panel'))
+        self.assertEqual(odgovor.context['br_akcija_na_cekanju'], 1)
+        self.assertEqual(odgovor.context['br_clanaka_na_cekanju'], 1)
+
+    # ── Odobri akciju ──
+
+    def test_ajax_odobri_akciju_menja_status(self):
+        self._prijavi_admina()
+        odgovor = self._ajax_post('ajax_odobri_akciju', {'akcija_id': self.akcija.pk})
+        self.assertEqual(odgovor.status_code, 200)
+        data = json.loads(odgovor.content)
+        self.assertTrue(data['success'])
+        self.akcija.refresh_from_db()
+        self.assertEqual(self.akcija.status, Akcija.Status.ODOBRENA)
+
+    def test_ajax_odobri_akciju_vraca_403_anonimnom(self):
+        odgovor = self._ajax_post('ajax_odobri_akciju', {'akcija_id': self.akcija.pk})
+        self.assertEqual(odgovor.status_code, 403)
+        self.akcija.refresh_from_db()
+        self.assertEqual(self.akcija.status, Akcija.Status.NA_CEKANJU)
+
+    def test_ajax_odobri_akciju_vraca_403_volonteru(self):
+        self.client.login(email='vol@example.com', password='Lozinka1!')
+        odgovor = self._ajax_post('ajax_odobri_akciju', {'akcija_id': self.akcija.pk})
+        self.assertEqual(odgovor.status_code, 403)
+
+    def test_ajax_odobri_akciju_vraca_400_kad_nije_na_cekanju(self):
+        self.akcija.status = Akcija.Status.ODOBRENA
+        self.akcija.save()
+        self._prijavi_admina()
+        odgovor = self._ajax_post('ajax_odobri_akciju', {'akcija_id': self.akcija.pk})
+        self.assertEqual(odgovor.status_code, 400)
+
+    def test_ajax_odobri_akciju_vraca_404_nepostojeca(self):
+        self._prijavi_admina()
+        odgovor = self._ajax_post('ajax_odobri_akciju', {'akcija_id': 99999})
+        self.assertEqual(odgovor.status_code, 404)
+
+    # ── Obriši akciju ──
+
+    def test_ajax_obrisi_akciju_brise_akciju(self):
+        self._prijavi_admina()
+        odgovor = self._ajax_post('ajax_obrisi_akciju', {'akcija_id': self.akcija.pk})
+        self.assertEqual(odgovor.status_code, 200)
+        data = json.loads(odgovor.content)
+        self.assertTrue(data['success'])
+        self.assertFalse(Akcija.objects.filter(pk=self.akcija.pk).exists())
+
+    def test_ajax_obrisi_akciju_vraca_403_anonimnom(self):
+        odgovor = self._ajax_post('ajax_obrisi_akciju', {'akcija_id': self.akcija.pk})
+        self.assertEqual(odgovor.status_code, 403)
+        self.assertTrue(Akcija.objects.filter(pk=self.akcija.pk).exists())
+
+    def test_ajax_obrisi_akciju_vraca_403_volonteru(self):
+        self.client.login(email='vol@example.com', password='Lozinka1!')
+        odgovor = self._ajax_post('ajax_obrisi_akciju', {'akcija_id': self.akcija.pk})
+        self.assertEqual(odgovor.status_code, 403)
+
+    def test_ajax_obrisi_akciju_vraca_404_nepostojeca(self):
+        self._prijavi_admina()
+        odgovor = self._ajax_post('ajax_obrisi_akciju', {'akcija_id': 99999})
+        self.assertEqual(odgovor.status_code, 404)
+
+    # ── Odobri članak ──
+
+    def test_ajax_odobri_clanak_menja_status(self):
+        self._prijavi_admina()
+        odgovor = self._ajax_post('ajax_odobri_clanak', {'clanak_id': self.clanak.pk})
+        self.assertEqual(odgovor.status_code, 200)
+        data = json.loads(odgovor.content)
+        self.assertTrue(data['success'])
+        self.clanak.refresh_from_db()
+        self.assertEqual(self.clanak.status, Clanak.Status.OBJAVLJEN)
+
+    def test_ajax_odobri_clanak_vraca_403_anonimnom(self):
+        odgovor = self._ajax_post('ajax_odobri_clanak', {'clanak_id': self.clanak.pk})
+        self.assertEqual(odgovor.status_code, 403)
+        self.clanak.refresh_from_db()
+        self.assertEqual(self.clanak.status, Clanak.Status.NA_CEKANJU)
+
+    def test_ajax_odobri_clanak_vraca_403_volonteru(self):
+        self.client.login(email='vol@example.com', password='Lozinka1!')
+        odgovor = self._ajax_post('ajax_odobri_clanak', {'clanak_id': self.clanak.pk})
+        self.assertEqual(odgovor.status_code, 403)
+
+    def test_ajax_odobri_clanak_vraca_400_kad_nije_na_cekanju(self):
+        self.clanak.status = Clanak.Status.OBJAVLJEN
+        self.clanak.save()
+        self._prijavi_admina()
+        odgovor = self._ajax_post('ajax_odobri_clanak', {'clanak_id': self.clanak.pk})
+        self.assertEqual(odgovor.status_code, 400)
+
+    def test_ajax_odobri_clanak_vraca_404_nepostojeci(self):
+        self._prijavi_admina()
+        odgovor = self._ajax_post('ajax_odobri_clanak', {'clanak_id': 99999})
+        self.assertEqual(odgovor.status_code, 404)
+
+    # ── Obriši članak ──
+
+    def test_ajax_obrisi_clanak_brise_clanak(self):
+        self._prijavi_admina()
+        odgovor = self._ajax_post('ajax_obrisi_clanak', {'clanak_id': self.clanak.pk})
+        self.assertEqual(odgovor.status_code, 200)
+        data = json.loads(odgovor.content)
+        self.assertTrue(data['success'])
+        self.assertFalse(Clanak.objects.filter(pk=self.clanak.pk).exists())
+
+    def test_ajax_obrisi_clanak_vraca_403_anonimnom(self):
+        odgovor = self._ajax_post('ajax_obrisi_clanak', {'clanak_id': self.clanak.pk})
+        self.assertEqual(odgovor.status_code, 403)
+        self.assertTrue(Clanak.objects.filter(pk=self.clanak.pk).exists())
+
+    def test_ajax_obrisi_clanak_vraca_403_volonteru(self):
+        self.client.login(email='vol@example.com', password='Lozinka1!')
+        odgovor = self._ajax_post('ajax_obrisi_clanak', {'clanak_id': self.clanak.pk})
+        self.assertEqual(odgovor.status_code, 403)
+
+    def test_ajax_obrisi_clanak_vraca_404_nepostojeci(self):
+        self._prijavi_admina()
+        odgovor = self._ajax_post('ajax_obrisi_clanak', {'clanak_id': 99999})
+        self.assertEqual(odgovor.status_code, 404)
+
+
 class SponzorskaPonudaTest(TestCase):
     """Testovi za SSU 7 — slanje sponzorske ponude."""
 
