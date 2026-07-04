@@ -20,6 +20,8 @@ urlpatterns = [
     path('akcije/<int:id_akc>/prijave/<int:id_kor>/prihvati/', views.prihvati_prijavu, name='prihvati_prijavu'),
     path('akcije/<int:id_akc>/prijave/<int:id_kor>/odbij/', views.odbij_prijavu, name='odbij_prijavu'),
     path('akcije/<int:id_akc>/ponuda/', views.posalji_ponudu, name='posalji_ponudu'),
+    path('akcije/<int:id_akc>/ponude/<int:ponuda_id>/prihvati/', views.prihvati_ponudu, name='prihvati_ponudu'),
+    path('akcije/<int:id_akc>/ponude/<int:ponuda_id>/odbij/', views.odbij_ponudu, name='odbij_ponudu'),
     path('clanci/', views.lista_clanaka, name='clanci'),
 
     # TODO(#23, Stefan): zameniti ovaj placeholder pravim view-om za detalj

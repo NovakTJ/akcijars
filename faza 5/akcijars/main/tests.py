@@ -550,3 +550,163 @@ class SponzorskaPonudaTest(TestCase):
         odgovor = self.client.get(reverse('detalj_akcije', kwargs={'id_akc': self.akcija.pk}))
         self.assertEqual(odgovor.status_code, 200)
         self.assertNotIn('ponuda_forma', odgovor.context)
+
+
+class OdlukaPonudaTest(TestCase):
+    """Testovi za SSU 17 — prihvatanje/odbijanje sponzorske ponude."""
+
+    def setUp(self):
+        kategorija = KategorijaAkcije.objects.create(naziv='Ekologija')
+
+        org_korisnik = Korisnik.objects.create_user(
+            email='org@primer.com', password='Lozinka1!',
+            korisnicko_ime='org_primer', ime='Org', prezime='Orgić')
+        self.org_profil = OrganizatorProfil.objects.create(
+            korisnik=org_korisnik,
+            naziv_organizacije='Zeleni krug',
+            status=OrganizatorProfil.Status.ODOBREN,
+        )
+
+        drugi_org = Korisnik.objects.create_user(
+            email='org2@primer.com', password='Lozinka1!',
+            korisnicko_ime='org2_primer', ime='Org2', prezime='Drugi')
+        OrganizatorProfil.objects.create(
+            korisnik=drugi_org,
+            naziv_organizacije='Plave reke',
+            status=OrganizatorProfil.Status.ODOBREN,
+        )
+
+        self.akcija = Akcija.objects.create(
+            organizator=self.org_profil,
+            kategorija=kategorija,
+            naziv='Test akcija',
+            opis='Opis',
+            datum=timezone.now().date(),
+            vreme='10:00',
+            lokacija='Beograd',
+            max_br_volontera=10,
+            kontakt_email='org@primer.com',
+            kontakt_telefon='011-111',
+            status=Akcija.Status.AKTIVNA,
+        )
+
+        sponzor_korisnik = Korisnik.objects.create_user(
+            email='sponzor@primer.com', password='Lozinka1!',
+            korisnicko_ime='sponzor_primer', ime='Sara', prezime='Sarić')
+        self.sponzor_profil = SponzorProfil.objects.create(
+            korisnik=sponzor_korisnik,
+            naziv_organizacije='ProNatura',
+            status=SponzorProfil.Status.ODOBREN,
+        )
+
+        self.volonter_korisnik = Korisnik.objects.create_user(
+            email='vol@primer.com', password='Lozinka1!',
+            korisnicko_ime='vol_primer', ime='Vanja', prezime='Vanić')
+        VolonterProfil.objects.create(korisnik=self.volonter_korisnik)
+
+        self.ponuda = SponzorskaPonuda.objects.create(
+            sponzor=self.sponzor_profil,
+            akcija=self.akcija,
+            vrednost=500,
+            opis='Finansijska podrška za opremu',
+        )
+
+        self.url_prihvati = reverse('prihvati_ponudu', kwargs={
+            'id_akc': self.akcija.pk, 'ponuda_id': self.ponuda.pk})
+        self.url_odbij = reverse('odbij_ponudu', kwargs={
+            'id_akc': self.akcija.pk, 'ponuda_id': self.ponuda.pk})
+
+    # ── Prihvatanje (SSU 17, 2.2.1) ─────────────────────────────────────────
+
+    def test_organizator_moze_prihvatiti_ponudu(self):
+        self.client.login(email='org@primer.com', password='Lozinka1!')
+        odgovor = self.client.post(self.url_prihvati)
+        self.assertEqual(odgovor.status_code, 200)
+        data = json.loads(odgovor.content)
+        self.assertIn('ponude', data)
+        self.ponuda.refresh_from_db()
+        self.assertEqual(self.ponuda.status, SponzorskaPonuda.Status.PRIHVACENA)
+
+    def test_prihvatanje_vraca_br_na_cekanju(self):
+        self.client.login(email='org@primer.com', password='Lozinka1!')
+        odgovor = self.client.post(self.url_prihvati)
+        data = json.loads(odgovor.content)
+        self.assertEqual(data['br_na_cekanju'], 0)
+
+    # ── Odbijanje (SSU 17, 2.2.2) ────────────────────────────────────────────
+
+    def test_organizator_moze_odbiti_ponudu(self):
+        self.client.login(email='org@primer.com', password='Lozinka1!')
+        odgovor = self.client.post(self.url_odbij)
+        self.assertEqual(odgovor.status_code, 200)
+        data = json.loads(odgovor.content)
+        self.assertIn('ponude', data)
+        self.ponuda.refresh_from_db()
+        self.assertEqual(self.ponuda.status, SponzorskaPonuda.Status.ODBIJENA)
+
+    # ── Autorizacija ─────────────────────────────────────────────────────────
+
+    def test_drugi_organizator_dobija_403_na_prihvati(self):
+        self.client.login(email='org2@primer.com', password='Lozinka1!')
+        odgovor = self.client.post(self.url_prihvati)
+        self.assertEqual(odgovor.status_code, 403)
+        self.ponuda.refresh_from_db()
+        self.assertEqual(self.ponuda.status, SponzorskaPonuda.Status.NA_CEKANJU)
+
+    def test_drugi_organizator_dobija_403_na_odbij(self):
+        self.client.login(email='org2@primer.com', password='Lozinka1!')
+        odgovor = self.client.post(self.url_odbij)
+        self.assertEqual(odgovor.status_code, 403)
+        self.ponuda.refresh_from_db()
+        self.assertEqual(self.ponuda.status, SponzorskaPonuda.Status.NA_CEKANJU)
+
+    def test_volonter_dobija_403(self):
+        self.client.login(email='vol@primer.com', password='Lozinka1!')
+        odgovor = self.client.post(self.url_prihvati)
+        self.assertEqual(odgovor.status_code, 403)
+
+    def test_anoniman_ne_moze_promeniti_status(self):
+        odgovor = self.client.post(self.url_prihvati)
+        self.assertNotEqual(odgovor.status_code, 200)
+        self.ponuda.refresh_from_db()
+        self.assertEqual(self.ponuda.status, SponzorskaPonuda.Status.NA_CEKANJU)
+
+    # ── Error handling ───────────────────────────────────────────────────────
+
+    def test_vec_prihvacena_ponuda_vraca_gresku(self):
+        self.ponuda.status = SponzorskaPonuda.Status.PRIHVACENA
+        self.ponuda.save()
+        self.client.login(email='org@primer.com', password='Lozinka1!')
+        odgovor = self.client.post(self.url_odbij)
+        self.assertEqual(odgovor.status_code, 400)
+        self.assertIn('error', json.loads(odgovor.content))
+
+    def test_vec_odbijena_ponuda_vraca_gresku(self):
+        self.ponuda.status = SponzorskaPonuda.Status.ODBIJENA
+        self.ponuda.save()
+        self.client.login(email='org@primer.com', password='Lozinka1!')
+        odgovor = self.client.post(self.url_prihvati)
+        self.assertEqual(odgovor.status_code, 400)
+        self.assertIn('error', json.loads(odgovor.content))
+
+    def test_nepostojeca_ponuda_vraca_404(self):
+        self.client.login(email='org@primer.com', password='Lozinka1!')
+        url = reverse('prihvati_ponudu', kwargs={
+            'id_akc': self.akcija.pk, 'ponuda_id': 99999})
+        odgovor = self.client.post(url)
+        self.assertEqual(odgovor.status_code, 404)
+
+    # ── Javni prikaz prihvaćenih sponzora ────────────────────────────────────
+
+    def test_detalj_prikazuje_prihvacene_sponzore(self):
+        self.ponuda.status = SponzorskaPonuda.Status.PRIHVACENA
+        self.ponuda.save()
+        odgovor = self.client.get(reverse('detalj_akcije', kwargs={'id_akc': self.akcija.pk}))
+        self.assertEqual(odgovor.status_code, 200)
+        self.assertContains(odgovor, 'ProNatura')
+        self.assertContains(odgovor, '500')
+
+    def test_detalj_ne_prikazuje_ponude_na_cekanju(self):
+        odgovor = self.client.get(reverse('detalj_akcije', kwargs={'id_akc': self.akcija.pk}))
+        self.assertEqual(odgovor.status_code, 200)
+        self.assertNotContains(odgovor, 'Sponzori ove akcije')

@@ -206,7 +206,9 @@ class PrijavaForm(forms.Form):
 
         # 2.2.2 / 2.2.3 — nepostojeći email ili pogrešna lozinka daju istu
         # poruku (neaktivan nalog takođe vraća None).
-        korisnik = authenticate(email=email, password=lozinka)
+        # Email se normalizuje pre pretrage: SQLite je case-sensitive za =,
+        # a korisnici su sačuvani sa malim slovima (normalize_email u create_user).
+        korisnik = authenticate(email=email.lower(), password=lozinka)
         if korisnik is None:
             raise ValidationError('Email adresa ili lozinka nisu ispravni.')
 

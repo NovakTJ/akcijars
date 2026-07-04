@@ -211,9 +211,13 @@ def detalj_akcije(request, id_akc):
     kontekst = {
         'akcija': akcija,
         'moja_prijava': _moja_prijava(request.user, akcija),
+        'prihvaceni_sponzori': SponzorskaPonuda.objects.filter(
+            akcija=akcija, status=SponzorskaPonuda.Status.PRIHVACENA,
+        ).select_related('sponzor'),
     }
     if _je_organizator_akcije(request.user, akcija):
         kontekst.update(_org_kontekst(akcija))
+        kontekst.update(_org_ponude_kontekst(akcija))
         kontekst['prikazi_org_panel'] = True
     if request.user.is_authenticated and request.user.je_sponzor and request.user.je_odobren:
         moja_ponuda = SponzorskaPonuda.objects.filter(
@@ -259,6 +263,18 @@ def _org_kontekst(akcija):
         'akcija': akcija,
         'prijave_na_cekanju': prijave.filter(status=Prijava.Status.NA_CEKANJU),
         'prijave_prihvacene': prijave.filter(status=Prijava.Status.PRIHVACENA),
+    }
+
+
+def _org_ponude_kontekst(akcija):
+    """Kontekst za _org_ponude.html panel (SSU 17)."""
+    ponude = akcija.sponzorske_ponude.select_related('sponzor')
+    na_cekanju = ponude.filter(status=SponzorskaPonuda.Status.NA_CEKANJU)
+    return {
+        'ponude_na_cekanju': na_cekanju,
+        'ponude_prihvacene': ponude.filter(status=SponzorskaPonuda.Status.PRIHVACENA),
+        'ponude_odbijene': ponude.filter(status=SponzorskaPonuda.Status.ODBIJENA),
+        'br_ponuda_na_cekanju': na_cekanju.count(),
     }
 
 
@@ -313,6 +329,50 @@ def odbij_prijavu(request, id_akc, id_kor):
     prijava.save(update_fields=['status'])
     posalji_odbijanje_prijave(prijava)
     return _org_ajax_odgovor(request, akcija)
+
+
+@login_required
+@require_POST
+def prihvati_ponudu(request, id_akc, ponuda_id):
+    """Organizator prihvata sponzorsku ponudu (SSU 17)."""
+    akcija = get_object_or_404(Akcija, pk=id_akc)
+    if not _je_organizator_akcije(request.user, akcija):
+        return JsonResponse({'error': 'Samo organizator akcije može ovo da uradi.'}, status=403)
+    try:
+        ponuda = SponzorskaPonuda.objects.get(pk=ponuda_id, akcija=akcija)
+    except SponzorskaPonuda.DoesNotExist:
+        return JsonResponse({'error': 'Ponuda ne postoji ili je već obrađena.'}, status=404)
+    if ponuda.status != SponzorskaPonuda.Status.NA_CEKANJU:
+        return JsonResponse({'error': 'Ponuda je već obrađena.'}, status=400)
+    ponuda.status = SponzorskaPonuda.Status.PRIHVACENA
+    ponuda.save(update_fields=['status'])
+    ctx = _org_ponude_kontekst(akcija)
+    return JsonResponse({
+        'ponude': render_to_string('_org_ponude.html', ctx, request=request),
+        'br_na_cekanju': ctx['br_ponuda_na_cekanju'],
+    })
+
+
+@login_required
+@require_POST
+def odbij_ponudu(request, id_akc, ponuda_id):
+    """Organizator odbija sponzorsku ponudu (SSU 17)."""
+    akcija = get_object_or_404(Akcija, pk=id_akc)
+    if not _je_organizator_akcije(request.user, akcija):
+        return JsonResponse({'error': 'Samo organizator akcije može ovo da uradi.'}, status=403)
+    try:
+        ponuda = SponzorskaPonuda.objects.get(pk=ponuda_id, akcija=akcija)
+    except SponzorskaPonuda.DoesNotExist:
+        return JsonResponse({'error': 'Ponuda ne postoji ili je već obrađena.'}, status=404)
+    if ponuda.status != SponzorskaPonuda.Status.NA_CEKANJU:
+        return JsonResponse({'error': 'Ponuda je već obrađena.'}, status=400)
+    ponuda.status = SponzorskaPonuda.Status.ODBIJENA
+    ponuda.save(update_fields=['status'])
+    ctx = _org_ponude_kontekst(akcija)
+    return JsonResponse({
+        'ponude': render_to_string('_org_ponude.html', ctx, request=request),
+        'br_na_cekanju': ctx['br_ponuda_na_cekanju'],
+    })
 
 
 @login_required

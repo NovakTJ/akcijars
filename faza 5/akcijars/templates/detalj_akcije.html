@@ -45,13 +45,23 @@
           <p>{{ akcija.opis|linebreaksbr }}</p>
         </div>
 
-        {% comment %}
-          TODO(#18, Stefan): povezati sa modelom SponzorskaPonuda i prikazati
-          listu sponzora čija je ponuda prihvaćena. Prototip: faza 2/prototip/akcija.html linije 184–198.
-        {% endcomment %}
-        <div style="margin-top:32px;padding:20px 24px;background:var(--bg);border:1px dashed var(--border-light);border-radius:var(--radius-lg);color:var(--text-muted);font-size:.875rem;">
-          <i class="bi bi-patch-check"></i> Sponzori ove akcije — biće implementirano.
+        {% if prihvaceni_sponzori %}
+        <div style="margin-top:32px;padding:20px 24px;background:linear-gradient(135deg,rgba(93,201,93,0.07),rgba(26,188,189,0.07));border:1px solid rgba(93,201,93,0.2);border-radius:var(--radius-lg);">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+            <i class="bi bi-patch-check-fill" style="color:var(--green);font-size:1.1rem;"></i>
+            <h3 style="font-size:.9375rem;font-weight:700;color:var(--dark);margin:0;">Sponzori ove akcije</h3>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;">
+            {% for ponuda in prihvaceni_sponzori %}
+            <div style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:white;border:1px solid rgba(93,201,93,0.3);border-radius:24px;box-shadow:0 1px 4px rgba(0,0,0,.06);">
+              <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--green-light),var(--teal-light));display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;color:var(--green-hover);">{{ ponuda.sponzor.naziv_organizacije|slice:":1" }}</div>
+              <span style="font-weight:600;font-size:.875rem;color:var(--dark);">{{ ponuda.sponzor.naziv_organizacije }}</span>
+              <span style="font-size:.8rem;color:var(--text-muted);">{{ ponuda.vrednost }} €</span>
+            </div>
+            {% endfor %}
+          </div>
         </div>
+        {% endif %}
       </div>
 
       <div class="action-sidebar">
@@ -132,21 +142,25 @@
         </div>
 
         <div style="display:flex;gap:4px;border-bottom:2px solid var(--border-light);margin-bottom:24px;overflow-x:auto;">
-          <button type="button"
-                  style="padding:10px 18px;font-size:.875rem;font-weight:600;border:none;background:none;cursor:default;
-                         border-bottom:2px solid var(--teal);color:var(--teal);margin-bottom:-2px;white-space:nowrap;">
+          <button type="button" id="otab-org-vol" data-tab-target="org-vol"
+                  style="padding:10px 18px;font-size:.875rem;font-weight:600;border:none;background:none;cursor:pointer;
+                         border-bottom:2px solid var(--teal);color:var(--teal);margin-bottom:-2px;white-space:nowrap;transition:all .15s;">
             <i class="bi bi-person-check"></i> Volonteri
           </button>
+          <button type="button" id="otab-org-sp" data-tab-target="org-sp"
+                  style="padding:10px 18px;font-size:.875rem;font-weight:600;border:none;background:none;cursor:pointer;
+                         border-bottom:2px solid transparent;color:var(--text-muted);margin-bottom:-2px;white-space:nowrap;transition:all .15s;">
+            <i class="bi bi-patch-check"></i> Sponzori
+            {% if br_ponuda_na_cekanju %}
+              <span id="org-sp-badge" style="background:var(--teal);color:white;font-size:.65rem;padding:1px 6px;border-radius:8px;font-weight:700;">{{ br_ponuda_na_cekanju }}</span>
+            {% else %}
+              <span id="org-sp-badge" style="background:var(--teal);color:white;font-size:.65rem;padding:1px 6px;border-radius:8px;font-weight:700;display:none;"></span>
+            {% endif %}
+          </button>
           {% comment %}
-            TODO(#19, Stefan): tab „Sponzori" (SSU 17 — prihvatanje/odbijanje sponzorstva).
             TODO(#24, Milica): tab „Pošalji obaveštenje" (SSU 8).
             TODO(#14, Maša): tab „Izmeni akciju" (SSU 10).
           {% endcomment %}
-          <button type="button" disabled title="Biće implementirano"
-                  style="padding:10px 18px;font-size:.875rem;font-weight:600;border:none;background:none;cursor:not-allowed;
-                         color:var(--text-muted);opacity:.5;margin-bottom:-2px;white-space:nowrap;">
-            <i class="bi bi-patch-check"></i> Sponzori
-          </button>
           <button type="button" disabled title="Biće implementirano"
                   style="padding:10px 18px;font-size:.875rem;font-weight:600;border:none;background:none;cursor:not-allowed;
                          color:var(--text-muted);opacity:.5;margin-bottom:-2px;white-space:nowrap;">
@@ -160,7 +174,12 @@
         </div>
 
         <div id="org-panel-content">
-          {% include '_org_prijave.html' %}
+          <div id="org-vol">
+            {% include '_org_prijave.html' %}
+          </div>
+          <div id="org-sp" style="display:none;">
+            {% include '_org_ponude.html' %}
+          </div>
         </div>
       </div>
     {% endif %}
