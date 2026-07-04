@@ -36,6 +36,10 @@
               <a href="{% url 'sponzor_panel' %}" class="btn btn-secondary btn-sm">
                 <i class="bi bi-trophy"></i> Sponzor panel
               </a>
+            {% elif request.user.je_volonter %}
+              <a href="{% url 'volonter_panel' %}" class="btn btn-secondary btn-sm">
+                <i class="bi bi-person-heart"></i> Volonter panel
+              </a>
             {% else %}
               <a href="#" class="btn btn-secondary btn-sm">Moj nalog</a>
             {% endif %}
@@ -64,6 +68,8 @@
           <a href="{% url 'admin_panel' %}" class="btn btn-secondary btn-sm">Admin panel</a>
         {% elif request.user.je_sponzor %}
           <a href="{% url 'sponzor_panel' %}" class="btn btn-secondary btn-sm">Sponzor panel</a>
+        {% elif request.user.je_volonter %}
+          <a href="{% url 'volonter_panel' %}" class="btn btn-secondary btn-sm">Volonter panel</a>
         {% else %}
           <a href="#" class="btn btn-secondary btn-sm">Moj nalog</a>
         {% endif %}

@@ -4,7 +4,7 @@ import re
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db.models import Sum
+from django.db.models import Q, Sum
 from django.http import HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
@@ -68,6 +68,8 @@ def _pocetna_za_korisnika(korisnik):
         return 'admin_panel'
     if korisnik.je_sponzor:
         return 'sponzor_panel'
+    if korisnik.je_volonter:
+        return 'volonter_panel'
     return 'home'
 
 
@@ -497,6 +499,44 @@ def sponzor_panel(request):
         'br_prihvacenih': prihvacene.count(),
         'br_na_cekanju': na_cekanju.count(),
         'br_odbijenih': odbijene.count(),
+    })
+
+
+@login_required
+def volonter_panel(request):
+    """Volonterski panel (SSU 15)."""
+    if not request.user.je_volonter:
+        return redirect('home')
+
+    volonter = request.user.volonter_profil
+    prijave = Prijava.objects.filter(
+        korisnik=volonter
+    ).select_related('akcija', 'akcija__organizator', 'akcija__kategorija')
+
+    zavrsene_akcije = [Akcija.Status.ZAVRSENA, Akcija.Status.OTKAZANA]
+
+    tekuce = prijave.filter(
+        status__in=[Prijava.Status.NA_CEKANJU, Prijava.Status.PRIHVACENA]
+    ).exclude(akcija__status__in=zavrsene_akcije)
+
+    istorija = prijave.filter(
+        Q(status=Prijava.Status.ODBIJENA) |
+        Q(akcija__status__in=zavrsene_akcije)
+    )
+
+    ukupno_sati = prijave.filter(
+        status=Prijava.Status.PRIHVACENA
+    ).aggregate(total=Sum('br_sati'))['total'] or 0
+
+    na_cekanju = tekuce.filter(status=Prijava.Status.NA_CEKANJU)
+
+    return render(request, 'volonter_panel.html', {
+        'tekuce_prijave': tekuce,
+        'istorija_prijava': istorija,
+        'ukupno_sati': ukupno_sati,
+        'br_tekucih': tekuce.count(),
+        'br_istorija': istorija.count(),
+        'br_na_cekanju': na_cekanju.count(),
     })
 
 

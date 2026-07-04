@@ -31,6 +31,9 @@ urlpatterns = [
     # pogrešnu rutu). Link iz liste članaka već koristi {% url 'detalj_clanka' %}.
     path('clanci/<int:id_cla>/', views._uskoro, name='detalj_clanka'),
 
+    # SSU 15 — volonterski panel
+    path('volonter-panel/', views.volonter_panel, name='volonter_panel'),
+
     # SSU 16 — sponzorski panel
     path('sponzor-panel/', views.sponzor_panel, name='sponzor_panel'),
 

@@ -10,6 +10,7 @@ from .models import (
     KategorijaAkcije,
     Korisnik,
     OrganizatorProfil,
+    Prijava,
     SponzorProfil,
     SponzorskaPonuda,
     VolonterProfil,
@@ -191,7 +192,7 @@ class PrijavaTest(TestCase):
     def test_uspesna_prijava_volontera(self):
         odgovor = self.client.post(
             self.url, {'email': 'volonter@example.com', 'lozinka': 'Lozinka1!'})
-        self.assertRedirects(odgovor, reverse('home'))
+        self.assertRedirects(odgovor, reverse('volonter_panel'))
         self.assertEqual(
             int(self.client.session['_auth_user_id']), self.volonter.pk)
 
@@ -255,7 +256,7 @@ class PrijavaTest(TestCase):
     def test_ulogovan_korisnik_preusmeren(self):
         self.client.login(email='volonter@example.com', password='Lozinka1!')
         odgovor = self.client.get(self.url)
-        self.assertRedirects(odgovor, reverse('home'))
+        self.assertRedirects(odgovor, reverse('volonter_panel'))
 
 
 class AdminPanelTest(TestCase):
@@ -879,4 +880,183 @@ class SponzorPanelTest(TestCase):
         odgovor = self.client.post(
             reverse('prijava'),
             {'email': 'sponzor1@primer.com', 'lozinka': 'Lozinka1!'})
+        self.assertRedirects(odgovor, self.url)
+
+
+class VolonterPanelTest(TestCase):
+    """Testovi za volonterski panel (SSU 15)."""
+
+    def setUp(self):
+        kategorija = KategorijaAkcije.objects.create(naziv='Ekologija')
+
+        org_korisnik = Korisnik.objects.create_user(
+            email='org@primer.com', password='Lozinka1!',
+            korisnicko_ime='org_primer', ime='Org', prezime='Orgić')
+        self.org_profil = OrganizatorProfil.objects.create(
+            korisnik=org_korisnik,
+            naziv_organizacije='Zeleni krug',
+            status=OrganizatorProfil.Status.ODOBREN,
+        )
+
+        def nova_akcija(naziv, status=Akcija.Status.AKTIVNA, datum='2026-09-01'):
+            return Akcija.objects.create(
+                organizator=self.org_profil,
+                kategorija=kategorija,
+                naziv=naziv,
+                opis='Opis',
+                datum=datum,
+                vreme='10:00',
+                lokacija='Beograd',
+                max_br_volontera=10,
+                kontakt_email='org@primer.com',
+                kontakt_telefon='011-111',
+                status=status,
+            )
+
+        self.akcija_aktivna = nova_akcija('Aktivna akcija')
+        self.akcija_zavrsena = nova_akcija('Završena akcija', Akcija.Status.ZAVRSENA, '2026-01-01')
+        self.akcija_otkazana = nova_akcija('Otkazana akcija', Akcija.Status.OTKAZANA, '2026-02-01')
+        self.akcija_druga = nova_akcija('Druga aktivna akcija')
+
+        # Volonter 1 — ima prijave svih statusa
+        self.vol1 = Korisnik.objects.create_user(
+            email='vol1@primer.com', password='Lozinka1!',
+            korisnicko_ime='vol1', ime='Ana', prezime='Anić')
+        self.vol1_profil = VolonterProfil.objects.create(korisnik=self.vol1)
+
+        self.prijava_na_cekanju = Prijava.objects.create(
+            korisnik=self.vol1_profil, akcija=self.akcija_aktivna,
+            status=Prijava.Status.NA_CEKANJU, br_sati=0,
+        )
+        self.prijava_prihvacena = Prijava.objects.create(
+            korisnik=self.vol1_profil, akcija=self.akcija_druga,
+            status=Prijava.Status.PRIHVACENA, br_sati=6,
+        )
+        self.prijava_odbijena = Prijava.objects.create(
+            korisnik=self.vol1_profil, akcija=self.akcija_zavrsena,
+            status=Prijava.Status.ODBIJENA, br_sati=0,
+        )
+        self.prijava_zavrsena_akcija = Prijava.objects.create(
+            korisnik=self.vol1_profil, akcija=self.akcija_otkazana,
+            status=Prijava.Status.PRIHVACENA, br_sati=4,
+        )
+
+        # Volonter 2 — tuđe prijave, ne smiju biti vidljive vol1
+        self.vol2 = Korisnik.objects.create_user(
+            email='vol2@primer.com', password='Lozinka1!',
+            korisnicko_ime='vol2', ime='Bojan', prezime='Bojić')
+        self.vol2_profil = VolonterProfil.objects.create(korisnik=self.vol2)
+        self.tuda_prijava = Prijava.objects.create(
+            korisnik=self.vol2_profil, akcija=self.akcija_aktivna,
+            status=Prijava.Status.PRIHVACENA, br_sati=8,
+        )
+
+        self.url = reverse('volonter_panel')
+
+    # ── Pristup ──────────────────────────────────────────────────────────────
+
+    def test_volonter_vidi_panel(self):
+        self.client.login(email='vol1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        self.assertEqual(odgovor.status_code, 200)
+        self.assertTemplateUsed(odgovor, 'volonter_panel.html')
+
+    def test_anoniman_ne_vidi_panel(self):
+        odgovor = self.client.get(self.url)
+        self.assertNotEqual(odgovor.status_code, 200)
+
+    def test_sponzor_preusmeren_na_pocetnu(self):
+        sponzor = Korisnik.objects.create_user(
+            email='sp@primer.com', password='Lozinka1!',
+            korisnicko_ime='sp', ime='Sara', prezime='Sarić')
+        SponzorProfil.objects.create(
+            korisnik=sponzor, naziv_organizacije='Sp doo',
+            status=SponzorProfil.Status.ODOBREN)
+        self.client.login(email='sp@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        self.assertRedirects(odgovor, reverse('home'))
+
+    # ── Volonter vidi samo svoje prijave ─────────────────────────────────────
+
+    def test_volonter_vidi_samo_svoje_tekuce(self):
+        self.client.login(email='vol1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        tekuce_pk = [p.pk for p in odgovor.context['tekuce_prijave']]
+        self.assertNotIn(self.tuda_prijava.pk, tekuce_pk)
+
+    def test_volonter_vidi_samo_svoju_istoriju(self):
+        self.client.login(email='vol1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        istorija_pk = [p.pk for p in odgovor.context['istorija_prijava']]
+        self.assertNotIn(self.tuda_prijava.pk, istorija_pk)
+
+    # ── Tekuće prijave (na_cekanju + prihvacena za aktivne akcije) ───────────
+
+    def test_tekuce_sadrze_prijavu_na_cekanju(self):
+        self.client.login(email='vol1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        tekuce_pk = [p.pk for p in odgovor.context['tekuce_prijave']]
+        self.assertIn(self.prijava_na_cekanju.pk, tekuce_pk)
+
+    def test_tekuce_sadrze_prihvacenu_za_aktivnu_akciju(self):
+        self.client.login(email='vol1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        tekuce_pk = [p.pk for p in odgovor.context['tekuce_prijave']]
+        self.assertIn(self.prijava_prihvacena.pk, tekuce_pk)
+
+    def test_tekuce_ne_sadrze_odbijena(self):
+        self.client.login(email='vol1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        tekuce_pk = [p.pk for p in odgovor.context['tekuce_prijave']]
+        self.assertNotIn(self.prijava_odbijena.pk, tekuce_pk)
+
+    def test_tekuce_ne_sadrze_prijavu_za_zavrsenu_akciju(self):
+        self.client.login(email='vol1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        tekuce_pk = [p.pk for p in odgovor.context['tekuce_prijave']]
+        self.assertNotIn(self.prijava_zavrsena_akcija.pk, tekuce_pk)
+
+    # ── Istorija (odbijene + završene/otkazane akcije) ────────────────────────
+
+    def test_istorija_sadrzi_odbijena(self):
+        self.client.login(email='vol1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        istorija_pk = [p.pk for p in odgovor.context['istorija_prijava']]
+        self.assertIn(self.prijava_odbijena.pk, istorija_pk)
+
+    def test_istorija_sadrzi_prijavu_za_otkazanu_akciju(self):
+        self.client.login(email='vol1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        istorija_pk = [p.pk for p in odgovor.context['istorija_prijava']]
+        self.assertIn(self.prijava_zavrsena_akcija.pk, istorija_pk)
+
+    def test_istorija_ne_sadrzi_tekuce(self):
+        self.client.login(email='vol1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        istorija_pk = [p.pk for p in odgovor.context['istorija_prijava']]
+        self.assertNotIn(self.prijava_na_cekanju.pk, istorija_pk)
+        self.assertNotIn(self.prijava_prihvacena.pk, istorija_pk)
+
+    # ── Ukupan broj sati ──────────────────────────────────────────────────────
+
+    def test_ukupno_sati_je_suma_prihvacenih(self):
+        self.client.login(email='vol1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        # prijava_prihvacena(6) + prijava_zavrsena_akcija(4) = 10
+        self.assertEqual(odgovor.context['ukupno_sati'], 10)
+
+    def test_ukupno_sati_ne_ukljucuje_na_cekanju_ni_odbijene(self):
+        self.client.login(email='vol1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        self.assertNotEqual(odgovor.context['ukupno_sati'], 0)
+        # Odbijene i na čekanju imaju br_sati=0, ali provera da
+        # suma nije uvećana tuđim satima
+        self.assertNotEqual(odgovor.context['ukupno_sati'], 18)
+
+    # ── Login redirekcija za volontera ────────────────────────────────────────
+
+    def test_volonter_se_loguje_na_panel(self):
+        odgovor = self.client.post(
+            reverse('prijava'),
+            {'email': 'vol1@primer.com', 'lozinka': 'Lozinka1!'})
         self.assertRedirects(odgovor, self.url)
