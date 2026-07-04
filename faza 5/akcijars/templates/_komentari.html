@@ -1,0 +1,15 @@
+{% if komentari %}
+  {% for k in komentari %}
+  <div class="comment-item">
+    <div class="comment-avatar">{{ k.korisnik.ime|first }}</div>
+    <div class="comment-content">
+      <div class="comment-meta">
+        <strong>{{ k.korisnik.get_full_name }}</strong> · {{ k.datum_komentara|date:"d.m.Y." }}
+      </div>
+      <div class="comment-text">{{ k.tekst }}</div>
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+  <p style="color:var(--text-muted);font-size:.9rem;padding:20px 0;">Još nema komentara. Budite prvi!</p>
+{% endif %}

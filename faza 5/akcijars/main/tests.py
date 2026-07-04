@@ -8,6 +8,9 @@ from django.utils import timezone
 from .models import (
     Akcija,
     KategorijaAkcije,
+    KategorijaClanka,
+    Clanak,
+    Komentar,
     Korisnik,
     OrganizatorProfil,
     Prijava,
@@ -1060,3 +1063,139 @@ class VolonterPanelTest(TestCase):
             reverse('prijava'),
             {'email': 'vol1@primer.com', 'lozinka': 'Lozinka1!'})
         self.assertRedirects(odgovor, self.url)
+
+
+class KomentarTest(TestCase):
+    """Testovi za SSU 12 — komentarisanje članaka."""
+
+    def setUp(self):
+        kategorija_clanka = KategorijaClanka.objects.create(naziv='Opšte')
+
+        org_korisnik = Korisnik.objects.create_user(
+            email='org@primer.com', password='Lozinka1!',
+            korisnicko_ime='org_primer', ime='Org', prezime='Orgić')
+        self.org_profil = OrganizatorProfil.objects.create(
+            korisnik=org_korisnik,
+            naziv_organizacije='Zeleni krug',
+            status=OrganizatorProfil.Status.ODOBREN,
+        )
+
+        self.clanak = Clanak.objects.create(
+            autor=self.org_profil,
+            kategorija=kategorija_clanka,
+            naslov='Test članak',
+            tekst='Sadržaj test članka.',
+            status=Clanak.Status.OBJAVLJEN,
+        )
+
+        self.volonter = Korisnik.objects.create_user(
+            email='vol@primer.com', password='Lozinka1!',
+            korisnicko_ime='vol_primer', ime='Ana', prezime='Anić')
+        VolonterProfil.objects.create(korisnik=self.volonter)
+
+        self.url_detalj = reverse('detalj_clanka', kwargs={'id_cla': self.clanak.pk})
+        self.url_komentar = reverse('ajax_dodaj_komentar', kwargs={'id_cla': self.clanak.pk})
+
+    def _ajax_post(self, tekst):
+        return self.client.post(
+            self.url_komentar,
+            data=json.dumps({'tekst': tekst}),
+            content_type='application/json',
+        )
+
+    # ── Prikaz detalja članka ────────────────────────────────────────────────
+
+    def test_detalj_clanka_prikazuje_stranicu(self):
+        odgovor = self.client.get(self.url_detalj)
+        self.assertEqual(odgovor.status_code, 200)
+        self.assertTemplateUsed(odgovor, 'detalj_clanka.html')
+        self.assertContains(odgovor, 'Test članak')
+
+    def test_detalj_clanka_sadrzi_tekst(self):
+        odgovor = self.client.get(self.url_detalj)
+        self.assertContains(odgovor, 'Sadržaj test članka.')
+
+    def test_neobjavljen_clanak_vraca_404(self):
+        clanak_na_cekanju = Clanak.objects.create(
+            autor=self.org_profil,
+            kategorija=Clanak.objects.first().kategorija,
+            naslov='Na čekanju',
+            tekst='Tekst.',
+            status=Clanak.Status.NA_CEKANJU,
+        )
+        odgovor = self.client.get(
+            reverse('detalj_clanka', kwargs={'id_cla': clanak_na_cekanju.pk}))
+        self.assertEqual(odgovor.status_code, 404)
+
+    # ── Ulogovan korisnik može da komentariše (SSU 12, 2.2.1) ───────────────
+
+    def test_ulogovan_moze_da_komentarise(self):
+        self.client.login(email='vol@primer.com', password='Lozinka1!')
+        odgovor = self._ajax_post('Odličan članak!')
+        self.assertEqual(odgovor.status_code, 200)
+        data = json.loads(odgovor.content)
+        self.assertIn('html', data)
+        self.assertEqual(data['br_komentara'], 1)
+        self.assertTrue(Komentar.objects.filter(
+            clanak=self.clanak, korisnik=self.volonter
+        ).exists())
+
+    def test_komentar_se_cuva_sa_ispravnim_tekstom(self):
+        self.client.login(email='vol@primer.com', password='Lozinka1!')
+        self._ajax_post('Moj komentar')
+        komentar = Komentar.objects.get(clanak=self.clanak)
+        self.assertEqual(komentar.tekst, 'Moj komentar')
+        self.assertEqual(komentar.korisnik, self.volonter)
+
+    # ── Neulogovan korisnik ne može da komentariše (SSU 12, 2.2.2) ──────────
+
+    def test_neulogovan_ne_moze_da_komentarise(self):
+        odgovor = self._ajax_post('Komentar anonimnog')
+        self.assertNotEqual(odgovor.status_code, 200)
+        self.assertFalse(Komentar.objects.exists())
+
+    def test_detalj_ne_prikazuje_formu_neulogovanom(self):
+        odgovor = self.client.get(self.url_detalj)
+        self.assertNotContains(odgovor, 'id="comment-input"')
+        self.assertContains(odgovor, 'Prijavite se')
+
+    def test_detalj_prikazuje_formu_ulogovanom(self):
+        self.client.login(email='vol@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url_detalj)
+        self.assertContains(odgovor, 'id="comment-input"')
+
+    # ── Error handling ───────────────────────────────────────────────────────
+
+    def test_prazan_komentar_vraca_gresku(self):
+        self.client.login(email='vol@primer.com', password='Lozinka1!')
+        odgovor = self._ajax_post('')
+        self.assertEqual(odgovor.status_code, 400)
+        data = json.loads(odgovor.content)
+        self.assertIn('error', data)
+        self.assertFalse(Komentar.objects.exists())
+
+    def test_whitespace_komentar_vraca_gresku(self):
+        self.client.login(email='vol@primer.com', password='Lozinka1!')
+        odgovor = self._ajax_post('   ')
+        self.assertEqual(odgovor.status_code, 400)
+        self.assertFalse(Komentar.objects.exists())
+
+    # ── Lista komentara sortirana najnoviji prvi ─────────────────────────────
+
+    def test_komentari_sortirani_najnoviji_prvi(self):
+        self.client.login(email='vol@primer.com', password='Lozinka1!')
+        Komentar.objects.create(clanak=self.clanak, korisnik=self.volonter, tekst='Prvi')
+        Komentar.objects.create(clanak=self.clanak, korisnik=self.volonter, tekst='Drugi')
+        odgovor = self.client.get(self.url_detalj)
+        komentari = list(odgovor.context['komentari'])
+        self.assertEqual(komentari[0].tekst, 'Drugi')
+        self.assertEqual(komentari[1].tekst, 'Prvi')
+
+    # ── Broj komentara se ažurira nakon Ajax slanja ──────────────────────────
+
+    def test_ajax_vraca_ispravni_broj_komentara(self):
+        self.client.login(email='vol@primer.com', password='Lozinka1!')
+        self._ajax_post('Komentar 1')
+        odgovor = self._ajax_post('Komentar 2')
+        data = json.loads(odgovor.content)
+        self.assertEqual(data['br_komentara'], 2)

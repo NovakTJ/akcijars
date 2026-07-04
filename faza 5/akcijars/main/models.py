@@ -591,3 +591,37 @@ class SlikaClanka(models.Model):
 
     def __str__(self):
         return f'Slika {self.id_sli} — {self.clanak.naslov}'
+
+
+class Komentar(models.Model):
+    """Komentar na članak (SSU 12)."""
+
+    korisnik = models.ForeignKey(
+        Korisnik,
+        on_delete=models.CASCADE,
+        related_name='komentari',
+        db_column='IdKor',
+        verbose_name='Korisnik',
+    )
+    clanak = models.ForeignKey(
+        Clanak,
+        on_delete=models.CASCADE,
+        related_name='komentari',
+        db_column='IdCla',
+        verbose_name='Članak',
+    )
+    tekst = models.TextField(verbose_name='Tekst', db_column='Tekst')
+    datum_komentara = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Datum komentara',
+        db_column='DatumKomentara',
+    )
+
+    class Meta:
+        db_table = 'Komentar'
+        verbose_name = 'Komentar'
+        verbose_name_plural = 'Komentari'
+        ordering = ['-datum_komentara']
+
+    def __str__(self):
+        return f'{self.korisnik.get_full_name()} → {self.clanak.naslov}'

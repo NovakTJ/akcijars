@@ -24,12 +24,8 @@ urlpatterns = [
     path('akcije/<int:id_akc>/ponude/<int:ponuda_id>/odbij/', views.odbij_ponudu, name='odbij_ponudu'),
     path('clanci/', views.lista_clanaka, name='clanci'),
 
-    # TODO(#23, Stefan): zameniti ovaj placeholder pravim view-om za detalj
-    # članka + komentare (SSU 12). VAŽNO: zadrži isto name='detalj_clanka',
-    # samo promeni views._uskoro u views.detalj_clanka; ne dodaj novi path
-    # sa istim name= (Django tiho koristi poslednji, {% url %} bi pokazao na
-    # pogrešnu rutu). Link iz liste članaka već koristi {% url 'detalj_clanka' %}.
-    path('clanci/<int:id_cla>/', views._uskoro, name='detalj_clanka'),
+    path('clanci/<int:id_cla>/', views.detalj_clanka, name='detalj_clanka'),
+    path('clanci/<int:id_cla>/komentari/', views.ajax_dodaj_komentar, name='ajax_dodaj_komentar'),
 
     # SSU 15 — volonterski panel
     path('volonter-panel/', views.volonter_panel, name='volonter_panel'),

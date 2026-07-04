@@ -9,6 +9,7 @@ from django.utils.text import slugify
 
 from .models import (
     Akcija,
+    Komentar,
     Korisnik,
     VolonterProfil,
     OrganizatorProfil,
@@ -177,6 +178,27 @@ class SponzorskaPonudaForm(forms.ModelForm):
         if vrednost is not None and vrednost < 1:
             raise forms.ValidationError('Vrednost mora biti pozitivan broj.')
         return vrednost
+
+
+class KomentarForm(forms.ModelForm):
+    class Meta:
+        model = Komentar
+        fields = ['tekst']
+        widgets = {
+            'tekst': forms.Textarea(attrs={
+                'rows': 4,
+                'placeholder': 'Napišite komentar...',
+                'class': 'form-control',
+                'id': 'comment-input',
+            }),
+        }
+        labels = {'tekst': 'Vaš komentar'}
+
+    def clean_tekst(self):
+        tekst = self.cleaned_data.get('tekst', '').strip()
+        if not tekst:
+            raise forms.ValidationError('Komentar ne može biti prazan!')
+        return tekst
 
 
 class PrijavaForm(forms.Form):

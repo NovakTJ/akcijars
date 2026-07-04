@@ -38,12 +38,13 @@ from .emails import (
     posalji_potvrdu_registracije,
     posalji_prihvatanje_prijave,
 )
-from .forms import PrijavaForm, RegistracijaForm, SponzorskaPonudaForm
+from .forms import KomentarForm, PrijavaForm, RegistracijaForm, SponzorskaPonudaForm
 from .models import (
     Akcija,
     Clanak,
     KategorijaAkcije,
     KategorijaClanka,
+    Komentar,
     Korisnik,
     OrganizatorProfil,
     Prijava,
@@ -472,6 +473,49 @@ def lista_clanaka(request):
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return render(request, '_clanci_grid.html', kontekst)
     return render(request, 'clanci.html', kontekst)
+
+
+def detalj_clanka(request, id_cla):
+    """Detalj objavljenog članka sa listom komentara (SSU 12)."""
+    clanak = get_object_or_404(
+        Clanak.objects.select_related('autor', 'kategorija').prefetch_related('slike'),
+        pk=id_cla,
+        status=Clanak.Status.OBJAVLJEN,
+    )
+    komentari = clanak.komentari.select_related('korisnik').order_by('-datum_komentara')
+    forma = KomentarForm() if request.user.is_authenticated else None
+    return render(request, 'detalj_clanka.html', {
+        'clanak': clanak,
+        'komentari': komentari,
+        'forma': forma,
+        'br_komentara': komentari.count(),
+    })
+
+
+@login_required
+@require_POST
+def ajax_dodaj_komentar(request, id_cla):
+    """Ajax endpoint za dodavanje komentara na članak (SSU 12)."""
+    clanak = get_object_or_404(Clanak, pk=id_cla, status=Clanak.Status.OBJAVLJEN)
+    podaci, err = _parse_ajax_body(request)
+    if err:
+        return err
+    tekst = podaci.get('tekst', '') if podaci else ''
+    forma = KomentarForm({'tekst': tekst})
+    if not forma.is_valid():
+        greske = forma.errors.get('tekst', [])
+        poruka = greske[0] if greske else 'Komentar ne može biti prazan!'
+        return JsonResponse({'error': poruka}, status=400)
+    komentar = forma.save(commit=False)
+    komentar.korisnik = request.user
+    komentar.clanak = clanak
+    komentar.save()
+    komentari = clanak.komentari.select_related('korisnik').order_by('-datum_komentara')
+    html = render_to_string('_komentari.html', {'komentari': komentari}, request=request)
+    return JsonResponse({
+        'html': html,
+        'br_komentara': komentari.count(),
+    })
 
 
 @login_required
