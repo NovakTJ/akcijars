@@ -11,6 +11,7 @@ from .models import (
     KategorijaAkcije,
     Akcija,
     Prijava,
+    SponzorskaPonuda,
     KategorijaClanka,
     Clanak,
     SlikaClanka,
@@ -156,6 +157,15 @@ class PrijavaAdmin(admin.ModelAdmin):
     list_display = ('korisnik', 'akcija', 'status', 'datum_prijave', 'br_sati')
     list_filter = ('status', 'datum_prijave')
     search_fields = ('korisnik__korisnik__ime', 'korisnik__korisnik__prezime', 'akcija__naziv')
+
+
+@admin.register(SponzorskaPonuda)
+class SponzorskaPonudaAdmin(admin.ModelAdmin):
+    list_display = ('sponzor', 'akcija', 'vrednost', 'status', 'datum_slanja')
+    list_filter = ('status', 'datum_slanja')
+    search_fields = ('sponzor__naziv_organizacije', 'akcija__naziv')
+    readonly_fields = ('datum_slanja',)
+    ordering = ('-datum_slanja',)
 
 
 @admin.register(KategorijaClanka)

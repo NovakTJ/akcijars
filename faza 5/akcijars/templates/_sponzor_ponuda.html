@@ -1,0 +1,73 @@
+{% load static %}
+{# SSU 7 — kartica sponzorske ponude. Vidljiva samo odobrenim sponzorima. #}
+<div class="sidebar-card" id="sponzor-ponuda-container" data-ponuda-url="{% url 'posalji_ponudu' akcija.id_akc %}">
+  <h4><i class="bi bi-patch-check" style="color:var(--green);"></i> Sponzorišite akciju</h4>
+
+  {% if moja_ponuda %}
+    {% if moja_ponuda.status == 'prihvacena' %}
+      <div class="alert alert-success" style="margin-top:0;">
+        <i class="bi bi-check-circle-fill"></i>
+        <span>Vaša ponuda je <strong>prihvaćena</strong>! Hvala na podršci.</span>
+      </div>
+      <div style="background:var(--bg);border-radius:var(--radius-sm);padding:10px 14px;margin-top:10px;">
+        <div style="font-size:.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Vrednost</div>
+        <div style="font-family:var(--font-display);font-size:1.375rem;font-weight:800;color:var(--green-hover);">{{ moja_ponuda.vrednost }} €</div>
+      </div>
+
+    {% elif moja_ponuda.status == 'na_cekanju' %}
+      <div class="alert alert-info" style="margin-top:0;">
+        <i class="bi bi-hourglass-split"></i>
+        <span>Vaša ponuda čeka odgovor organizatora.</span>
+      </div>
+      <div style="background:var(--bg);border-radius:var(--radius-sm);padding:10px 14px;margin-top:10px;">
+        <div style="font-size:.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">Vrednost</div>
+        <div style="font-family:var(--font-display);font-size:1.375rem;font-weight:800;color:var(--green-hover);">{{ moja_ponuda.vrednost }} €</div>
+        <div style="font-size:.8rem;color:var(--text-muted);margin-top:4px;">{{ moja_ponuda.opis }}</div>
+      </div>
+
+    {% else %}
+      <div class="alert alert-error" style="margin-top:0;">
+        <i class="bi bi-x-circle"></i>
+        <span>Vaša ponuda je <strong>odbijena</strong>.</span>
+      </div>
+    {% endif %}
+
+  {% else %}
+    {% if ponuda_forma.errors %}
+      <div class="alert alert-error" style="margin-top:0;margin-bottom:12px;">
+        <i class="bi bi-exclamation-circle"></i>
+        <span>Proverite unete podatke.</span>
+      </div>
+    {% endif %}
+
+    <form id="form-ponuda" method="post" action="{% url 'posalji_ponudu' akcija.id_akc %}">
+      {% csrf_token %}
+      {{ ponuda_forma.akcija }}
+
+      <div class="form-group">
+        <label class="form-label">Vrednost (EUR) <span class="req">*</span></label>
+        <input type="number" name="vrednost" min="1"
+               class="form-control{% if ponuda_forma.vrednost.errors %} is-error{% endif %}"
+               placeholder="npr. 500"
+               value="{{ ponuda_forma.vrednost.value|default:'' }}">
+        {% if ponuda_forma.vrednost.errors %}
+          <div class="form-error"><i class="bi bi-exclamation-circle"></i> {{ ponuda_forma.vrednost.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Opis doprinosa <span class="req">*</span></label>
+        <textarea name="opis" rows="4" maxlength="1024"
+                  class="form-control{% if ponuda_forma.opis.errors %} is-error{% endif %}"
+                  placeholder="Opišite vaš doprinos…">{{ ponuda_forma.opis.value|default:'' }}</textarea>
+        {% if ponuda_forma.opis.errors %}
+          <div class="form-error"><i class="bi bi-exclamation-circle"></i> {{ ponuda_forma.opis.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width:100%;" id="btn-posalji-ponudu">
+        <i class="bi bi-send"></i> Pošalji ponudu
+      </button>
+    </form>
+  {% endif %}
+</div>

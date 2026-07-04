@@ -513,6 +513,60 @@ class Clanak(models.Model):
         return self.naslov
 
 
+class SponzorskaPonuda(models.Model):
+    """Ponuda sponzora za finansijsku podršku akciji (SSU 7)."""
+
+    class Status(models.TextChoices):
+        NA_CEKANJU = 'na_cekanju', 'Na čekanju'
+        PRIHVACENA = 'prihvacena', 'Prihvaćena'
+        ODBIJENA = 'odbijena', 'Odbijena'
+
+    sponzor = models.ForeignKey(
+        SponzorProfil,
+        on_delete=models.CASCADE,
+        related_name='ponude',
+        db_column='IdKor',
+        verbose_name='Sponzor',
+    )
+    akcija = models.ForeignKey(
+        Akcija,
+        on_delete=models.CASCADE,
+        related_name='sponzorske_ponude',
+        db_column='IdAkc',
+        verbose_name='Akcija',
+    )
+    vrednost = models.PositiveIntegerField(
+        verbose_name='Vrednost (EUR)',
+        db_column='Vrednost',
+    )
+    opis = models.TextField(
+        max_length=1024,
+        verbose_name='Opis doprinosa',
+        db_column='Opis',
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.NA_CEKANJU,
+        verbose_name='Status',
+        db_column='Status',
+    )
+    datum_slanja = models.DateField(
+        auto_now_add=True,
+        verbose_name='Datum slanja',
+        db_column='DatumSlanja',
+    )
+
+    class Meta:
+        db_table = 'SponzorskaPonuda'
+        verbose_name = 'Sponzorska ponuda'
+        verbose_name_plural = 'Sponzorske ponude'
+        ordering = ['-datum_slanja']
+
+    def __str__(self):
+        return f'{self.sponzor.naziv_organizacije} → {self.akcija.naziv} ({self.get_status_display()})'
+
+
 class SlikaClanka(models.Model):
     """Slike koje pripadaju članku (spec.baze 3.11) — može ih biti više po članku."""
 

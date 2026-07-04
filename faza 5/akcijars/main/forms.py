@@ -8,10 +8,12 @@ from django.core.validators import validate_email
 from django.utils.text import slugify
 
 from .models import (
+    Akcija,
     Korisnik,
     VolonterProfil,
     OrganizatorProfil,
     SponzorProfil,
+    SponzorskaPonuda,
 )
 
 
@@ -154,6 +156,27 @@ class RegistracijaForm(forms.Form):
             )
 
         return korisnik, uloga
+
+
+class SponzorskaPonudaForm(forms.ModelForm):
+    class Meta:
+        model = SponzorskaPonuda
+        fields = ['akcija', 'vrednost', 'opis']
+        widgets = {
+            'akcija': forms.HiddenInput(),
+            'vrednost': forms.NumberInput(attrs={'min': 1, 'placeholder': 'npr. 500'}),
+            'opis': forms.Textarea(attrs={'rows': 4, 'maxlength': 1024, 'placeholder': 'Opišite vaš doprinos…'}),
+        }
+        labels = {
+            'vrednost': 'Vrednost (EUR)',
+            'opis': 'Opis doprinosa',
+        }
+
+    def clean_vrednost(self):
+        vrednost = self.cleaned_data.get('vrednost')
+        if vrednost is not None and vrednost < 1:
+            raise forms.ValidationError('Vrednost mora biti pozitivan broj.')
+        return vrednost
 
 
 class PrijavaForm(forms.Form):

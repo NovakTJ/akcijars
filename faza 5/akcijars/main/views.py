@@ -37,7 +37,7 @@ from .emails import (
     posalji_potvrdu_registracije,
     posalji_prihvatanje_prijave,
 )
-from .forms import PrijavaForm, RegistracijaForm
+from .forms import PrijavaForm, RegistracijaForm, SponzorskaPonudaForm
 from .models import (
     Akcija,
     Clanak,
@@ -47,6 +47,7 @@ from .models import (
     OrganizatorProfil,
     Prijava,
     SponzorProfil,
+    SponzorskaPonuda,
 )
 
 
@@ -214,6 +215,12 @@ def detalj_akcije(request, id_akc):
     if _je_organizator_akcije(request.user, akcija):
         kontekst.update(_org_kontekst(akcija))
         kontekst['prikazi_org_panel'] = True
+    if request.user.is_authenticated and request.user.je_sponzor and request.user.je_odobren:
+        moja_ponuda = SponzorskaPonuda.objects.filter(
+            sponzor=request.user.sponzor_profil, akcija=akcija
+        ).first()
+        kontekst['ponuda_forma'] = SponzorskaPonudaForm(initial={'akcija': akcija})
+        kontekst['moja_ponuda'] = moja_ponuda
     return render(request, 'detalj_akcije.html', kontekst)
 
 
@@ -326,6 +333,33 @@ def odjavi_se(request, id_akc):
     return render(request, '_prijava_sidebar.html', {
         'akcija': akcija,
         'moja_prijava': _moja_prijava(request.user, akcija),
+    })
+
+
+@login_required
+@require_POST
+def posalji_ponudu(request, id_akc):
+    """Sponzor šalje ponudu za akciju (SSU 7, 2.2.1)."""
+    if not request.user.je_sponzor:
+        return HttpResponseForbidden('Samo sponzori mogu da pošalju ponudu.')
+    if not request.user.je_odobren:
+        return HttpResponseForbidden('Vaš nalog još nije odobren.')
+    akcija = get_object_or_404(Akcija, pk=id_akc)
+    form = SponzorskaPonudaForm(request.POST)
+    if form.is_valid():
+        ponuda = form.save(commit=False)
+        ponuda.sponzor = request.user.sponzor_profil
+        ponuda.akcija = akcija
+        ponuda.save()
+        return render(request, '_sponzor_ponuda.html', {
+            'akcija': akcija,
+            'moja_ponuda': ponuda,
+            'ponuda_forma': SponzorskaPonudaForm(initial={'akcija': akcija}),
+        })
+    return render(request, '_sponzor_ponuda.html', {
+        'akcija': akcija,
+        'moja_ponuda': None,
+        'ponuda_forma': form,
     })
 
 

@@ -40,6 +40,28 @@
     }
   });
 
+  // Sponzorska ponuda (SSU 7) — Ajax submit forme
+  const ponudaContainer = document.getElementById('sponzor-ponuda-container');
+  if (ponudaContainer) {
+    ponudaContainer.addEventListener('submit', async (e) => {
+      if (!e.target.closest('#form-ponuda')) return;
+      e.preventDefault();
+      const form = e.target.closest('#form-ponuda');
+      const url = ponudaContainer.dataset.ponudaUrl;
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'X-CSRFToken': getCsrfToken(), 'X-Requested-With': 'XMLHttpRequest' },
+          body: new FormData(form),
+        });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        ponudaContainer.outerHTML = await response.text();
+      } catch (err) {
+        console.error('Slanje ponude nije uspelo:', err);
+      }
+    });
+  }
+
   // Organizator panel (SSU 18) — Prihvati / Odbij prijave
   const orgPanel = document.getElementById('org-panel');
   if (orgPanel) {
