@@ -240,7 +240,7 @@ class PrijavaTest(TestCase):
             status=OrganizatorProfil.Status.ODOBREN)
         odgovor = self.client.post(
             self.url, {'email': 'org2@example.com', 'lozinka': 'Lozinka1!'})
-        self.assertRedirects(odgovor, reverse('home'))
+        self.assertRedirects(odgovor, reverse('organizator_panel'))
         self.assertIn('_auth_user_id', self.client.session)
 
     def test_nepopunjena_polja(self):
@@ -358,7 +358,7 @@ class AdminPanelTest(TestCase):
         self.client.logout()
         odgovor = self.client.post(
             reverse('prijava'), {'email': 'org@example.com', 'lozinka': 'Lozinka1!'})
-        self.assertRedirects(odgovor, reverse('home'))
+        self.assertRedirects(odgovor, reverse('organizator_panel'))
 
     # ── Odbijanje naloga (SSU 13, 2.2.2) ──
 
@@ -1382,3 +1382,229 @@ class KomentarTest(TestCase):
         odgovor = self._ajax_post('Komentar 2')
         data = json.loads(odgovor.content)
         self.assertEqual(data['br_komentara'], 2)
+
+
+class OrganizatorPanelTest(TestCase):
+    """Testovi za organizatorski panel."""
+
+    def setUp(self):
+        kategorija = KategorijaAkcije.objects.create(naziv='Ekologija')
+        kat_clanka = KategorijaClanka.objects.create(naziv='Opšte')
+
+        org1 = Korisnik.objects.create_user(
+            email='org1@primer.com', password='Lozinka1!',
+            korisnicko_ime='org1', ime='Novak', prezime='Novković')
+        self.org1_profil = OrganizatorProfil.objects.create(
+            korisnik=org1,
+            naziv_organizacije='Zeleni Beograd',
+            status=OrganizatorProfil.Status.ODOBREN,
+        )
+
+        org2 = Korisnik.objects.create_user(
+            email='org2@primer.com', password='Lozinka1!',
+            korisnicko_ime='org2', ime='Ana', prezime='Anić')
+        self.org2_profil = OrganizatorProfil.objects.create(
+            korisnik=org2,
+            naziv_organizacije='Plave reke',
+            status=OrganizatorProfil.Status.ODOBREN,
+        )
+
+        org_neodobren = Korisnik.objects.create_user(
+            email='neodobren@primer.com', password='Lozinka1!',
+            korisnicko_ime='org_neo', ime='Neo', prezime='Neović')
+        OrganizatorProfil.objects.create(
+            korisnik=org_neodobren,
+            naziv_organizacije='Neodobrena org',
+            status=OrganizatorProfil.Status.NA_CEKANJU,
+        )
+        self.org_neodobren = org_neodobren
+
+        vol = Korisnik.objects.create_user(
+            email='vol@primer.com', password='Lozinka1!',
+            korisnicko_ime='vol_primer', ime='Vanja', prezime='Vanić')
+        self.vol_profil = VolonterProfil.objects.create(korisnik=vol)
+
+        sponzor = Korisnik.objects.create_user(
+            email='sponzor@primer.com', password='Lozinka1!',
+            korisnicko_ime='sponzor_primer', ime='Sara', prezime='Sarić')
+        self.sponzor_profil = SponzorProfil.objects.create(
+            korisnik=sponzor,
+            naziv_organizacije='ProNatura',
+            status=SponzorProfil.Status.ODOBREN,
+        )
+
+        self.akcija1 = Akcija.objects.create(
+            organizator=self.org1_profil, kategorija=kategorija,
+            naziv='Akcija org1', opis='Opis',
+            datum='2026-09-01', vreme='10:00', lokacija='Beograd',
+            max_br_volontera=10, kontakt_email='org1@primer.com',
+            kontakt_telefon='011-111', status=Akcija.Status.AKTIVNA)
+
+        self.akcija2 = Akcija.objects.create(
+            organizator=self.org2_profil, kategorija=kategorija,
+            naziv='Akcija org2', opis='Opis',
+            datum='2026-09-02', vreme='10:00', lokacija='Novi Sad',
+            max_br_volontera=5, kontakt_email='org2@primer.com',
+            kontakt_telefon='021-111', status=Akcija.Status.AKTIVNA)
+
+        self.prijava1 = Prijava.objects.create(
+            korisnik=self.vol_profil, akcija=self.akcija1,
+            status=Prijava.Status.NA_CEKANJU, br_sati=0)
+
+        self.prijava_tuda = Prijava.objects.create(
+            korisnik=self.vol_profil, akcija=self.akcija2,
+            status=Prijava.Status.NA_CEKANJU, br_sati=0)
+
+        self.ponuda1 = SponzorskaPonuda.objects.create(
+            sponzor=self.sponzor_profil, akcija=self.akcija1,
+            vrednost=500, opis='Oprema',
+            status=SponzorskaPonuda.Status.NA_CEKANJU)
+
+        self.ponuda_tuda = SponzorskaPonuda.objects.create(
+            sponzor=self.sponzor_profil, akcija=self.akcija2,
+            vrednost=999, opis='Tuđa',
+            status=SponzorskaPonuda.Status.NA_CEKANJU)
+
+        self.clanak1 = Clanak.objects.create(
+            autor=self.org1_profil, kategorija=kat_clanka,
+            naslov='Članak org1', tekst='Tekst.',
+            status=Clanak.Status.NA_CEKANJU)
+
+        self.clanak_tuđi = Clanak.objects.create(
+            autor=self.org2_profil, kategorija=kat_clanka,
+            naslov='Tuđi članak', tekst='Tekst.',
+            status=Clanak.Status.OBJAVLJEN)
+
+        self.url = reverse('organizator_panel')
+
+    # ── Pristup ──────────────────────────────────────────────────────────────
+
+    def test_organizator_vidi_panel(self):
+        self.client.login(email='org1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        self.assertEqual(odgovor.status_code, 200)
+        self.assertTemplateUsed(odgovor, 'organizator_panel.html')
+
+    def test_anoniman_ne_vidi_panel(self):
+        odgovor = self.client.get(self.url)
+        self.assertNotEqual(odgovor.status_code, 200)
+
+    def test_volonter_preusmeren_na_pocetnu(self):
+        self.client.login(email='vol@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        self.assertRedirects(odgovor, reverse('home'))
+
+    def test_sponzor_preusmeren_na_pocetnu(self):
+        self.client.login(email='sponzor@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        self.assertRedirects(odgovor, reverse('home'))
+
+    def test_neodobren_organizator_preusmeren_na_pocetnu(self):
+        self.client.force_login(self.org_neodobren)
+        odgovor = self.client.get(self.url)
+        self.assertRedirects(odgovor, reverse('home'))
+
+    # ── Organizator vidi samo svoje podatke ──────────────────────────────────
+
+    def test_org_vidi_samo_svoje_akcije(self):
+        self.client.login(email='org1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        akcije_pk = [a.pk for a in odgovor.context['akcije']]
+        self.assertIn(self.akcija1.pk, akcije_pk)
+        self.assertNotIn(self.akcija2.pk, akcije_pk)
+
+    def test_org_vidi_samo_svoje_prijave_na_cekanju(self):
+        self.client.login(email='org1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        prijave_pk = [p.pk for p in odgovor.context['prijave_na_cekanju']]
+        self.assertIn(self.prijava1.pk, prijave_pk)
+        self.assertNotIn(self.prijava_tuda.pk, prijave_pk)
+
+    def test_org_vidi_samo_svoje_ponude_na_cekanju(self):
+        self.client.login(email='org1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        ponude_pk = [p.pk for p in odgovor.context['ponude_na_cekanju']]
+        self.assertIn(self.ponuda1.pk, ponude_pk)
+        self.assertNotIn(self.ponuda_tuda.pk, ponude_pk)
+
+    def test_org_vidi_samo_svoje_clanke(self):
+        self.client.login(email='org1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        clanci_pk = [c.pk for c in odgovor.context['clanci']]
+        self.assertIn(self.clanak1.pk, clanci_pk)
+        self.assertNotIn(self.clanak_tuđi.pk, clanci_pk)
+
+    # ── Panel prikazuje tačne podatke ────────────────────────────────────────
+
+    def test_panel_prikazuje_naziv_akcije(self):
+        self.client.login(email='org1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        self.assertContains(odgovor, 'Akcija org1')
+
+    def test_panel_prikazuje_clanak(self):
+        self.client.login(email='org1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        self.assertContains(odgovor, 'Članak org1')
+
+    def test_panel_ne_prikazuje_tude_podatke(self):
+        self.client.login(email='org1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        self.assertNotContains(odgovor, 'Tuđi članak')
+
+    # ── Statistika ────────────────────────────────────────────────────────────
+
+    def test_statistika_ukupan_br_akcija(self):
+        self.client.login(email='org1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        self.assertEqual(odgovor.context['ukupan_br_akcija'], 1)
+
+    def test_statistika_ukupan_br_volontera_prihvacenih(self):
+        self.prijava1.status = Prijava.Status.PRIHVACENA
+        self.prijava1.save()
+        self.client.login(email='org1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        self.assertEqual(odgovor.context['ukupan_br_volontera'], 1)
+
+    def test_statistika_ne_broji_tude_volontere(self):
+        self.prijava_tuda.status = Prijava.Status.PRIHVACENA
+        self.prijava_tuda.save()
+        self.client.login(email='org1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        self.assertEqual(odgovor.context['ukupan_br_volontera'], 0)
+
+    def test_statistika_ukupan_doprinos_prihvacenih(self):
+        self.ponuda1.status = SponzorskaPonuda.Status.PRIHVACENA
+        self.ponuda1.save()
+        self.client.login(email='org1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        self.assertEqual(odgovor.context['ukupan_doprinos'], 500)
+
+    def test_statistika_ne_ukljucuje_tude_doprinose(self):
+        self.ponuda_tuda.status = SponzorskaPonuda.Status.PRIHVACENA
+        self.ponuda_tuda.save()
+        self.client.login(email='org1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        self.assertEqual(odgovor.context['ukupan_doprinos'], 0)
+
+    def test_statistika_doprinos_nula_bez_prihvacenih(self):
+        self.client.login(email='org1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        self.assertEqual(odgovor.context['ukupan_doprinos'], 0)
+
+    def test_br_prijava_na_cekanju_u_kontekstu(self):
+        self.client.login(email='org1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        self.assertEqual(odgovor.context['br_prijava_na_cekanju'], 1)
+
+    def test_br_ponuda_na_cekanju_u_kontekstu(self):
+        self.client.login(email='org1@primer.com', password='Lozinka1!')
+        odgovor = self.client.get(self.url)
+        self.assertEqual(odgovor.context['br_ponuda_na_cekanju'], 1)
+
+    # ── Login redirekcija ─────────────────────────────────────────────────────
+
+    def test_org_se_loguje_na_panel(self):
+        odgovor = self.client.post(
+            reverse('prijava'),
+            {'email': 'org1@primer.com', 'lozinka': 'Lozinka1!'})
+        self.assertRedirects(odgovor, self.url)

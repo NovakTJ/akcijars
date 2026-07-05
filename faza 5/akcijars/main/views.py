@@ -61,9 +61,6 @@ def home(request):
 def _pocetna_za_korisnika(korisnik):
     """
     Vraća naziv rute lične stranice u zavisnosti od uloge (SSU 2, 2.2.1).
-
-    Kontrolne table po ulogama (volonter/organizator/sponzor/admin) — uvode se
-    prave rute kako odgovarajući paneli budu gotovi.
     """
     if korisnik.je_admin:
         return 'admin_panel'
@@ -71,6 +68,8 @@ def _pocetna_za_korisnika(korisnik):
         return 'sponzor_panel'
     if korisnik.je_volonter:
         return 'volonter_panel'
+    if korisnik.je_organizator:
+        return 'organizator_panel'
     return 'home'
 
 
@@ -581,6 +580,65 @@ def volonter_panel(request):
         'br_tekucih': tekuce.count(),
         'br_istorija': istorija.count(),
         'br_na_cekanju': na_cekanju.count(),
+    })
+
+
+@login_required
+def organizator_panel(request):
+    """Organizatorski panel."""
+    if not request.user.je_organizator or not request.user.je_odobren:
+        return redirect('home')
+
+    org = request.user.organizator_profil
+
+    akcije = (
+        Akcija.objects
+        .filter(organizator=org)
+        .select_related('kategorija')
+        .order_by('-datum_kreiranja')
+    )
+
+    prijave_na_cekanju = (
+        Prijava.objects
+        .filter(akcija__organizator=org, status=Prijava.Status.NA_CEKANJU)
+        .select_related('korisnik__korisnik', 'akcija')
+        .order_by('-datum_prijave')
+    )
+
+    ponude_na_cekanju = (
+        SponzorskaPonuda.objects
+        .filter(akcija__organizator=org, status=SponzorskaPonuda.Status.NA_CEKANJU)
+        .select_related('sponzor', 'akcija')
+        .order_by('-datum_slanja')
+    )
+
+    clanci = (
+        Clanak.objects
+        .filter(autor=org)
+        .select_related('kategorija')
+        .order_by('-datum_kreiranja')
+    )
+
+    ukupan_br_volontera = Prijava.objects.filter(
+        akcija__organizator=org,
+        status=Prijava.Status.PRIHVACENA,
+    ).count()
+
+    ukupan_doprinos = SponzorskaPonuda.objects.filter(
+        akcija__organizator=org,
+        status=SponzorskaPonuda.Status.PRIHVACENA,
+    ).aggregate(total=Sum('vrednost'))['total'] or 0
+
+    return render(request, 'organizator_panel.html', {
+        'akcije': akcije,
+        'prijave_na_cekanju': prijave_na_cekanju,
+        'ponude_na_cekanju': ponude_na_cekanju,
+        'clanci': clanci,
+        'ukupan_br_akcija': akcije.count(),
+        'ukupan_br_volontera': ukupan_br_volontera,
+        'ukupan_doprinos': ukupan_doprinos,
+        'br_prijava_na_cekanju': prijave_na_cekanju.count(),
+        'br_ponuda_na_cekanju': ponude_na_cekanju.count(),
     })
 
 

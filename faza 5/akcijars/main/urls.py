@@ -33,6 +33,9 @@ urlpatterns = [
     # SSU 16 — sponzorski panel
     path('sponzor-panel/', views.sponzor_panel, name='sponzor_panel'),
 
+    # Organizatorski panel
+    path('organizator-panel/', views.organizator_panel, name='organizator_panel'),
+
     # SSU 13 — admin panel i Ajax endpointi za upravljanje nalozima
     path('admin-panel/', views.admin_panel, name='admin_panel'),
     path('ajax/odobri-nalog/', views.ajax_odobri_nalog, name='ajax_odobri_nalog'),
