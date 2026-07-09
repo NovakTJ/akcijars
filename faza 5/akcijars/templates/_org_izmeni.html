@@ -1,0 +1,158 @@
+{# SSU 10 — izmena i otkazivanje akcije (vidljivo samo organizatoru akcije). #}
+
+{% if akcija.status == 'otkazana' %}
+  <div class="alert alert-error" style="display:flex;">
+    <i class="bi bi-x-octagon-fill"></i>
+    <span>Akcija je otkazana — izmena, otkazivanje i dalje upravljanje nisu mogući.</span>
+  </div>
+{% else %}
+
+{% if izmena_uspeh %}
+  <div class="alert alert-success" style="display:flex;margin-bottom:16px;">
+    <i class="bi bi-check-circle-fill"></i>
+    <span>Izmene su uspešno sačuvane.</span>
+  </div>
+{% endif %}
+
+<form id="izmeni-forma" enctype="multipart/form-data" style="max-width:640px;">
+  {% if izmeni_forma.non_field_errors %}
+    <div class="alert alert-error" style="display:flex;margin-bottom:16px;">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span>{{ izmeni_forma.non_field_errors.0 }}</span>
+    </div>
+  {% endif %}
+
+  <div class="form-group">
+    <label class="form-label">Naziv akcije <span class="req">*</span></label>
+    {{ izmeni_forma.naziv }}
+    {% for greska in izmeni_forma.naziv.errors %}
+      <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">Opis akcije <span class="req">*</span></label>
+    {{ izmeni_forma.opis }}
+    {% for greska in izmeni_forma.opis.errors %}
+      <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="grid-2" style="gap:16px;">
+    <div class="form-group">
+      <label class="form-label">Datum <span class="req">*</span></label>
+      {{ izmeni_forma.datum }}
+      {% for greska in izmeni_forma.datum.errors %}
+        <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+      {% endfor %}
+    </div>
+    <div class="form-group">
+      <label class="form-label">Vreme <span class="req">*</span></label>
+      {{ izmeni_forma.vreme }}
+      {% for greska in izmeni_forma.vreme.errors %}
+        <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">Lokacija <span class="req">*</span></label>
+    {{ izmeni_forma.lokacija }}
+    {% for greska in izmeni_forma.lokacija.errors %}
+      <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+    {% endfor %}
+  </div>
+
+  <div class="grid-2" style="gap:16px;">
+    <div class="form-group">
+      <label class="form-label">Kategorija <span class="req">*</span></label>
+      {{ izmeni_forma.kategorija }}
+      {% for greska in izmeni_forma.kategorija.errors %}
+        <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+      {% endfor %}
+    </div>
+    <div class="form-group">
+      <label class="form-label">Maks. broj volontera <span class="req">*</span></label>
+      {{ izmeni_forma.max_br_volontera }}
+      {% for greska in izmeni_forma.max_br_volontera.errors %}
+        <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="grid-2" style="gap:16px;">
+    <div class="form-group">
+      <label class="form-label">Kontakt email <span class="req">*</span></label>
+      {{ izmeni_forma.kontakt_email }}
+      {% for greska in izmeni_forma.kontakt_email.errors %}
+        <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+      {% endfor %}
+    </div>
+    <div class="form-group">
+      <label class="form-label">Kontakt telefon <span class="req">*</span></label>
+      {{ izmeni_forma.kontakt_telefon }}
+      {% for greska in izmeni_forma.kontakt_telefon.errors %}
+        <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  {# Skrivena geo polja (Google Places autocomplete popunjava pri kreiranju). #}
+  {{ izmeni_forma.geo_sirina }}
+  {{ izmeni_forma.geo_duzina }}
+
+  {# ── Slike pre/posle akcije (SSU 10) ── #}
+  <div class="form-section-title" style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:24px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--border-light);">
+    Fotografije akcije
+  </div>
+
+  {% with pre=akcija.fotografije.all %}
+  <div class="grid-2" style="gap:16px;">
+    <div class="form-group">
+      <label class="form-label">Slike „pre" akcije</label>
+      <input type="file" name="slike_pre" accept="image/*" multiple class="form-control">
+      <div class="form-hint">Možete izabrati više slika odjednom.</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Slike „posle" akcije</label>
+      <input type="file" name="slike_posle" accept="image/*" multiple class="form-control">
+      <div class="form-hint">Dodajte ih nakon održavanja akcije.</div>
+    </div>
+  </div>
+
+  {% if pre %}
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+      {% for foto in pre %}
+        <div style="position:relative;">
+          <img src="{{ foto.slika.url }}" alt="{{ foto.get_tip_display }}"
+               style="width:84px;height:84px;object-fit:cover;border-radius:8px;border:1px solid var(--border);">
+          <span class="badge {% if foto.tip == 'posle' %}badge-teal{% else %}badge-gray{% endif %}"
+                style="position:absolute;bottom:4px;left:4px;font-size:.6rem;padding:1px 5px;">{{ foto.get_tip_display }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+  {% endwith %}
+
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+    <button type="submit" id="btn-sacuvaj-izmene" class="btn btn-primary">
+      <i class="bi bi-floppy"></i> Sačuvaj izmene
+    </button>
+  </div>
+</form>
+
+{# ── Otkazivanje akcije (SSU 10, 2.2.9) ── #}
+<div style="margin-top:28px;padding:18px 20px;border:1px solid #fca5a5;background:var(--error-bg);border-radius:var(--radius-lg);max-width:640px;">
+  <div style="font-weight:700;color:#991b1b;margin-bottom:4px;">
+    <i class="bi bi-exclamation-octagon-fill"></i> Otkazivanje akcije
+  </div>
+  <p style="font-size:.85rem;color:var(--text-secondary);margin:0 0 12px;">
+    Akcija se trajno prebacuje u status „Otkazana". Svi prijavljeni volonteri biće obavešteni emailom.
+  </p>
+  <button type="button" id="btn-otkazi-akciju" class="btn btn-sm"
+          style="background:#dc2626;color:white;border:1px solid #dc2626;">
+    <i class="bi bi-x-octagon"></i> Otkaži akciju
+  </button>
+</div>
+
+{% endif %}

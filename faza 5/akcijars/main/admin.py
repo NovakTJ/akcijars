@@ -10,6 +10,7 @@ from .models import (
     AdministratorProfil,
     KategorijaAkcije,
     Akcija,
+    FotografijaAkcije,
     Prijava,
     SponzorskaPonuda,
     KategorijaClanka,
@@ -143,6 +144,11 @@ class KategorijaAkcijeAdmin(admin.ModelAdmin):
     search_fields = ('naziv',)
 
 
+class FotografijaAkcijeInline(admin.TabularInline):
+    model = FotografijaAkcije
+    extra = 1
+
+
 @admin.register(Akcija)
 class AkcijaAdmin(admin.ModelAdmin):
     list_display = ('naziv', 'organizator', 'kategorija', 'datum', 'vreme', 'lokacija', 'status')
@@ -150,6 +156,14 @@ class AkcijaAdmin(admin.ModelAdmin):
     search_fields = ('naziv', 'lokacija', 'organizator__naziv_organizacije')
     ordering = ('-datum_kreiranja',)
     readonly_fields = ('datum_kreiranja',)
+    inlines = [FotografijaAkcijeInline]
+
+
+@admin.register(FotografijaAkcije)
+class FotografijaAkcijeAdmin(admin.ModelAdmin):
+    list_display = ('id_fot', 'akcija', 'tip', 'slika')
+    list_filter = ('tip',)
+    search_fields = ('akcija__naziv',)
 
 
 @admin.register(Prijava)

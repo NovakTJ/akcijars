@@ -26,6 +26,9 @@ urlpatterns = [
     path('akcije/<int:id_akc>/ponude/<int:ponuda_id>/odbij/', views.odbij_ponudu, name='odbij_ponudu'),
     # SSU 8 — slanje obaveštenja prihvaćenim volonterima (Ajax)
     path('akcije/<int:id_akc>/obavestenje/', views.posalji_obavestenje, name='posalji_obavestenje'),
+    # SSU 10 — ažuriranje i otkazivanje akcije (Ajax)
+    path('akcije/<int:id_akc>/izmeni/', views.izmeni_akciju, name='izmeni_akciju'),
+    path('akcije/<int:id_akc>/otkazi/', views.otkazi_akciju, name='otkazi_akciju'),
     path('clanci/', views.lista_clanaka, name='clanci'),
     path('clanci/kreiraj/', views.kreiraj_clanak, name='kreiraj_clanak'),
 

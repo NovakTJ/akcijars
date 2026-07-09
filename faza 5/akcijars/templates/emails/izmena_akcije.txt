@@ -1,0 +1,14 @@
+Zdravo {{ volonter.ime }},
+
+Organizator je izmenio akciju „{{ akcija.naziv }}" na koju ste prijavljeni.
+
+Aktuelni detalji akcije:
+- Datum: {{ akcija.datum|date:"j. F Y." }} u {{ akcija.vreme|time:"H:i" }}
+- Lokacija: {{ akcija.lokacija }}
+- Organizator: {{ akcija.organizator.naziv_organizacije }}
+- Kontakt: {{ akcija.kontakt_email }} · {{ akcija.kontakt_telefon }}
+
+Molimo proverite nove informacije pre održavanja akcije.
+
+Srdačan pozdrav,
+Tim AkcijaRS

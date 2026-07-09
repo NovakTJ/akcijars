@@ -71,7 +71,7 @@
   // ── Tab switching ────────────────────────────────────────────────────────
 
   function switchOrgTab(activeId) {
-    ['org-vol', 'org-sp', 'org-obavestenje'].forEach(id => {
+    ['org-vol', 'org-sp', 'org-obavestenje', 'org-izmeni'].forEach(id => {
       const el  = document.getElementById(id);
       const btn = document.getElementById('otab-' + id);
       if (el)  el.style.display = id === activeId ? '' : 'none';
@@ -166,11 +166,48 @@
     }
   }
 
+  // ── Izmena i otkazivanje akcije (SSU 10) ─────────────────────────────────
+
+  async function sacuvajIzmene(forma) {
+    const dugme = document.getElementById('btn-sacuvaj-izmene');
+    if (dugme) dugme.disabled = true;
+    try {
+      // Multipart (slike) — ne ide kroz apiFetch (JSON), već običan fetch sa FormData.
+      const response = await fetch(`/akcije/${akcijaId}/izmeni/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCsrfToken(), 'X-Requested-With': 'XMLHttpRequest' },
+        body: new FormData(forma),
+      });
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      // Server vraća osvežen fragment (sa greškama ili porukom o uspehu).
+      const panel = document.getElementById('org-izmeni');
+      if (panel) panel.innerHTML = await response.text();
+    } catch (err) {
+      console.error('Čuvanje izmena nije uspelo:', err);
+      if (dugme) dugme.disabled = false;
+    }
+  }
+
+  async function otkaziAkciju() {
+    // SSU 10, 2.2.9 korak 5 — potvrda pre otkazivanja.
+    if (!confirm('Da li ste sigurni da želite da otkažete ovu akciju? '
+                 + 'Svi prijavljeni volonteri biće obavešteni emailom.')) return;
+    try {
+      await apiFetch(`/akcije/${akcijaId}/otkazi/`, { method: 'POST' });
+      window.location.reload();  // status se menja na više mesta na strani
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
   orgPanel.addEventListener('submit', (e) => {
-    const forma = e.target.closest('#obavestenje-forma');
-    if (!forma) return;
-    e.preventDefault();
-    posaljiObavestenje(forma);
+    if (e.target.closest('#obavestenje-forma')) {
+      e.preventDefault();
+      posaljiObavestenje(e.target.closest('#obavestenje-forma'));
+    } else if (e.target.closest('#izmeni-forma')) {
+      e.preventDefault();
+      sacuvajIzmene(e.target.closest('#izmeni-forma'));
+    }
   });
 
   // ── Delegirani click handler ─────────────────────────────────────────────
@@ -180,6 +217,12 @@
     if (tabBtn) {
       e.preventDefault();
       switchOrgTab(tabBtn.dataset.tabTarget);
+      return;
+    }
+
+    if (e.target.closest('#btn-otkazi-akciju')) {
+      e.preventDefault();
+      otkaziAkciju();
       return;
     }
 

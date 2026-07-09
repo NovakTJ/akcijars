@@ -67,10 +67,12 @@ def _brojevi_paginacije(strana):
     return rezultat
 
 from .emails import (
+    posalji_izmenu_akcije,
     posalji_obavestenje_volonterima,
     posalji_odbijanje_naloga,
     posalji_odbijanje_prijave,
     posalji_odobrenje_naloga,
+    posalji_otkazivanje_akcije,
     posalji_potvrdu_registracije,
     posalji_prihvatanje_prijave,
 )
@@ -85,6 +87,7 @@ from .forms import (
 from .models import (
     Akcija,
     Clanak,
+    FotografijaAkcije,
     KategorijaAkcije,
     KategorijaClanka,
     Komentar,
@@ -356,6 +359,7 @@ def detalj_akcije(request, id_akc):
         kontekst.update(_org_kontekst(akcija))
         kontekst.update(_org_ponude_kontekst(akcija))
         kontekst['prikazi_org_panel'] = True
+        kontekst['izmeni_forma'] = AkcijaForm(instance=akcija)  # SSU 10 — tab „Izmeni akciju"
     if request.user.is_authenticated and request.user.je_sponzor and request.user.je_odobren:
         moja_ponuda = SponzorskaPonuda.objects.filter(
             sponzor=request.user.sponzor_profil, akcija=akcija
@@ -393,6 +397,15 @@ def _je_organizator_akcije(korisnik, akcija):
     )
 
 
+def _je_otkazana(akcija):
+    """
+    Otkazana akcija je „zamrznuta" (SSU 10, 2.2.9): nad njom nisu moguće izmene,
+    prihvatanje/odbijanje volontera i sponzora, slanje obaveštenja ni nove
+    sponzorske ponude. SSU-ovi to eksplicitno ne pominju — poslovno pravilo.
+    """
+    return akcija.status == Akcija.Status.OTKAZANA
+
+
 def _org_kontekst(akcija):
     """Kontekst za _org_prijave.html panel."""
     prijave = akcija.prijave.select_related('korisnik__korisnik')
@@ -408,6 +421,7 @@ def _org_ponude_kontekst(akcija):
     ponude = akcija.sponzorske_ponude.select_related('sponzor')
     na_cekanju = ponude.filter(status=SponzorskaPonuda.Status.NA_CEKANJU)
     return {
+        'akcija': akcija,
         'ponude_na_cekanju': na_cekanju,
         'ponude_prihvacene': ponude.filter(status=SponzorskaPonuda.Status.PRIHVACENA),
         'ponude_odbijene': ponude.filter(status=SponzorskaPonuda.Status.ODBIJENA),
@@ -459,6 +473,9 @@ def odbij_prijavu(request, id_akc, id_kor):
     akcija = get_object_or_404(Akcija, pk=id_akc)
     if not _je_organizator_akcije(request.user, akcija):
         return HttpResponseForbidden('Samo organizator akcije može ovo da uradi.')
+    if _je_otkazana(akcija):
+        # Otkazana akcija je zamrznuta — poruka se prikazuje kroz UI panel.
+        return _org_ajax_odgovor(request, akcija)
     prijava = get_object_or_404(
         Prijava, akcija=akcija, korisnik_id=id_kor, status=Prijava.Status.NA_CEKANJU
     )
@@ -475,6 +492,8 @@ def prihvati_ponudu(request, id_akc, ponuda_id):
     akcija = get_object_or_404(Akcija, pk=id_akc)
     if not _je_organizator_akcije(request.user, akcija):
         return JsonResponse({'error': 'Samo organizator akcije može ovo da uradi.'}, status=403)
+    if _je_otkazana(akcija):
+        return JsonResponse({'error': 'Akcija je otkazana.'}, status=400)
     try:
         ponuda = SponzorskaPonuda.objects.get(pk=ponuda_id, akcija=akcija)
     except SponzorskaPonuda.DoesNotExist:
@@ -497,6 +516,8 @@ def odbij_ponudu(request, id_akc, ponuda_id):
     akcija = get_object_or_404(Akcija, pk=id_akc)
     if not _je_organizator_akcije(request.user, akcija):
         return JsonResponse({'error': 'Samo organizator akcije može ovo da uradi.'}, status=403)
+    if _je_otkazana(akcija):
+        return JsonResponse({'error': 'Akcija je otkazana.'}, status=400)
     try:
         ponuda = SponzorskaPonuda.objects.get(pk=ponuda_id, akcija=akcija)
     except SponzorskaPonuda.DoesNotExist:
@@ -542,6 +563,8 @@ def posalji_ponudu(request, id_akc):
     if not request.user.je_odobren:
         return HttpResponseForbidden('Vaš nalog još nije odobren.')
     akcija = get_object_or_404(Akcija, pk=id_akc)
+    if _je_otkazana(akcija):
+        return HttpResponseForbidden('Akcija je otkazana.')
     form = SponzorskaPonudaForm(request.POST)
     if form.is_valid():
         ponuda = form.save(commit=False)
@@ -572,6 +595,8 @@ def posalji_obavestenje(request, id_akc):
     akcija = get_object_or_404(Akcija, pk=id_akc)
     if not _je_organizator_akcije(request.user, akcija):
         return JsonResponse({'error': 'Samo organizator akcije može ovo da uradi.'}, status=403)
+    if _je_otkazana(akcija):
+        return JsonResponse({'error': 'Akcija je otkazana — slanje obaveštenja nije moguće.'}, status=400)
 
     podaci, greska = _parse_ajax_body(request)
     if greska:
@@ -597,6 +622,87 @@ def posalji_obavestenje(request, id_akc):
         'poslato': poslato,
         'poruka': f'Obaveštenje je poslato prijavljenim volonterima ({poslato}).',
     })
+
+
+def _prijavljeni_korisnici(akcija):
+    """
+    Korisnici svih prijavljenih volontera akcije osim odbijenih (SSU 10) —
+    njih obaveštavamo o izmeni/otkazivanju akcije.
+    """
+    prijave = (
+        akcija.prijave
+        .exclude(status=Prijava.Status.ODBIJENA)
+        .select_related('korisnik__korisnik')
+    )
+    return [prijava.korisnik.korisnik for prijava in prijave]
+
+
+def _sacuvaj_fotografije(akcija, files):
+    """Čuva otpremljene fotografije pre/posle akcije (SSU 10, 2.2.1)."""
+    nove = (
+        [FotografijaAkcije(akcija=akcija, slika=f, tip=FotografijaAkcije.Tip.PRE)
+         for f in files.getlist('slike_pre')]
+        + [FotografijaAkcije(akcija=akcija, slika=f, tip=FotografijaAkcije.Tip.POSLE)
+           for f in files.getlist('slike_posle')]
+    )
+    if nove:
+        FotografijaAkcije.objects.bulk_create(nove)
+
+
+@login_required
+@require_POST
+def izmeni_akciju(request, id_akc):
+    """
+    Ažuriranje akcije (SSU 10, 2.2.1). Organizator menja podatke svoje akcije;
+    prijavljeni volonteri se obaveštavaju emailom. Vraća HTML fragment forme
+    (sa greškama po scenarijima 2.2.2–2.2.7, ili sa porukom o uspehu).
+    """
+    akcija = get_object_or_404(Akcija, pk=id_akc)
+    if not _je_organizator_akcije(request.user, akcija):
+        return HttpResponseForbidden('Samo organizator akcije može ovo da uradi.')
+    if _je_otkazana(akcija):
+        # Zamrznuta akcija — vraćamo fragment koji prikazuje da izmena nije moguća.
+        return render(request, '_org_izmeni.html', {
+            'akcija': akcija,
+            'izmeni_forma': AkcijaForm(instance=akcija),
+        })
+
+    forma = AkcijaForm(request.POST, request.FILES, instance=akcija)
+    if forma.is_valid():
+        forma.save()
+        _sacuvaj_fotografije(akcija, request.FILES)
+        # SSU 10, 2.2.1 korak 7 — obavesti prijavljene volontere o izmenama.
+        posalji_izmenu_akcije(akcija, _prijavljeni_korisnici(akcija))
+        return render(request, '_org_izmeni.html', {
+            'akcija': akcija,
+            'izmeni_forma': AkcijaForm(instance=akcija),
+            'izmena_uspeh': True,
+        })
+    return render(request, '_org_izmeni.html', {
+        'akcija': akcija,
+        'izmeni_forma': forma,
+    })
+
+
+@login_required
+@require_POST
+def otkazi_akciju(request, id_akc):
+    """
+    Otkazivanje akcije (SSU 10, 2.2.9). Status prelazi u „Otkazana", a svi
+    prijavljeni volonteri se obaveštavaju emailom. Potvrdu traži klijent.
+    """
+    akcija = get_object_or_404(Akcija, pk=id_akc)
+    if not _je_organizator_akcije(request.user, akcija):
+        return JsonResponse({'error': 'Samo organizator akcije može ovo da uradi.'}, status=403)
+    if akcija.status == Akcija.Status.OTKAZANA:
+        return JsonResponse({'error': 'Akcija je već otkazana.'}, status=400)
+
+    primaoci = _prijavljeni_korisnici(akcija)
+    akcija.status = Akcija.Status.OTKAZANA
+    akcija.save(update_fields=['status'])
+    # SSU 10, 2.2.9 korak 8 — obavesti prijavljene volontere o otkazivanju.
+    posalji_otkazivanje_akcije(akcija, primaoci)
+    return JsonResponse({'ok': True, 'poruka': 'Akcija je otkazana.'})
 
 
 def lista_clanaka(request):

@@ -1,6 +1,11 @@
 {# SSU 8 — slanje obaveštenja prihvaćenim volonterima (vidljivo samo organizatoru akcije). #}
 
-{% if not prijave_prihvacene %}
+{% if akcija.status == 'otkazana' %}
+  <div class="alert alert-error" style="display:flex;">
+    <i class="bi bi-x-octagon-fill"></i>
+    <span>Akcija je otkazana — slanje obaveštenja nije moguće.</span>
+  </div>
+{% elif not prijave_prihvacene %}
   <div class="empty-state" style="padding:32px 16px;">
     <div class="es-icon">📣</div>
     <h3>Nema prihvaćenih volontera.</h3>

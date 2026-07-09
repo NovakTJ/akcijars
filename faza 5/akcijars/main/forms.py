@@ -259,6 +259,15 @@ class AkcijaForm(forms.ModelForm):
                 'max_br_volontera',
                 'Maksimalan broj volontera mora biti pozitivan broj.',
             )
+        # SSU 10, 2.2.5 — pri izmeni akcije novi maksimum ne sme biti manji od
+        # broja već prihvaćenih volontera. Relevantno samo za postojeću akciju
+        # (pri kreiranju self.instance.pk je None i prihvaćenih nema).
+        elif self.instance.pk and max_vol < self.instance.broj_prihvacenih:
+            self.add_error(
+                'max_br_volontera',
+                'Maksimalan broj volontera ne može biti manji od broja već '
+                'prihvaćenih volontera.',
+            )
 
         # 2.2.5 — neispravan format kontakt email adrese.
         try:

@@ -32,6 +32,12 @@
       </div>
     {% endif %}
 
+  {% elif akcija.status == 'otkazana' %}
+    <div class="alert alert-error" style="margin-top:0;">
+      <i class="bi bi-x-circle"></i>
+      <span>Akcija je otkazana — sponzorisanje nije moguće.</span>
+    </div>
+
   {% else %}
     {% if ponuda_forma.errors %}
       <div class="alert alert-error" style="margin-top:0;margin-bottom:12px;">

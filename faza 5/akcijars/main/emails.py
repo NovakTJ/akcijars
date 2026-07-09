@@ -132,3 +132,34 @@ def posalji_obavestenje_volonterima(akcija, poruka, primaoci):
         email.attach_alternative(html, 'text/html')
         poslato += email.send(fail_silently=True)
     return poslato
+
+
+def _posalji_svim_prijavljenima(akcija, primaoci, naslov, template_base):
+    """Zajednička logika za obaveštenje svih prijavljenih volontera akcije (SSU 10)."""
+    poslato = 0
+    for volonter in primaoci:
+        kontekst = {'volonter': volonter, 'akcija': akcija}
+        tekst = render_to_string(f'emails/{template_base}.txt', kontekst)
+        html = render_to_string(f'emails/{template_base}.html', kontekst)
+        email = EmailMultiAlternatives(subject=naslov, body=tekst, to=[volonter.email])
+        email.attach_alternative(html, 'text/html')
+        poslato += email.send(fail_silently=True)
+    return poslato
+
+
+def posalji_izmenu_akcije(akcija, primaoci):
+    """Obaveštava prijavljene volontere da je akcija izmenjena (SSU 10, 2.2.1 korak 7)."""
+    return _posalji_svim_prijavljenima(
+        akcija, primaoci,
+        naslov=f'Izmena akcije — {akcija.naziv}',
+        template_base='izmena_akcije',
+    )
+
+
+def posalji_otkazivanje_akcije(akcija, primaoci):
+    """Obaveštava prijavljene volontere da je akcija otkazana (SSU 10, 2.2.9 korak 8)."""
+    return _posalji_svim_prijavljenima(
+        akcija, primaoci,
+        naslov=f'Akcija otkazana — {akcija.naziv}',
+        template_base='otkazivanje_akcije',
+    )

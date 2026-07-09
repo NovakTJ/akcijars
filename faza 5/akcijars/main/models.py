@@ -399,6 +399,50 @@ class Akcija(models.Model):
         return max(0, self.max_br_volontera - self.broj_prihvacenih)
 
 
+class FotografijaAkcije(models.Model):
+    """
+    Tabela FotografijaAkcije iz specifikacije baze (3.12) — fotografije vezane
+    za akciju; može ih biti više po akciji.
+
+    Napomena: spec.baze (3.12) definiše samo (IdFot, IdAkc, Putanja). Polje
+    ``tip`` (pre/posle) dodato je zbog SSU 10 (slike pre i posle akcije) —
+    svesna devijacija u odnosu na 3.12, po ugledu na Clanak.kategorija.
+    """
+
+    class Tip(models.TextChoices):
+        PRE = 'pre', 'Pre akcije'
+        POSLE = 'posle', 'Posle akcije'
+
+    id_fot = models.AutoField(primary_key=True, db_column='IdFot')
+    akcija = models.ForeignKey(
+        Akcija,
+        on_delete=models.CASCADE,
+        related_name='fotografije',
+        db_column='IdAkc',
+        verbose_name='Akcija',
+    )
+    slika = models.ImageField(
+        upload_to='akcije/',
+        verbose_name='Fotografija',
+        db_column='Putanja',
+    )
+    tip = models.CharField(
+        max_length=10,
+        choices=Tip.choices,
+        default=Tip.PRE,
+        verbose_name='Tip (pre/posle)',
+        db_column='Tip',
+    )
+
+    class Meta:
+        db_table = 'FotografijaAkcije'
+        verbose_name = 'Fotografija akcije'
+        verbose_name_plural = 'Fotografije akcija'
+
+    def __str__(self):
+        return f'Fotografija {self.id_fot} ({self.get_tip_display()}) — {self.akcija.naziv}'
+
+
 class Prijava(models.Model):
     """Tabela PrijavaVolontera iz specifikacije baze (3.8)."""
 
