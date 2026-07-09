@@ -1,6 +1,7 @@
 import json
 import re
 
+from django.contrib import messages
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
@@ -38,7 +39,14 @@ from .emails import (
     posalji_potvrdu_registracije,
     posalji_prihvatanje_prijave,
 )
-from .forms import ClanakForma, KomentarForm, PrijavaForm, RegistracijaForm, SponzorskaPonudaForm
+from .forms import (
+    AkcijaForm,
+    ClanakForma,
+    KomentarForm,
+    PrijavaForm,
+    RegistracijaForm,
+    SponzorskaPonudaForm,
+)
 from .models import (
     Akcija,
     Clanak,
@@ -198,6 +206,60 @@ def lista_akcija(request):
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return render(request, '_akcije_grid.html', kontekst)
     return render(request, 'akcije.html', kontekst)
+
+@login_required
+def kreiraj_akciju(request):
+    """
+    Kreiranje akcije (SSU 5).
+
+    Preduslov (2.4): korisnik je ulogovan u ulogu organizatora. Kreirana akcija
+    dobija status „na čekanju" i čeka odobrenje administratora (2.5).
+    """
+    if not request.user.je_organizator or not request.user.je_odobren:
+        return redirect('home')
+
+    if request.method == 'POST':
+        form = AkcijaForm(request.POST, request.FILES)
+        if form.is_valid():
+            # 2.2.1 — uspešno kreiranje: akcija se čuva sa statusom „na čekanju"
+            # i vezuje za ulogovanog organizatora.
+            akcija = form.save(commit=False)
+            akcija.organizator = request.user.organizator_profil
+            akcija.status = Akcija.Status.NA_CEKANJU
+            akcija.save()
+            messages.success(
+                request,
+                'Akcija je uspešno kreirana i čeka odobrenje administratora.',
+            )
+            return redirect('moje_akcije')
+    else:
+        form = AkcijaForm()
+
+    return render(request, 'kreiraj_akciju.html', {'form': form})
+
+
+@login_required
+def moje_akcije(request):
+    """
+    Lista akcija ulogovanog organizatora (SSU 5 — stranica „Moje akcije").
+
+    Odredište preusmerenja nakon uspešnog kreiranja akcije; prikazuje i akcije
+    koje još čekaju odobrenje administratora.
+    """
+    if not request.user.je_organizator:
+        return redirect('home')
+
+    akcije = (
+        Akcija.objects
+        .filter(organizator=request.user.organizator_profil)
+        .select_related('kategorija', 'organizator')
+        .order_by('-datum_kreiranja')
+    )
+    return render(request, 'moje_akcije.html', {
+        'akcije': akcije,
+        'br_akcija': akcije.count(),
+    })
+
 
 def _moja_prijava(korisnik, akcija):
     """Vraća Prijavu ulogovanog volontera za datu akciju, ili None."""

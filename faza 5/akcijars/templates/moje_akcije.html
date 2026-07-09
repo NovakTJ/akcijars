@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Moje akcije – AkcijaRS{% endblock %}
+{% block nav_akcije %}active{% endblock %}
+{% block nav_mobile_akcije %}active{% endblock %}
+
+{% block content %}
+<div style="padding-top:calc(var(--nav-h) + 36px);background:white;border-bottom:1px solid var(--border-light);">
+  <div class="container" style="padding-top:32px;padding-bottom:28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+    <div>
+      <h1 style="font-size:1.875rem;font-weight:800;margin-bottom:4px;">Moje akcije</h1>
+      <p style="color:var(--text-secondary);">Upravljanje vašim volonterskim akcijama</p>
+    </div>
+    <a href="{% url 'kreiraj_akciju' %}" class="btn btn-primary">
+      <i class="bi bi-plus-circle"></i> Kreiraj novu akciju
+    </a>
+  </div>
+</div>
+
+<div class="page-content" style="padding-top:32px;">
+  <div class="container">
+
+    {# SSU 5, 2.2.1 — potvrda uspešnog kreiranja akcije. #}
+    {% for poruka in messages %}
+      <div class="alert alert-success" style="display:flex;">
+        <i class="bi bi-check-circle-fill"></i>
+        <span>{{ poruka }}</span>
+      </div>
+    {% endfor %}
+
+    <div class="grid-3" style="margin-top:18px;">
+      {% for akcija in akcije %}
+        <div class="card">
+          <div class="card-img-placeholder" style="padding:0;overflow:hidden;">
+            {% if akcija.slika %}
+              <img src="{{ akcija.slika.url }}" style="width:100%;height:100%;object-fit:cover;display:block;">
+            {% else %}
+              <img src="{% static 'images/slikaAkcije.png' %}" style="width:100%;height:100%;object-fit:cover;display:block;">
+            {% endif %}
+          </div>
+          <div class="card-body">
+            <div class="card-meta">
+              <span class="badge badge-teal">{{ akcija.kategorija.naziv }}</span>
+              <span class="badge {{ akcija.badge_klasa }}">{{ akcija.get_status_display }}</span>
+            </div>
+            <h3 class="card-title">{{ akcija.naziv }}</h3>
+            <div class="card-meta">
+              <span class="card-meta-item"><i class="bi bi-geo-alt"></i>{{ akcija.lokacija }}</span>
+              <span class="card-meta-item"><i class="bi bi-calendar3"></i>{{ akcija.datum }}</span>
+              <span class="card-meta-item"><i class="bi bi-clock"></i>{{ akcija.vreme|time:"H:i" }}</span>
+            </div>
+            <p class="card-excerpt">{{ akcija.opis }}</p>
+          </div>
+          <div class="card-footer">
+            <span class="card-meta-item"><i class="bi bi-people"></i>{{ akcija.max_br_volontera }} mesta</span>
+            <a href="{% url 'detalj_akcije' akcija.id_akc %}" class="btn btn-primary btn-sm">Pogledaj →</a>
+          </div>
+        </div>
+      {% empty %}
+        <div class="empty-state" style="grid-column:1/-1;text-align:center;padding:40px 20px;">
+          <div class="es-icon" style="font-size:2.5rem;">📋</div>
+          <h3>Još nemate kreiranih akcija</h3>
+          <p style="color:var(--text-muted);">Kreirajte prvu volontersku akciju i ona će se pojaviti ovde.</p>
+          <a href="{% url 'kreiraj_akciju' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Kreiraj akciju
+          </a>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

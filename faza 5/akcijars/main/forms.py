@@ -5,6 +5,7 @@ from django.contrib.auth import authenticate
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+from django.utils import timezone
 from django.utils.text import slugify
 
 from .models import (
@@ -158,6 +159,113 @@ class RegistracijaForm(forms.Form):
             )
 
         return korisnik, uloga
+
+
+class AkcijaForm(forms.ModelForm):
+    """
+    Forma za kreiranje akcije (SSU 5).
+
+    Polja su ``required=False`` kako bismo sami kontrolisali poruke o greškama
+    i reprodukovali tačne tekstove iz SSU 5 (jedinstvena globalna poruka
+    „Nisu uneta sva obavezna polja.“ umesto Django podrazumevanih poruka po
+    polju). Polja ``kontakt_email``, ``kontakt_telefon`` i ``max_br_volontera``
+    su eksplicitno redefinisana da bismo izbegli podrazumevane validatore
+    modela i vratili tačne SSU poruke.
+    """
+
+    max_br_volontera = forms.IntegerField(
+        required=False,
+        widget=forms.NumberInput(attrs={'min': 1, 'placeholder': 'npr. 30'}),
+    )
+    kontakt_email = forms.CharField(
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(attrs={'placeholder': 'kontakt@organizacija.rs'}),
+    )
+    kontakt_telefon = forms.CharField(
+        max_length=20,
+        required=False,
+        widget=forms.TextInput(attrs={'placeholder': '+381 11 123 4567'}),
+    )
+
+    class Meta:
+        model = Akcija
+        fields = [
+            'naziv', 'opis', 'datum', 'vreme', 'lokacija',
+            'kategorija', 'max_br_volontera', 'kontakt_email',
+            'kontakt_telefon', 'slika',
+        ]
+        widgets = {
+            'naziv': forms.TextInput(attrs={
+                'maxlength': 100,
+                'placeholder': 'npr. Čišćenje parka u Zvezdari',
+            }),
+            'opis': forms.Textarea(attrs={
+                'rows': 5,
+                'maxlength': 1024,
+                'placeholder': 'Opišite akciju, šta će se raditi, šta treba poneti...',
+            }),
+            'datum': forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
+            'vreme': forms.TimeInput(attrs={'type': 'time'}, format='%H:%M'),
+            'lokacija': forms.TextInput(attrs={
+                'maxlength': 50,
+                'placeholder': 'npr. Ada Ciganlija, Beograd',
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['kategorija'].empty_label = '— Izaberite kategoriju —'
+        # Sva polja su opciona na nivou forme — obaveznost proveravamo u clean()
+        # da bismo vratili jedinstvenu SSU poruku. Svakom polju dodajemo klasu
+        # `form-control` radi doslednog izgleda sa ostalim formama.
+        for name, field in self.fields.items():
+            field.required = False
+            if name != 'slika':
+                field.widget.attrs.setdefault('class', 'form-control')
+
+    def clean(self):
+        cleaned = super().clean()
+
+        naziv = cleaned.get('naziv')
+        opis = cleaned.get('opis')
+        datum = cleaned.get('datum')
+        vreme = cleaned.get('vreme')
+        lokacija = cleaned.get('lokacija')
+        kategorija = cleaned.get('kategorija')
+        max_vol = cleaned.get('max_br_volontera')
+        email = cleaned.get('kontakt_email', '')
+        telefon = cleaned.get('kontakt_telefon', '')
+
+        # 2.2.2 — nepopunjena obavezna polja (jedinstvena globalna poruka).
+        # 0 je validna „popunjenost“ za broj volontera (proverava se u 2.2.4).
+        obavezna = [naziv, opis, datum, vreme, lokacija, kategorija,
+                    max_vol, email, telefon]
+        if any(v is None or v == '' for v in obavezna):
+            raise ValidationError('Nisu uneta sva obavezna polja.')
+
+        # 2.2.3 — datum održavanja u prošlosti.
+        if datum < timezone.localdate():
+            self.add_error('datum', 'Datum održavanja akcije ne sme biti u prošlosti.')
+
+        # 2.2.4 — nevalidan (0 ili negativan) broj volontera.
+        if max_vol < 1:
+            self.add_error(
+                'max_br_volontera',
+                'Maksimalan broj volontera mora biti pozitivan broj.',
+            )
+
+        # 2.2.5 — neispravan format kontakt email adrese.
+        try:
+            validate_email(email)
+        except ValidationError:
+            self.add_error('kontakt_email', 'Kontakt email nije ispravnog formata.')
+
+        # 2.2.6 — neispravan format kontakt telefona.
+        if not TELEFON_RE.match(telefon):
+            self.add_error('kontakt_telefon', 'Kontakt telefon nije ispravnog formata.')
+
+        return cleaned
 
 
 class SponzorskaPonudaForm(forms.ModelForm):

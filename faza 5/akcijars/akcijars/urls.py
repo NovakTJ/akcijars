@@ -24,6 +24,7 @@ urlpatterns = [
     path('', include('main.urls')),
 ]
 
-# U razvojnom režimu Django ne servira MEDIA_URL automatski.
+# U razvoju (DEBUG) serviramo otpremljene slike akcija (Akcija.slika) preko
+# MEDIA_URL; u produkciji ovo preuzima web server.
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

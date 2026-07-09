@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Kreiraj akciju – AkcijaRS{% endblock %}
+{% block nav_akcije %}active{% endblock %}
+{% block nav_mobile_akcije %}active{% endblock %}
+
+{% block content %}
+<div style="padding-top:calc(var(--nav-h) + 36px);background:white;border-bottom:1px solid var(--border-light);">
+  <div class="container" style="padding-top:32px;padding-bottom:28px;">
+    <h1 style="font-size:1.875rem;font-weight:800;margin-bottom:4px;">Kreiraj novu akciju</h1>
+    <p style="color:var(--text-secondary);">Sva obavezna polja moraju biti popunjena (SSU 5)</p>
+  </div>
+</div>
+
+<div class="page-content" style="padding-top:32px;">
+  <div class="container" style="max-width:760px;">
+
+    {# Globalna greška (npr. nepopunjena obavezna polja) #}
+    {% if form.non_field_errors %}
+      <div class="alert alert-error" style="display:flex;">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>{{ form.non_field_errors.0 }}</span>
+      </div>
+    {% endif %}
+
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <h3><i class="bi bi-calendar-plus"></i> Nova volonterska akcija</h3>
+      </div>
+      <div class="panel-card-body">
+
+        <form method="post" action="{% url 'kreiraj_akciju' %}" enctype="multipart/form-data" novalidate>
+          {% csrf_token %}
+
+          <div class="form-group">
+            <label class="form-label">Naziv akcije <span class="req">*</span></label>
+            {{ form.naziv }}
+            {% for greska in form.naziv.errors %}
+              <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Opis akcije <span class="req">*</span></label>
+            {{ form.opis }}
+            {% for greska in form.opis.errors %}
+              <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Datum održavanja <span class="req">*</span></label>
+              {{ form.datum }}
+              {% for greska in form.datum.errors %}
+                <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+              {% endfor %}
+            </div>
+            <div class="form-group">
+              <label class="form-label">Vreme <span class="req">*</span></label>
+              {{ form.vreme }}
+              {% for greska in form.vreme.errors %}
+                <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Lokacija <span class="req">*</span></label>
+            {{ form.lokacija }}
+            <div class="form-hint">
+              <i class="bi bi-map" style="color:var(--teal);"></i>
+              Izbor lokacije preko Google Maps prozorčića stiže u kasnijem koraku.
+            </div>
+            {% for greska in form.lokacija.errors %}
+              <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Kategorija <span class="req">*</span></label>
+              {{ form.kategorija }}
+              {% for greska in form.kategorija.errors %}
+                <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+              {% endfor %}
+            </div>
+            <div class="form-group">
+              <label class="form-label">Maks. broj volontera <span class="req">*</span></label>
+              {{ form.max_br_volontera }}
+              {% for greska in form.max_br_volontera.errors %}
+                <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Kontakt email <span class="req">*</span></label>
+              {{ form.kontakt_email }}
+              {% for greska in form.kontakt_email.errors %}
+                <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+              {% endfor %}
+            </div>
+            <div class="form-group">
+              <label class="form-label">Kontakt telefon <span class="req">*</span></label>
+              {{ form.kontakt_telefon }}
+              <div class="form-hint">Dozvoljeni: cifre, razmaci, + i -</div>
+              {% for greska in form.kontakt_telefon.errors %}
+                <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Naslovna slika</label>
+            {{ form.slika }}
+            <div class="form-hint">PNG ili JPG – opciono, preporučeno 1200×600px.</div>
+            {% for greska in form.slika.errors %}
+              <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+            {% endfor %}
+          </div>
+
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-circle"></i> Kreiraj akciju
+            </button>
+            {# 2.2.7 — odustajanje: podaci se ne čuvaju, korisnik ide na početnu. #}
+            <a href="{% url 'home' %}" class="btn btn-ghost">
+              <i class="bi bi-x"></i> Odustani
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="alert alert-info" style="margin-top:16px;">
+      <i class="bi bi-info-circle-fill"></i>
+      <span>Kreirana akcija <strong>čeka odobrenje administratora</strong> pre nego što postane vidljiva svim korisnicima sajta.</span>
+    </div>
+  </div>
+</div>
+{% endblock %}
