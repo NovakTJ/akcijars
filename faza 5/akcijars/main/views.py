@@ -38,7 +38,7 @@ from .emails import (
     posalji_potvrdu_registracije,
     posalji_prihvatanje_prijave,
 )
-from .forms import KomentarForm, PrijavaForm, RegistracijaForm, SponzorskaPonudaForm
+from .forms import ClanakForma, KomentarForm, PrijavaForm, RegistracijaForm, SponzorskaPonudaForm
 from .models import (
     Akcija,
     Clanak,
@@ -48,6 +48,7 @@ from .models import (
     Korisnik,
     OrganizatorProfil,
     Prijava,
+    SlikaClanka,
     SponzorProfil,
     SponzorskaPonuda,
 )
@@ -583,14 +584,8 @@ def volonter_panel(request):
     })
 
 
-@login_required
-def organizator_panel(request):
-    """Organizatorski panel."""
-    if not request.user.je_organizator or not request.user.je_odobren:
-        return redirect('home')
-
-    org = request.user.organizator_profil
-
+def _organizator_panel_kontekst(org, forma_clanka=None):
+    """Zajednički kontekst za organizator_panel.html (koristi ga i kreiraj_clanak view)."""
     akcije = (
         Akcija.objects
         .filter(organizator=org)
@@ -629,7 +624,7 @@ def organizator_panel(request):
         status=SponzorskaPonuda.Status.PRIHVACENA,
     ).aggregate(total=Sum('vrednost'))['total'] or 0
 
-    return render(request, 'organizator_panel.html', {
+    return {
         'akcije': akcije,
         'prijave_na_cekanju': prijave_na_cekanju,
         'ponude_na_cekanju': ponude_na_cekanju,
@@ -639,7 +634,21 @@ def organizator_panel(request):
         'ukupan_doprinos': ukupan_doprinos,
         'br_prijava_na_cekanju': prijave_na_cekanju.count(),
         'br_ponuda_na_cekanju': ponude_na_cekanju.count(),
-    })
+        'forma_clanka': forma_clanka if forma_clanka is not None else ClanakForma(),
+    }
+
+
+@login_required
+def organizator_panel(request):
+    """Organizatorski panel."""
+    if not request.user.je_organizator or not request.user.je_odobren:
+        return redirect('home')
+
+    return render(
+        request,
+        'organizator_panel.html',
+        _organizator_panel_kontekst(request.user.organizator_profil),
+    )
 
 
 def _uskoro(request):
@@ -969,3 +978,40 @@ def ajax_obrisi_clanak(request):
         'success': True,
         'message': f'Članak „{naslov}" je obrisan.',
     })
+
+
+# SSU 22 — Kreiranje članka od strane organizatora (inline forma u organizator panelu).
+
+@login_required
+def kreiraj_clanak(request):
+    """
+    Prima POST iz forme unutar organizator panela (tab „Moji članci").
+    GET preusmerava na panel — nema zasebne stranice.
+    """
+    if not request.user.je_organizator or not request.user.je_odobren:
+        return redirect('home')
+
+    org = request.user.organizator_profil
+
+    if request.method != 'POST':
+        return redirect('organizator_panel')
+
+    forma = ClanakForma(request.POST, request.FILES)
+    if forma.is_valid():
+        clanak = forma.save(commit=False)
+        clanak.autor = org
+        # status ostaje NA_CEKANJU (default) — admin odobrava kroz SSU 13.
+        clanak.save()
+
+        dodatne = request.FILES.getlist('dodatne_slike')
+        if dodatne:
+            SlikaClanka.objects.bulk_create([
+                SlikaClanka(clanak=clanak, slika=f) for f in dodatne
+            ])
+
+        return redirect('organizator_panel')
+
+    # Neuspešna validacija — vraćamo panel sa otvorenom formom i greškama.
+    kontekst = _organizator_panel_kontekst(org, forma_clanka=forma)
+    kontekst['otvori_formu_clanka'] = True
+    return render(request, 'organizator_panel.html', kontekst)

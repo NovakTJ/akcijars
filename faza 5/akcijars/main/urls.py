@@ -23,6 +23,7 @@ urlpatterns = [
     path('akcije/<int:id_akc>/ponude/<int:ponuda_id>/prihvati/', views.prihvati_ponudu, name='prihvati_ponudu'),
     path('akcije/<int:id_akc>/ponude/<int:ponuda_id>/odbij/', views.odbij_ponudu, name='odbij_ponudu'),
     path('clanci/', views.lista_clanaka, name='clanci'),
+    path('clanci/kreiraj/', views.kreiraj_clanak, name='kreiraj_clanak'),
 
     path('clanci/<int:id_cla>/', views.detalj_clanka, name='detalj_clanka'),
     path('clanci/<int:id_cla>/komentari/', views.ajax_dodaj_komentar, name='ajax_dodaj_komentar'),

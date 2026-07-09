@@ -9,6 +9,7 @@ from django.utils.text import slugify
 
 from .models import (
     Akcija,
+    Clanak,
     Komentar,
     Korisnik,
     VolonterProfil,
@@ -178,6 +179,65 @@ class SponzorskaPonudaForm(forms.ModelForm):
         if vrednost is not None and vrednost < 1:
             raise forms.ValidationError('Vrednost mora biti pozitivan broj.')
         return vrednost
+
+
+class _VisestrukiFajlInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class _VisestrukoFajlPolje(forms.FileField):
+    """FileField koje prihvata više fajlova odjednom (Django preporučeni pattern)."""
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('widget', _VisestrukiFajlInput())
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        pojedinacni = super().clean
+        if isinstance(data, (list, tuple)):
+            return [pojedinacni(d, initial) for d in data]
+        return pojedinacni(data, initial)
+
+
+class ClanakForma(forms.ModelForm):
+    """Forma za kreiranje članka (SSU 22)."""
+
+    dodatne_slike = _VisestrukoFajlPolje(
+        required=False,
+        label='Dodatne slike (opciono)',
+    )
+
+    class Meta:
+        model = Clanak
+        fields = ['kategorija', 'naslov', 'tekst', 'glavna_slika']
+        widgets = {
+            'naslov': forms.TextInput(attrs={
+                'maxlength': 200,
+                'placeholder': 'Unesite naslov članka',
+            }),
+            'tekst': forms.Textarea(attrs={
+                'rows': 10,
+                'placeholder': 'Sadržaj članka…',
+            }),
+        }
+        labels = {
+            'kategorija': 'Kategorija',
+            'naslov': 'Naslov',
+            'tekst': 'Tekst',
+            'glavna_slika': 'Glavna slika (cover)',
+        }
+
+    def clean_naslov(self):
+        naslov = (self.cleaned_data.get('naslov') or '').strip()
+        if not naslov:
+            raise forms.ValidationError('Naslov je obavezan.')
+        return naslov
+
+    def clean_tekst(self):
+        tekst = (self.cleaned_data.get('tekst') or '').strip()
+        if not tekst:
+            raise forms.ValidationError('Tekst članka je obavezan.')
+        return tekst
 
 
 class KomentarForm(forms.ModelForm):

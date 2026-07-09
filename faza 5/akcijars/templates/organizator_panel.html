@@ -420,9 +420,119 @@
 
       <!-- ─ TAB: MOJI ČLANCI ─ -->
       <div class="panel-section" id="sec-clanci">
-        <div style="margin-bottom:22px;">
-          <h2 style="font-size:1.375rem;font-weight:800;margin-bottom:3px;">Moji članci</h2>
-          <p style="color:var(--text-secondary);font-size:.9rem;">Svi članci koje ste napisali i njihov trenutni status</p>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h2 style="font-size:1.375rem;font-weight:800;margin-bottom:3px;">Moji članci</h2>
+            <p style="color:var(--text-secondary);font-size:.9rem;">Svi članci koje ste napisali i njihov trenutni status</p>
+          </div>
+          <button type="button" id="btn-otvori-formu-clanka" class="btn btn-primary" onclick="toggleFormaClanka(true)">
+            <i class="bi bi-plus-circle"></i> Kreiraj članak
+          </button>
+        </div>
+
+        <!-- Forma za novi članak (SSU 22) -->
+        <div id="clanak-forma" class="panel-card" style="max-width:720px;margin-bottom:24px;{% if not otvori_formu_clanka %}display:none;{% endif %}">
+          <div class="panel-card-header">
+            <h3><i class="bi bi-pencil-square"></i> Novi članak</h3>
+          </div>
+          <div class="panel-card-body" style="padding:20px 24px;">
+            {% if forma_clanka.non_field_errors %}
+              <div class="alert alert-error" style="display:flex;">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <span>{{ forma_clanka.non_field_errors.0 }}</span>
+              </div>
+            {% endif %}
+
+            <form method="post" action="{% url 'kreiraj_clanak' %}" enctype="multipart/form-data" novalidate>
+              {% csrf_token %}
+
+              <div class="form-group">
+                <label class="form-label">Naslov članka <span class="req">*</span></label>
+                <input type="text" name="naslov" maxlength="200"
+                       class="form-control {% if forma_clanka.naslov.errors %}is-error{% endif %}"
+                       placeholder="npr. Uspešno završena akcija čišćenja..."
+                       value="{{ forma_clanka.naslov.value|default:'' }}">
+                {% for greska in forma_clanka.naslov.errors %}
+                  <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+                {% endfor %}
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Kategorija <span class="req">*</span></label>
+                <select name="kategorija" class="form-control {% if forma_clanka.kategorija.errors %}is-error{% endif %}">
+                  <option value="">— Izaberite kategoriju —</option>
+                  {% for kat in forma_clanka.kategorija.field.queryset %}
+                    <option value="{{ kat.pk }}" {% if forma_clanka.kategorija.value|stringformat:'s' == kat.pk|stringformat:'s' %}selected{% endif %}>{{ kat.naziv }}</option>
+                  {% endfor %}
+                </select>
+                {% for greska in forma_clanka.kategorija.errors %}
+                  <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+                {% endfor %}
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Sadržaj članka <span class="req">*</span></label>
+                <textarea name="tekst" rows="7"
+                          class="form-control {% if forma_clanka.tekst.errors %}is-error{% endif %}"
+                          placeholder="Opišite akciju, utiske, rezultate...">{{ forma_clanka.tekst.value|default:'' }}</textarea>
+                {% for greska in forma_clanka.tekst.errors %}
+                  <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+                {% endfor %}
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Glavna slika (cover)</label>
+                <input type="file" name="glavna_slika" id="c-glavna-slika" accept="image/*"
+                       style="display:none;" onchange="prikaziNazivGlavne(this)">
+                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                  <label for="c-glavna-slika" class="btn btn-secondary" style="cursor:pointer;margin:0;">
+                    <i class="bi bi-image"></i> Izaberi sliku
+                  </label>
+                  <span id="c-glavna-slika-naziv" style="font-size:.875rem;color:var(--text-muted);">
+                    Nijedan fajl nije izabran
+                  </span>
+                  <button type="button" id="c-glavna-slika-clear" onclick="obrisiGlavnuSliku()"
+                          style="display:none;background:none;border:none;color:var(--error);cursor:pointer;font-size:.875rem;padding:4px 8px;">
+                    <i class="bi bi-x-circle"></i> Ukloni
+                  </button>
+                </div>
+                <div class="form-hint" style="margin-top:6px;">Opciono. Prikazuje se kao velika slika na vrhu članka.</div>
+                {% for greska in forma_clanka.glavna_slika.errors %}
+                  <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+                {% endfor %}
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Slike</label>
+                <div id="c-slika-dropzone"
+                     style="border:2px dashed var(--border);border-radius:var(--radius-sm);padding:24px;text-align:center;background:var(--bg);cursor:pointer;transition:var(--transition);"
+                     onclick="document.getElementById('c-slika').click()"
+                     ondragover="event.preventDefault();this.style.borderColor='var(--teal)'"
+                     ondragleave="this.style.borderColor='var(--border)'"
+                     ondrop="handleDropClanak(event)">
+                  <input type="file" id="c-slika" name="dodatne_slike" accept="image/*" multiple style="display:none;" onchange="previewSlikaClanak(this)">
+                  <div id="c-slika-placeholder">
+                    <i class="bi bi-images" style="font-size:2rem;color:var(--text-muted);display:block;margin-bottom:8px;"></i>
+                    <div style="font-weight:600;color:var(--text-secondary);font-size:.9375rem;">Kliknite ili prevucite slike ovde</div>
+                    <div style="font-size:.8rem;color:var(--text-muted);margin-top:4px;">PNG, JPG – možete odabrati više slika odjednom</div>
+                  </div>
+                  <div id="c-slika-previews" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;justify-content:center;"></div>
+                </div>
+                {% for greska in forma_clanka.dodatne_slike.errors %}
+                  <div class="form-error" style="display:flex;margin-top:6px;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
+                {% endfor %}
+              </div>
+
+              <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-floppy"></i> Sačuvaj
+                </button>
+                <button type="button" class="btn btn-ghost" onclick="toggleFormaClanka(false)">
+                  <i class="bi bi-x"></i> Otkaži
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
 
         {% if clanci %}
@@ -472,6 +582,9 @@
           <div class="es-icon">📰</div>
           <h3>Još niste napisali nijedan članak.</h3>
           <p>Podelite iskustva sa vaših akcija sa zajednicom!</p>
+          <button type="button" class="btn btn-primary" onclick="toggleFormaClanka(true)">
+            <i class="bi bi-plus-circle"></i> Kreiraj prvi članak
+          </button>
         </div>
         {% endif %}
       </div>
@@ -490,5 +603,76 @@
       s.classList.remove('active'));
     document.getElementById('sec-' + tab).classList.add('active');
   }
+
+  // ── SSU 22: kreiranje članka ──
+  function toggleFormaClanka(prikazi) {
+    const forma = document.getElementById('clanak-forma');
+    const btn = document.getElementById('btn-otvori-formu-clanka');
+    if (!forma) return;
+    forma.style.display = prikazi ? 'block' : 'none';
+    if (btn) btn.style.display = prikazi ? 'none' : '';
+    if (prikazi) forma.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function previewSlikaClanak(input) {
+    const kontejner = document.getElementById('c-slika-previews');
+    const placeholder = document.getElementById('c-slika-placeholder');
+    if (!kontejner) return;
+    kontejner.innerHTML = '';
+    const fajlovi = Array.from(input.files || []);
+    if (fajlovi.length === 0) {
+      if (placeholder) placeholder.style.display = '';
+      return;
+    }
+    if (placeholder) placeholder.style.display = 'none';
+    fajlovi.forEach(f => {
+      const url = URL.createObjectURL(f);
+      const img = document.createElement('img');
+      img.src = url;
+      img.alt = f.name;
+      img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--border);';
+      img.onload = () => URL.revokeObjectURL(url);
+      kontejner.appendChild(img);
+    });
+  }
+
+  function prikaziNazivGlavne(input) {
+    const naziv = document.getElementById('c-glavna-slika-naziv');
+    const clear = document.getElementById('c-glavna-slika-clear');
+    if (input.files && input.files[0]) {
+      naziv.textContent = input.files[0].name;
+      naziv.style.color = 'var(--dark)';
+      naziv.style.fontWeight = '600';
+      if (clear) clear.style.display = '';
+    } else {
+      naziv.textContent = 'Nijedan fajl nije izabran';
+      naziv.style.color = 'var(--text-muted)';
+      naziv.style.fontWeight = '';
+      if (clear) clear.style.display = 'none';
+    }
+  }
+
+  function obrisiGlavnuSliku() {
+    const input = document.getElementById('c-glavna-slika');
+    if (input) {
+      input.value = '';
+      prikaziNazivGlavne(input);
+    }
+  }
+
+  function handleDropClanak(event) {
+    event.preventDefault();
+    const dz = document.getElementById('c-slika-dropzone');
+    if (dz) dz.style.borderColor = 'var(--border)';
+    const input = document.getElementById('c-slika');
+    if (!input || !event.dataTransfer) return;
+    input.files = event.dataTransfer.files;
+    previewSlikaClanak(input);
+  }
+
+  // Ako je forma otvorena zbog grešaka validacije — automatski otvori tab „Moji članci".
+  {% if otvori_formu_clanka %}
+    switchTab('clanci');
+  {% endif %}
 </script>
 {% endblock %}
