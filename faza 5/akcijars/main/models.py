@@ -317,6 +317,21 @@ class Akcija(models.Model):
     datum = models.DateField(verbose_name='Datum', db_column='Datum')
     vreme = models.TimeField(verbose_name='Vreme', db_column='Vreme')
     lokacija = models.CharField(max_length=50, verbose_name='Lokacija', db_column='Lokacija')
+    # FZ 4.3.1 — geografske koordinate lokacije (za prikaz na Google Maps karti i
+    # pretragu akcija po lokaciji). Opcione: popunjava ih Google Places autocomplete
+    # pri kreiranju akcije; akcija bez koordinata se i dalje čuva (nema markera).
+    geo_sirina = models.FloatField(
+        null=True,
+        blank=True,
+        verbose_name='Geografska širina',
+        db_column='GeoSirina',
+    )
+    geo_duzina = models.FloatField(
+        null=True,
+        blank=True,
+        verbose_name='Geografska dužina',
+        db_column='GeoDuzina',
+    )
     max_br_volontera = models.PositiveIntegerField(
         verbose_name='Maksimalan broj volontera',
         db_column='MaxBrVolontera',
@@ -360,6 +375,11 @@ class Akcija(models.Model):
 
     def __str__(self):
         return self.naziv
+
+    @property
+    def ima_koordinate(self):
+        """True ako akcija ima geografske koordinate (za prikaz na mapi)."""
+        return self.geo_sirina is not None and self.geo_duzina is not None
 
     @property
     def badge_klasa(self):

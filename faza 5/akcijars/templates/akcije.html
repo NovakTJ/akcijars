@@ -17,10 +17,6 @@
   <div class="container">
 
     <div class="filter-bar">
-      {% comment %}
-        TODO(#12, Novak): dodati filter po lokaciji + radius (Google Maps + haversine).
-        Prototip: faza 2/prototip/akcije.html linije 73–112.
-      {% endcomment %}
       <form method="get" id="filter-form">
         <div class="filter-row" style="flex-wrap:wrap;gap:12px;">
           <div class="filter-group" style="flex:2;min-width:180px;">
@@ -51,6 +47,29 @@
             <label>Datum akcije</label>
             <input name="datum" type="date" class="form-control" value="{{ filteri.datum|default:'' }}">
           </div>
+          {% if GOOGLE_MAPS_API_KEY %}
+          {# SSU 3, 2.2.6 — pretraga po lokaciji sa izborom radijusa. #}
+          <div class="filter-group" style="min-width:180px;">
+            <label>Lokacija</label>
+            <div style="display:flex;gap:6px;">
+              <input id="lok-input" name="lok" type="text" class="form-control"
+                     placeholder="Mesto..." maxlength="120" autocomplete="off"
+                     value="{{ filteri.lok|default:'' }}">
+              <button type="button" id="moja-lokacija" class="btn btn-ghost"
+                      title="Koristi moju lokaciju"><i class="bi bi-geo-alt"></i></button>
+            </div>
+            <input type="hidden" id="lok-lat" name="lat" value="{{ filteri.lat|default:'' }}">
+            <input type="hidden" id="lok-lng" name="lng" value="{{ filteri.lng|default:'' }}">
+          </div>
+          <div class="filter-group" style="min-width:110px;">
+            <label>Radijus</label>
+            <select name="radius" class="form-control">
+              {% for r in radiusi %}
+                <option value="{{ r }}" {% if filteri.radius == r %}selected{% endif %}>{{ r }} km</option>
+              {% endfor %}
+            </select>
+          </div>
+          {% endif %}
           <div class="filter-group" style="flex:0;">
             <label>&nbsp;</label>
             <div style="display:flex;gap:6px;">
@@ -71,4 +90,5 @@
 
 {% block extra_js %}
 <script src="{% static 'js/akcije.js' %}"></script>
+{% include '_maps_script.html' %}
 {% endblock %}

@@ -1,4 +1,5 @@
 import json
+import math
 import re
 
 from django.contrib import messages
@@ -14,6 +15,39 @@ from django.views.decorators.http import require_POST
 
 # SSU 3, otvoreno pitanje 2 — dozvoljena slova (uklj. srpske), cifre, razmaci.
 _DOZVOLJEN_UPIT = re.compile(r'^[a-zA-ZčćžšđČĆŽŠĐ0-9 ]*$')
+
+# SSU 3, 2.2.6 — dozvoljeni radijusi pretrage po lokaciji (km); podrazumevano 25.
+_RADIUSI = (5, 10, 25, 50)
+
+
+def _parsiraj_koord(vrednost):
+    """Parsira string koordinate u float; vraća None za prazan/neispravan unos."""
+    if not vrednost:
+        return None
+    try:
+        return float(vrednost)
+    except (TypeError, ValueError):
+        return None
+
+
+def _parsiraj_radius(vrednost):
+    """Radijus pretrage u km; vraća podrazumevanih 25 za nevalidan unos."""
+    try:
+        r = int(vrednost)
+    except (TypeError, ValueError):
+        return 25
+    return r if r in _RADIUSI else 25
+
+
+def _haversine_km(lat1, lng1, lat2, lng2):
+    """Rastojanje između dve tačke na Zemlji (haversine formula), u kilometrima."""
+    R = 6371.0
+    d_lat = math.radians(lat2 - lat1)
+    d_lng = math.radians(lng2 - lng1)
+    a = (math.sin(d_lat / 2) ** 2
+         + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2))
+         * math.sin(d_lng / 2) ** 2)
+    return R * 2 * math.asin(math.sqrt(a))
 
 
 def _brojevi_paginacije(strana):
@@ -176,16 +210,44 @@ def lista_akcija(request):
     if datum:
         akcije = akcije.filter(datum=datum)
 
-    # SSU 3, 2.2.8 — sortiranje. 'najblize' i 'slobodna_mesta' zavise od
-    # tuđih komitova (#12 lokacija — Novak, #15 model Prijava — Maša),
-    # do tada su u UI-u kao disabled opcije.
+    # SSU 3, 2.2.6 — pretraga po lokaciji. Google Places (client-side) daje
+    # koordinate izabranog mesta; radijus filtriramo haversine formulom na
+    # serveru. Akcije bez koordinata se izostavljaju iz geo-pretrage.
+    lok = request.GET.get('lok', '').strip()[:120]
+    lat = _parsiraj_koord(request.GET.get('lat'))
+    lng = _parsiraj_koord(request.GET.get('lng'))
+    radius = _parsiraj_radius(request.GET.get('radius'))
+    lokacija_aktivna = lat is not None and lng is not None
+
+    # SSU 3, 2.2.8 — sortiranje. 'najblize' je dostupno samo kada je izabrana
+    # lokacija; 'slobodna_mesta' zavisi od modela Prijava (#15) i za sada je u
+    # UI-u kao disabled opcija.
     poredak = {
         'datum_kacenja': '-datum_kreiranja',
         'datum_odrzavanja': '-datum',
     }.get(sortiranje, '-datum_kreiranja')
 
-    # SSU 3, otvoreno pitanje 1 — numActionsPerPage = 9.
-    paginator = Paginator(akcije.distinct().order_by(poredak), 9)
+    akcije = akcije.distinct().order_by(poredak)
+
+    if lokacija_aktivna:
+        # Materijalizujemo listu, računamo distancu i zadržavamo akcije unutar
+        # radijusa. „Najbliže" (2.2.8) sortira po izračunatoj distanci.
+        stavke = []
+        for akc in akcije:
+            if not akc.ima_koordinate:
+                continue
+            d = _haversine_km(lat, lng, akc.geo_sirina, akc.geo_duzina)
+            if d <= radius:
+                akc.distanca = round(d, 1)
+                stavke.append(akc)
+        if sortiranje == 'najblize':
+            stavke.sort(key=lambda a: a.distanca)
+        # SSU 3, otvoreno pitanje 1 — numActionsPerPage = 9.
+        paginator = Paginator(stavke, 9)
+    else:
+        # SSU 3, otvoreno pitanje 1 — numActionsPerPage = 9.
+        paginator = Paginator(akcije, 9)
+
     strana = paginator.get_page(request.GET.get('page'))
 
     kontekst = {
@@ -200,7 +262,13 @@ def lista_akcija(request):
             (Akcija.Status.ZAVRSENA, Akcija.Status.ZAVRSENA.label),
             (Akcija.Status.OTKAZANA, Akcija.Status.OTKAZANA.label),
         ],
-        'filteri': {'q': q, 'kategorija': kategorija, 'status': status, 'datum': datum},
+        'filteri': {
+            'q': q, 'kategorija': kategorija, 'status': status, 'datum': datum,
+            'lok': lok, 'lat': request.GET.get('lat', ''),
+            'lng': request.GET.get('lng', ''), 'radius': radius,
+        },
+        'radiusi': _RADIUSI,
+        'lokacija_aktivna': lokacija_aktivna,
         'sortiranje': sortiranje,
     }
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':

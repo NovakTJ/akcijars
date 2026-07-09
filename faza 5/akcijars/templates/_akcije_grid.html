@@ -18,8 +18,8 @@
     <select name="sort" form="filter-form" class="form-control" style="width:auto;padding:7px 32px 7px 10px;font-size:.875rem;">
       <option value="datum_kacenja" {% if sortiranje == 'datum_kacenja' %}selected{% endif %}>Najnovije (datum kačenja)</option>
       <option value="datum_odrzavanja" {% if sortiranje == 'datum_odrzavanja' %}selected{% endif %}>Najnovije (datum održavanja)</option>
-      {# TODO(#12, Novak): omogućiti kad je lokacija izabrana. #}
-      <option value="najblize" disabled>Najbliže</option>
+      {# SSU 3, 2.2.8 — „Najbliže" je dostupno samo kada je izabrana lokacija. #}
+      <option value="najblize" {% if not lokacija_aktivna %}disabled{% endif %} {% if sortiranje == 'najblize' %}selected{% endif %}>Najbliže</option>
       {# TODO(#15, Maša): omogućiti kad postoji model Prijava sa brojanjem prihvaćenih. #}
       <option value="slobodna_mesta" disabled>Slobodna mesta</option>
     </select>
@@ -44,6 +44,9 @@
         <h3 class="card-title">{{ akcija.naziv }}</h3>
         <div class="card-meta">
           <span class="card-meta-item"><i class="bi bi-geo-alt"></i>{{ akcija.lokacija }}</span>
+          {% if akcija.distanca %}
+            <span class="card-meta-item"><i class="bi bi-signpost-2"></i>{{ akcija.distanca }} km</span>
+          {% endif %}
           <span class="card-meta-item"><i class="bi bi-calendar3"></i>{{ akcija.datum }}</span>
           <span class="card-meta-item"><i class="bi bi-clock"></i>{{ akcija.vreme|time:"H:i" }}</span>
         </div>

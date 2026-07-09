@@ -69,9 +69,16 @@
           <div class="form-group">
             <label class="form-label">Lokacija <span class="req">*</span></label>
             {{ form.lokacija }}
+            {{ form.geo_sirina }}
+            {{ form.geo_duzina }}
             <div class="form-hint">
               <i class="bi bi-map" style="color:var(--teal);"></i>
-              Izbor lokacije preko Google Maps prozorčića stiže u kasnijem koraku.
+              {% if GOOGLE_MAPS_API_KEY %}
+                Počnite da kucate naziv mesta i izaberite predlog sa liste da bismo
+                zapamtili tačnu lokaciju na mapi.
+              {% else %}
+                Unesite naziv lokacije (npr. Ada Ciganlija, Beograd).
+              {% endif %}
             </div>
             {% for greska in form.lokacija.errors %}
               <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
@@ -141,4 +148,8 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{% include '_maps_script.html' %}
 {% endblock %}

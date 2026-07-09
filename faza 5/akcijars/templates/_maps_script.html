@@ -1,0 +1,16 @@
+{% comment %}
+  FZ 4.3.1 — učitavanje Google Maps JS API-ja. Uključuje se u `extra_js` na
+  stranicama koje koriste mapu (kreiraj akciju, detalj akcije, lista akcija).
+
+  Guard `{% if GOOGLE_MAPS_API_KEY %}`: ako ključ nije postavljen, ništa se ne
+  učitava — stranice rade bez mape (fallback na tekstualni prikaz lokacije).
+
+  Ključ je restringovan po HTTP referrer-u, pa se koristi isključivo client-side.
+{% endcomment %}
+{% if GOOGLE_MAPS_API_KEY %}
+{% load static %}
+<script src="{% static 'js/mapa.js' %}"></script>
+<script async
+        src="https://maps.googleapis.com/maps/api/js?key={{ GOOGLE_MAPS_API_KEY }}&libraries=places&callback=initMape&loading=async">
+</script>
+{% endif %}

@@ -69,6 +69,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'main.context_processors.google_maps',
             ],
         },
     },
@@ -148,3 +149,10 @@ EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'AkcijaRS <no-reply@akcijars.rs>')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# Google Maps (FZ 4.3.1 — prikaz lokacije akcije na karti i pretraga po
+# lokaciji). Ključ se drži u .env (gitignored) i restringovan je po HTTP
+# referrer-u, pa se koristi isključivo client-side. Ako nije postavljen,
+# stranice rade bez mape (fallback na tekstualni prikaz lokacije).
+GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY', '')

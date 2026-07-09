@@ -187,13 +187,18 @@ class AkcijaForm(forms.ModelForm):
         required=False,
         widget=forms.TextInput(attrs={'placeholder': '+381 11 123 4567'}),
     )
+    # FZ 4.3.1 — koordinate lokacije. Opcione, popunjava ih Google Places
+    # autocomplete (client-side) na osnovu izabranog mesta; skrivena su od
+    # korisnika. Akcija bez koordinata se i dalje čuva (samo nema markera).
+    geo_sirina = forms.FloatField(required=False, widget=forms.HiddenInput())
+    geo_duzina = forms.FloatField(required=False, widget=forms.HiddenInput())
 
     class Meta:
         model = Akcija
         fields = [
             'naziv', 'opis', 'datum', 'vreme', 'lokacija',
             'kategorija', 'max_br_volontera', 'kontakt_email',
-            'kontakt_telefon', 'slika',
+            'kontakt_telefon', 'slika', 'geo_sirina', 'geo_duzina',
         ]
         widgets = {
             'naziv': forms.TextInput(attrs={
@@ -221,7 +226,7 @@ class AkcijaForm(forms.ModelForm):
         # `form-control` radi doslednog izgleda sa ostalim formama.
         for name, field in self.fields.items():
             field.required = False
-            if name != 'slika':
+            if name not in ('slika', 'geo_sirina', 'geo_duzina'):
                 field.widget.attrs.setdefault('class', 'form-control')
 
     def clean(self):

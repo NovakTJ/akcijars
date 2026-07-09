@@ -502,6 +502,7 @@ input[type="date"].form-control::-webkit-calendar-picker-indicator {
 .info-row span { color: var(--text-secondary); }
 .map-placeholder { height: 180px; border-radius: var(--radius); background: linear-gradient(135deg, #d4f0f0, #c8e8d8); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--teal-hover); font-size: 0.875rem; margin-top: 14px; border: 1.5px dashed var(--teal-light); }
 .map-placeholder i { font-size: 2rem; }
+.action-map { height: 180px; border-radius: var(--radius); margin-top: 14px; }
 .sponsor-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 5px 12px; font-size: 0.8125rem; font-weight: 500; color: var(--dark); margin: 4px; }
 .sponsor-chip i { color: var(--green); }
 
