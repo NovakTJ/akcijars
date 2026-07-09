@@ -165,15 +165,14 @@
               <span id="org-sp-badge" style="background:var(--teal);color:white;font-size:.65rem;padding:1px 6px;border-radius:8px;font-weight:700;display:none;"></span>
             {% endif %}
           </button>
-          {% comment %}
-            TODO(#24, Milica): tab „Pošalji obaveštenje" (SSU 8).
-            TODO(#14, Maša): tab „Izmeni akciju" (SSU 10).
-          {% endcomment %}
-          <button type="button" disabled title="Biće implementirano"
-                  style="padding:10px 18px;font-size:.875rem;font-weight:600;border:none;background:none;cursor:not-allowed;
-                         color:var(--text-muted);opacity:.5;margin-bottom:-2px;white-space:nowrap;">
+          <button type="button" id="otab-org-obavestenje" data-tab-target="org-obavestenje"
+                  style="padding:10px 18px;font-size:.875rem;font-weight:600;border:none;background:none;cursor:pointer;
+                         border-bottom:2px solid transparent;color:var(--text-muted);margin-bottom:-2px;white-space:nowrap;transition:all .15s;">
             <i class="bi bi-megaphone"></i> Pošalji obaveštenje
           </button>
+          {% comment %}
+            TODO(#14, Maša): tab „Izmeni akciju" (SSU 10).
+          {% endcomment %}
           <button type="button" disabled title="Biće implementirano"
                   style="padding:10px 18px;font-size:.875rem;font-weight:600;border:none;background:none;cursor:not-allowed;
                          color:var(--text-muted);opacity:.5;margin-bottom:-2px;white-space:nowrap;">
@@ -187,6 +186,9 @@
           </div>
           <div id="org-sp" style="display:none;">
             {% include '_org_ponude.html' %}
+          </div>
+          <div id="org-obavestenje" style="display:none;">
+            {% include '_org_obavestenje.html' %}
           </div>
         </div>
       </div>

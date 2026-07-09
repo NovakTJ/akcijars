@@ -67,6 +67,7 @@ def _brojevi_paginacije(strana):
     return rezultat
 
 from .emails import (
+    posalji_obavestenje_volonterima,
     posalji_odbijanje_naloga,
     posalji_odbijanje_prijave,
     posalji_odobrenje_naloga,
@@ -556,6 +557,45 @@ def posalji_ponudu(request, id_akc):
         'akcija': akcija,
         'moja_ponuda': None,
         'ponuda_forma': form,
+    })
+
+
+@login_required
+@require_POST
+def posalji_obavestenje(request, id_akc):
+    """
+    Organizator šalje obaveštenje prihvaćenim volonterima akcije (SSU 8, 2.2.1).
+
+    Prima JSON telo ``{"poruka": "..."}``. Prazna poruka se odbija (SSU 8,
+    2.2.2). Vraća JSON sa brojem obaveštenih volontera.
+    """
+    akcija = get_object_or_404(Akcija, pk=id_akc)
+    if not _je_organizator_akcije(request.user, akcija):
+        return JsonResponse({'error': 'Samo organizator akcije može ovo da uradi.'}, status=403)
+
+    podaci, greska = _parse_ajax_body(request)
+    if greska:
+        return greska
+
+    poruka = (podaci.get('poruka') or '').strip()
+    if not poruka:
+        # SSU 8, 2.2.2 — sistem zahteva unos teksta poruke.
+        return JsonResponse({'error': 'Unesite tekst poruke.'}, status=400)
+
+    prijave = (
+        akcija.prijave
+        .filter(status=Prijava.Status.PRIHVACENA)
+        .select_related('korisnik__korisnik')
+    )
+    primaoci = [prijava.korisnik.korisnik for prijava in prijave]
+    if not primaoci:
+        return JsonResponse({'error': 'Nema prihvaćenih volontera za slanje.'}, status=400)
+
+    poslato = posalji_obavestenje_volonterima(akcija, poruka, primaoci)
+    return JsonResponse({
+        'ok': True,
+        'poslato': poslato,
+        'poruka': f'Obaveštenje je poslato prijavljenim volonterima ({poslato}).',
     })
 
 

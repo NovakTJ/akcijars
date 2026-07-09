@@ -1,5 +1,5 @@
 """
-Slanje email obaveštenja korisnicima (FZ 4.3.2 — Email API).
+Slanje emasnicimail obaveštenja kori (FZ 4.3.2 — Email API).
 
 Za sada se koristi samo za potvrdu registracije (SSU 1, 2.2.1 / 2.2.2), ali je
 modul predviđen da okupi i ostala obaveštenja (prijave na akcije, preporuke...).
@@ -106,3 +106,29 @@ def posalji_odbijanje_prijave(prijava):
         naslov=f'Odgovor na prijavu — {prijava.akcija.naziv}',
         template_base='odbijanje_prijave',
     )
+
+
+def posalji_obavestenje_volonterima(akcija, poruka, primaoci):
+    """
+    Šalje obaveštenje organizatora prihvaćenim volonterima akcije (SSU 8, 2.2.1).
+
+    ``primaoci`` je iterable ``Korisnik`` objekata (prihvaćeni volonteri), a
+    ``poruka`` slobodan tekst koji je organizator uneo. Svakom volonteru se
+    šalje zaseban email (bez izlaganja tuđih adresa). Vraća broj uspešno
+    poslatih poruka. Greške pri slanju se ne propagiraju (fail_silently).
+    """
+    poslato = 0
+    for volonter in primaoci:
+        kontekst = {'volonter': volonter, 'akcija': akcija, 'poruka': poruka}
+
+        tekst = render_to_string('emails/obavestenje_volonterima.txt', kontekst)
+        html = render_to_string('emails/obavestenje_volonterima.html', kontekst)
+
+        email = EmailMultiAlternatives(
+            subject=f'Obaveštenje — {akcija.naziv}',
+            body=tekst,
+            to=[volonter.email],
+        )
+        email.attach_alternative(html, 'text/html')
+        poslato += email.send(fail_silently=True)
+    return poslato

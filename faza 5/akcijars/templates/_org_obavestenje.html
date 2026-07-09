@@ -1,0 +1,46 @@
+{# SSU 8 — slanje obaveštenja prihvaćenim volonterima (vidljivo samo organizatoru akcije). #}
+
+{% if not prijave_prihvacene %}
+  <div class="empty-state" style="padding:32px 16px;">
+    <div class="es-icon">📣</div>
+    <h3>Nema prihvaćenih volontera.</h3>
+    <p>Obaveštenje možete poslati tek kada prihvatite bar jednog volontera na ovu akciju.</p>
+  </div>
+{% else %}
+
+  <div style="margin-bottom:20px;">
+    <div style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+      <span style="width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;"></span>
+      Primaoci ({{ prijave_prihvacene|length }})
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+      {% for prijava in prijave_prihvacene %}
+        <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:white;border:1px solid var(--border-light);border-radius:999px;font-size:.85rem;">
+          <span style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,var(--teal-light),var(--green-light));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.7rem;color:var(--teal-hover);">
+            {{ prijava.korisnik.korisnik.ime|slice:":1" }}
+          </span>
+          {{ prijava.korisnik.korisnik.get_full_name }}
+        </span>
+      {% endfor %}
+    </div>
+  </div>
+
+  {# Forma za unos poruke (SSU 8, 2.2.1 korak 4-5). Šalje se Ajax-om iz detalj.js. #}
+  <form id="obavestenje-forma" style="max-width:560px;">
+    <div id="obavestenje-rezultat"></div>
+
+    <div class="form-group">
+      <label class="form-label" for="obavestenje-tekst">Tekst poruke <span class="req">*</span></label>
+      <textarea id="obavestenje-tekst" name="poruka" class="form-control" rows="4"
+                placeholder="Unesite tekst obaveštenja za prijavljene volontere..."></textarea>
+      <div class="form-hint">Obaveštenje se šalje email-om svim prihvaćenim volonterima akcije.</div>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button type="submit" id="btn-posalji-obavestenje" class="btn btn-primary">
+        <i class="bi bi-send"></i> Pošalji
+      </button>
+    </div>
+  </form>
+
+{% endif %}

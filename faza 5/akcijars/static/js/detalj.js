@@ -71,7 +71,7 @@
   // ── Tab switching ────────────────────────────────────────────────────────
 
   function switchOrgTab(activeId) {
-    ['org-vol', 'org-sp'].forEach(id => {
+    ['org-vol', 'org-sp', 'org-obavestenje'].forEach(id => {
       const el  = document.getElementById(id);
       const btn = document.getElementById('otab-' + id);
       if (el)  el.style.display = id === activeId ? '' : 'none';
@@ -127,6 +127,51 @@
       }
     }
   }
+
+  // ── Slanje obaveštenja volonterima (SSU 8) ───────────────────────────────
+
+  function prikaziObavestenjeRezultat(tip, tekst) {
+    const box = document.getElementById('obavestenje-rezultat');
+    if (!box) return;
+    const klasa = tip === 'ok' ? 'alert-success' : 'alert-error';
+    const ikona = tip === 'ok' ? 'check-circle-fill' : 'exclamation-circle';
+    box.innerHTML = `<div class="alert ${klasa}" style="display:flex;margin-bottom:16px;">`
+      + `<i class="bi bi-${ikona}"></i> <span>${tekst}</span></div>`;
+  }
+
+  async function posaljiObavestenje(forma) {
+    const textarea = document.getElementById('obavestenje-tekst');
+    const dugme = document.getElementById('btn-posalji-obavestenje');
+    const poruka = (textarea?.value || '').trim();
+
+    // SSU 8, 2.2.2 — prazna poruka se ne šalje (provera i na klijentu i na serveru).
+    if (!poruka) {
+      prikaziObavestenjeRezultat('greska', 'Unesite tekst poruke.');
+      textarea?.focus();
+      return;
+    }
+
+    if (dugme) dugme.disabled = true;
+    try {
+      const data = await apiFetch(`/akcije/${akcijaId}/obavestenje/`, {
+        method: 'POST',
+        body: JSON.stringify({ poruka }),
+      });
+      prikaziObavestenjeRezultat('ok', data.poruka || 'Obaveštenje je poslato.');
+      if (textarea) textarea.value = '';
+    } catch (err) {
+      prikaziObavestenjeRezultat('greska', err.message);
+    } finally {
+      if (dugme) dugme.disabled = false;
+    }
+  }
+
+  orgPanel.addEventListener('submit', (e) => {
+    const forma = e.target.closest('#obavestenje-forma');
+    if (!forma) return;
+    e.preventDefault();
+    posaljiObavestenje(forma);
+  });
 
   // ── Delegirani click handler ─────────────────────────────────────────────
 
