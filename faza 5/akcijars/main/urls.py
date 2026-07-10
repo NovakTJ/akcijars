@@ -37,6 +37,8 @@ urlpatterns = [
 
     # SSU 15 — volonterski panel
     path('volonter-panel/', views.volonter_panel, name='volonter_panel'),
+    # SSU 9 — opt-in za email preporuke akcija (Ajax)
+    path('volonter/preporuke/', views.toggle_preporuke, name='toggle_preporuke'),
 
     # SSU 16 — sponzorski panel
     path('sponzor-panel/', views.sponzor_panel, name='sponzor_panel'),

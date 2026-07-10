@@ -857,7 +857,28 @@ def volonter_panel(request):
         'br_tekucih': tekuce.count(),
         'br_istorija': istorija.count(),
         'br_na_cekanju': na_cekanju.count(),
+        'prima_preporuke': volonter.prima_preporuke,  # SSU 9 — opt-in za preporuke
     })
+
+
+@login_required
+@require_POST
+def toggle_preporuke(request):
+    """
+    Volonter uključuje/isključuje email preporuke akcija (SSU 9, 2.2.2 / 2.2.3).
+    Prima JSON telo ``{"prima_preporuke": true|false}``.
+    """
+    if not request.user.je_volonter:
+        return JsonResponse({'error': 'Samo volonteri mogu da menjaju ovu opciju.'}, status=403)
+
+    podaci, greska = _parse_ajax_body(request)
+    if greska:
+        return greska
+
+    volonter = request.user.volonter_profil
+    volonter.prima_preporuke = bool(podaci.get('prima_preporuke'))
+    volonter.save(update_fields=['prima_preporuke'])
+    return JsonResponse({'ok': True, 'prima_preporuke': volonter.prima_preporuke})
 
 
 def _organizator_panel_kontekst(org, forma_clanka=None):

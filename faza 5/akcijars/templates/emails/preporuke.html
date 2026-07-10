@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="sr">
+<body style="font-family:Arial,Helvetica,sans-serif;color:#1f2937;line-height:1.6;">
+  <div style="max-width:560px;margin:0 auto;padding:24px;">
+    <h2 style="color:#0f766e;margin:0 0 16px;">Preporučene akcije za vas</h2>
+
+    <p>Zdravo {{ korisnik.ime }},</p>
+
+    <p>Na osnovu akcija na kojima ste ranije učestvovali, izdvojili smo akcije
+       u vašoj blizini koje bi vam mogle biti zanimljive:</p>
+
+    {% for akcija in akcije %}
+      <div style="border:1px solid #e5e7eb;border-radius:8px;padding:14px 16px;margin-bottom:12px;">
+        <div style="font-weight:700;font-size:1rem;color:#111827;">{{ akcija.naziv }}</div>
+        <div style="font-size:.85rem;color:#6b7280;margin:4px 0;">
+          {{ akcija.kategorija.naziv }} · {{ akcija.datum|date:"j. F Y." }} u {{ akcija.vreme|time:"H:i" }}
+        </div>
+        <div style="font-size:.85rem;color:#374151;">
+          📍 {{ akcija.lokacija }} <span style="color:#059669;">(~{{ akcija.distanca }} km od vas)</span>
+        </div>
+        <div style="font-size:.8rem;color:#6b7280;margin-top:4px;">
+          Organizator: {{ akcija.organizator.naziv_organizacije }}
+        </div>
+      </div>
+    {% endfor %}
+
+    <p>Prijavite se na akcije koje vam odgovaraju na platformi AkcijaRS.</p>
+
+    <p style="font-size:.8rem;color:#9ca3af;">
+      Ako više ne želite da primate preporuke, isključite ih u podešavanjima
+      svog volonterskog panela.
+    </p>
+
+    <p style="margin-top:24px;">Srdačan pozdrav,<br>Tim AkcijaRS</p>
+  </div>
+</body>
+</html>

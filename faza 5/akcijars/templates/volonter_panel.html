@@ -64,6 +64,9 @@
           <button class="panel-tab" data-tab="istorija" onclick="switchTab('istorija')">
             <i class="bi bi-clock-history"></i> Istorija
           </button>
+          <button class="panel-tab" data-tab="podesavanja" onclick="switchTab('podesavanja')">
+            <i class="bi bi-gear"></i> Podešavanja
+          </button>
         </div>
       </div>
     </div>
@@ -264,6 +267,40 @@
         {% endif %}
       </div>
 
+      <!-- ─ TAB: PODEŠAVANJA (SSU 9 — preporuke) ─ -->
+      <div class="panel-section" id="sec-podesavanja">
+        <div style="margin-bottom:22px;">
+          <h2 style="font-size:1.375rem;font-weight:800;margin-bottom:3px;">Podešavanja</h2>
+          <p style="color:var(--text-secondary);font-size:.9rem;">Upravljajte obaveštenjima koja primate emailom</p>
+        </div>
+
+        <div class="panel-card" style="max-width:640px;">
+          <div class="panel-card-header">
+            <h3><i class="bi bi-envelope-heart"></i> Preporuke akcija</h3>
+          </div>
+          <div style="padding:20px 24px;">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+              <div style="flex:1;min-width:200px;">
+                <div style="font-weight:600;color:var(--dark);margin-bottom:4px;">Aktiviraj preporuke akcija</div>
+                <div style="font-size:.85rem;color:var(--text-secondary);">
+                  Povremeno ćemo vam emailom slati akcije u blizini lokacija na kojima ste ranije volontirali.
+                </div>
+              </div>
+              <label style="position:relative;display:inline-block;width:48px;height:26px;flex-shrink:0;">
+                <input type="checkbox" id="chk-preporuke" {% if prima_preporuke %}checked{% endif %}
+                       style="opacity:0;width:0;height:0;">
+                <span id="slider-preporuke" style="position:absolute;cursor:pointer;inset:0;border-radius:26px;transition:.2s;
+                      background:{% if prima_preporuke %}var(--teal){% else %}var(--border){% endif %};">
+                  <span id="slider-knob-preporuke" style="position:absolute;height:20px;width:20px;left:3px;top:3px;background:white;border-radius:50%;transition:.2s;
+                        transform:translateX({% if prima_preporuke %}22px{% else %}0{% endif %});"></span>
+                </span>
+              </label>
+            </div>
+            <div id="preporuke-status" style="font-size:.85rem;margin-top:12px;"></div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -277,6 +314,40 @@
     document.querySelectorAll('.panel-section').forEach(s =>
       s.classList.remove('active'));
     document.getElementById('sec-' + tab).classList.add('active');
+  }
+
+  // ── SSU 9: uključivanje/isključivanje preporuka (opt-in) ──
+  const chkPreporuke = document.getElementById('chk-preporuke');
+  if (chkPreporuke) {
+    chkPreporuke.addEventListener('change', async () => {
+      const ukljuceno = chkPreporuke.checked;
+      const slider = document.getElementById('slider-preporuke');
+      const knob = document.getElementById('slider-knob-preporuke');
+      const status = document.getElementById('preporuke-status');
+      // Vizuelno stanje prekidača
+      slider.style.background = ukljuceno ? 'var(--teal)' : 'var(--border)';
+      knob.style.transform = ukljuceno ? 'translateX(22px)' : 'translateX(0)';
+      chkPreporuke.disabled = true;
+      try {
+        const data = await apiFetch('{% url "toggle_preporuke" %}', {
+          method: 'POST',
+          body: JSON.stringify({ prima_preporuke: ukljuceno }),
+        });
+        status.style.color = 'var(--green-hover)';
+        status.innerHTML = data.prima_preporuke
+          ? '<i class="bi bi-check-circle-fill"></i> Preporuke su uključene.'
+          : '<i class="bi bi-check-circle-fill"></i> Preporuke su isključene.';
+      } catch (err) {
+        // Vrati prekidač u prethodno stanje ako čuvanje ne uspe.
+        chkPreporuke.checked = !ukljuceno;
+        slider.style.background = chkPreporuke.checked ? 'var(--teal)' : 'var(--border)';
+        knob.style.transform = chkPreporuke.checked ? 'translateX(22px)' : 'translateX(0)';
+        status.style.color = 'var(--error)';
+        status.innerHTML = '<i class="bi bi-exclamation-circle"></i> ' + err.message;
+      } finally {
+        chkPreporuke.disabled = false;
+      }
+    });
   }
 </script>
 {% endblock %}

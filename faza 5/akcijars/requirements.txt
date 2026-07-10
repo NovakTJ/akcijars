@@ -2,3 +2,4 @@ django
 mysqlclient
 Pillow
 python-dotenv
+apscheduler

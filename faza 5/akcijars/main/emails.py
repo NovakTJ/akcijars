@@ -163,3 +163,27 @@ def posalji_otkazivanje_akcije(akcija, primaoci):
         naslov=f'Akcija otkazana — {akcija.naziv}',
         template_base='otkazivanje_akcije',
     )
+
+
+def posalji_preporuke(volonter, akcije):
+    """
+    Šalje volonteru email sa preporučenim akcijama (SSU 9, 2.2.1).
+
+    Ako je ``akcije`` prazno, email se ne šalje (SSU 9, 2.2.4). Vraća broj
+    poslatih poruka (0 ili 1).
+    """
+    if not akcije:
+        return 0
+    korisnik = volonter.korisnik
+    kontekst = {'korisnik': korisnik, 'akcije': akcije}
+
+    tekst = render_to_string('emails/preporuke.txt', kontekst)
+    html = render_to_string('emails/preporuke.html', kontekst)
+
+    email = EmailMultiAlternatives(
+        subject='AkcijaRS — preporučene akcije za vas',
+        body=tekst,
+        to=[korisnik.email],
+    )
+    email.attach_alternative(html, 'text/html')
+    return email.send(fail_silently=True)

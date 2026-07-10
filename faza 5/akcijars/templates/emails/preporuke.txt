@@ -1,0 +1,16 @@
+Zdravo {{ korisnik.ime }},
+
+Na osnovu akcija na kojima ste ranije učestvovali, izdvojili smo akcije u
+vašoj blizini koje bi vam mogle biti zanimljive:
+{% for akcija in akcije %}
+- {{ akcija.naziv }} ({{ akcija.kategorija.naziv }})
+  {{ akcija.datum|date:"j. F Y." }} u {{ akcija.vreme|time:"H:i" }} · {{ akcija.lokacija }} (~{{ akcija.distanca }} km)
+  Organizator: {{ akcija.organizator.naziv_organizacije }}
+{% endfor %}
+Prijavite se na akcije koje vam odgovaraju na platformi AkcijaRS.
+
+Ako više ne želite da primate preporuke, isključite ih u podešavanjima svog
+volonterskog panela.
+
+Srdačan pozdrav,
+Tim AkcijaRS
