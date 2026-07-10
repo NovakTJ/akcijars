@@ -97,12 +97,23 @@ from .models import (
     SlikaClanka,
     SponzorProfil,
     SponzorskaPonuda,
+    VolonterProfil,
 )
 
 
 def home(request):
-    """Stub početna stranica — sadržaj dodaje Novak/Maša u kasnijim commitima."""
-    return render(request, 'home.html')
+    """Početna stranica sa statistikom platforme (računato iz baze)."""
+    ukupno_sati = (
+        Prijava.objects
+        .filter(status=Prijava.Status.PRIHVACENA)
+        .aggregate(s=Sum('br_sati'))['s'] or 0
+    )
+    return render(request, 'home.html', {
+        'br_akcija': Akcija.objects.count(),
+        'br_volontera': VolonterProfil.objects.count(),
+        'br_organizacija': OrganizatorProfil.objects.count(),
+        'ukupno_sati': ukupno_sati,
+    })
 
 
 def _pocetna_za_korisnika(korisnik):

@@ -14,7 +14,7 @@
     <div class="hero-content">
       <div class="hero-badge fade-up">
         <span class="badge badge-teal" style="font-size:.875rem;padding:6px 14px;box-shadow:var(--shadow-sm);">
-          <i class="bi bi-lightning-charge-fill"></i>&nbsp; 10.000+ aktivnih volontera u Srbiji
+          <i class="bi bi-lightning-charge-fill"></i>&nbsp; {{ br_volontera }} aktivnih volontera u Srbiji
         </span>
       </div>
       <h1 class="hero-title fade-up-1">
@@ -40,13 +40,13 @@
   <div class="stats-strip">
     <div class="container">
       <div class="stats-grid">
-        <div class="stat-item"><div class="stat-num">500+</div><div class="stat-label">Akcija</div></div>
+        <div class="stat-item"><div class="stat-num">{{ br_akcija }}</div><div class="stat-label">Akcija</div></div>
         <div class="stat-divider"></div>
-        <div class="stat-item"><div class="stat-num">10.000+</div><div class="stat-label">Volontera</div></div>
+        <div class="stat-item"><div class="stat-num">{{ br_volontera }}</div><div class="stat-label">Volontera</div></div>
         <div class="stat-divider"></div>
-        <div class="stat-item"><div class="stat-num">150+</div><div class="stat-label">Organizacija</div></div>
+        <div class="stat-item"><div class="stat-num">{{ br_organizacija }}</div><div class="stat-label">Organizacija</div></div>
         <div class="stat-divider"></div>
-        <div class="stat-item"><div class="stat-num">150.000+</div><div class="stat-label">Volonterskih sati</div></div>
+        <div class="stat-item"><div class="stat-num">{{ ukupno_sati }}</div><div class="stat-label">Volonterskih sati</div></div>
       </div>
     </div>
   </div>
@@ -122,7 +122,7 @@
   <div class="container" style="text-align:center;">
     <h2 style="color:white;font-size:1.875rem;margin-bottom:12px;">Spreman/na da promeniš nešto?</h2>
     <p style="color:rgba(255,255,255,0.85);font-size:1.0625rem;margin-bottom:28px;max-width:520px;margin-left:auto;margin-right:auto;">
-      Registruj se danas i postani deo 10.000+ volontera koji zajedno čine Srbiju boljim mestom.
+      Registruj se danas i postani deo {{ br_volontera }} volontera koji zajedno čine Srbiju boljim mestom.
     </p>
     <a href="{% url 'registracija' %}" class="btn btn-lg" style="background:white;color:var(--teal-hover);box-shadow:0 6px 28px rgba(0,0,0,0.2);">
       <i class="bi bi-person-plus-fill"></i> Registruj se besplatno
