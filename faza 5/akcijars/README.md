@@ -175,4 +175,4 @@ DEFAULT_FROM_EMAIL=AkcijaRS <nalog@gmail.com>
 ## 8. Napomena o restartu
 
 Izmene u `.env` (npr. dodavanje Maps ključa ili email podataka) primenjuju se
-tek nakon **restarta servera** (`Ctrlgit +C`, pa ponovo `runserver`).
+tek nakon **restarta servera** (`Ctrl+C`, pa ponovo `runserver`).
