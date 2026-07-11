@@ -1,3 +1,4 @@
+# Autor: Stefan Grujičić 0030/2023
 import django.db.models.deletion
 import django.utils.timezone
 from django.conf import settings

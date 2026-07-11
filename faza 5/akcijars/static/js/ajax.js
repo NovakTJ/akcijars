@@ -1,3 +1,4 @@
+// Autor: Stefan Grujičić 0030/2023
 // ── AkcijaRS Ajax helper ─────────────────────────────────────────────────────
 //
 // Django postavlja kolačić "csrftoken" pri svakom učitavanju stranice.

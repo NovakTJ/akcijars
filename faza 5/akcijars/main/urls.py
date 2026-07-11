@@ -1,5 +1,6 @@
 # Autor: Milica Milošević 0357/2023
 # Autor: Maša Nikolić 2023/0089
+# Autor: Stefan Grujičić 0030/2023
 from django.urls import path
 from . import views
 
