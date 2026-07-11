@@ -20,8 +20,7 @@
       <option value="datum_odrzavanja" {% if sortiranje == 'datum_odrzavanja' %}selected{% endif %}>Najnovije (datum održavanja)</option>
       {# SSU 3, 2.2.8 — „Najbliže" je dostupno samo kada je izabrana lokacija. #}
       <option value="najblize" {% if not lokacija_aktivna %}disabled{% endif %} {% if sortiranje == 'najblize' %}selected{% endif %}>Najbliže</option>
-      {# TODO(#15, Maša): omogućiti kad postoji model Prijava sa brojanjem prihvaćenih. #}
-      <option value="slobodna_mesta" disabled>Slobodna mesta</option>
+      <option value="slobodna_mesta" {% if sortiranje == 'slobodna_mesta' %}selected{% endif %}>Slobodna mesta</option>
     </select>
   </div>
 </div>

@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
-from django.db.models import Q, Sum
+from django.db.models import Count, ExpressionWrapper, F, IntegerField, Q, Sum
 from django.http import HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.template.loader import render_to_string
@@ -241,12 +241,26 @@ def lista_akcija(request):
     lokacija_aktivna = lat is not None and lng is not None
 
     # SSU 3, 2.2.8 — sortiranje. 'najblize' je dostupno samo kada je izabrana
-    # lokacija; 'slobodna_mesta' zavisi od modela Prijava (#15) i za sada je u
-    # UI-u kao disabled opcija.
-    poredak = {
-        'datum_kacenja': '-datum_kreiranja',
-        'datum_odrzavanja': '-datum',
-    }.get(sortiranje, '-datum_kreiranja')
+    # lokacija.
+    if sortiranje == 'slobodna_mesta':
+        # Broj slobodnih mesta = max_br_volontera - broj prihvaćenih prijava
+        # (isti izraz kao property Akcija.slobodna_mesta, ali na nivou baze
+        # da bi sortiranje moglo da radi u order_by). Najviše slobodnih prvo.
+        akcije = akcije.annotate(
+            _slobodna_mesta=ExpressionWrapper(
+                F('max_br_volontera') - Count(
+                    'prijave',
+                    filter=Q(prijave__status=Prijava.Status.PRIHVACENA),
+                ),
+                output_field=IntegerField(),
+            )
+        )
+        poredak = '-_slobodna_mesta'
+    else:
+        poredak = {
+            'datum_kacenja': '-datum_kreiranja',
+            'datum_odrzavanja': '-datum',
+        }.get(sortiranje, '-datum_kreiranja')
 
     akcije = akcije.distinct().order_by(poredak)
 
