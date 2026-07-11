@@ -1,3 +1,4 @@
+# Autor: Milica Milošević 0357/2023
 """
 URL configuration for akcijars project.
 
@@ -20,6 +21,9 @@ from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
+    # admindocs — pregled dokumentacionih komentara (docstring-ova) na /admin/doc/.
+    # Mora doći PRE 'admin/' da ga admin ne bi presreo.
+    path('admin/doc/', include('django.contrib.admindocs.urls')),
     path('admin/', admin.site.urls),
     path('', include('main.urls')),
 ]

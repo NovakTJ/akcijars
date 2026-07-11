@@ -1,4 +1,4 @@
-Zdravo {{ korisnik.ime }},
+{# Autor: Milica Milošević 0357/2023 #}Zdravo {{ korisnik.ime }},
 
 Na osnovu akcija na kojima ste ranije učestvovali, izdvojili smo akcije u
 vašoj blizini koje bi vam mogle biti zanimljive:

@@ -1,3 +1,4 @@
+# Autor: Milica Milošević 0357/2023
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils.safestring import mark_safe

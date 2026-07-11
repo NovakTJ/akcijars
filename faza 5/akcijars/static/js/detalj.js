@@ -1,3 +1,4 @@
+// Autor: Milica Milošević 0357/2023
 // ── Detalj akcije: Ajax prijava/odjava volontera (SSU 6) ────────────────────
 //
 // Klik na #btn-prijavi / #btn-odjavi šalje POST na odgovarajući endpoint.

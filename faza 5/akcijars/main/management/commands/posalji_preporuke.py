@@ -1,3 +1,4 @@
+# Autor: Milica Milošević 0357/2023
 """
 Slanje email preporuka akcija volonterima (SSU 9 / FZ 5.9).
 

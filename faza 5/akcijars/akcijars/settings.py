@@ -1,3 +1,4 @@
+# Autor: Milica Milošević 0357/2023
 """
 Django settings for akcijars project.
 
@@ -41,6 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.admindocs',  # pregled dokumentacionih komentara na /admin/doc/
     'main.apps.MainConfig',
 ]
 
@@ -115,7 +117,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = 'sr'
+LANGUAGE_CODE = 'sr-latn'
 
 TIME_ZONE = 'Europe/Belgrade'
 

@@ -1,3 +1,4 @@
+# Autor: Milica Milošević 0357/2023
 # SSU 10 — model FotografijaAkcije (slike pre/posle akcije).
 
 import django.db.models.deletion

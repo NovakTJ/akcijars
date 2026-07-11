@@ -1,3 +1,4 @@
+# Autor: Milica Milošević 0357/2023
 """
 WSGI config for akcijars project.
 

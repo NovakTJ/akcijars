@@ -1,3 +1,4 @@
+# Autor: Milica Milošević 0357/2023
 """
 Generisanje preporuka akcija na osnovu lokacije (SSU 9 / FZ 5.9).
 

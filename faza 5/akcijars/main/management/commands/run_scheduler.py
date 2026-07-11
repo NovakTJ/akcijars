@@ -1,3 +1,4 @@
+# Autor: Milica Milošević 0357/2023
 """
 Planer koji periodično (jednom nedeljno) šalje email preporuke akcija (SSU 9).
 

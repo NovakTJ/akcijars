@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# Autor: Milica Milošević 0357/2023
 """Django's command-line utility for administrative tasks."""
 import os
 import sys

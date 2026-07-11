@@ -1,4 +1,4 @@
-Zdravo {{ volonter.ime }},
+{# Autor: Milica Milošević 0357/2023 #}Zdravo {{ volonter.ime }},
 
 Organizator akcije „{{ akcija.naziv }}" vam je poslao obaveštenje:
 

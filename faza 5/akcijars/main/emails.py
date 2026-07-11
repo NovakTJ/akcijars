@@ -1,3 +1,4 @@
+# Autor: Milica Milošević 0357/2023
 """
 Slanje emasnicimail obaveštenja kori (FZ 4.3.2 — Email API).
 
