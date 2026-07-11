@@ -1,4 +1,5 @@
 # Autor: Milica Milošević 0357/2023
+# Autor: Maša Nikolić 2023/0089
 """
 Slanje emasnicimail obaveštenja kori (FZ 4.3.2 — Email API).
 
@@ -75,7 +76,7 @@ def posalji_odbijanje_naloga(korisnik):
 
 
 def _posalji_odgovor_na_prijavu(prijava, naslov, template_base):
-    """Zajednička logika za slanje mejla o odluci organizatora (SSU 18)."""
+    """Zajednička logika za slanje mejla o odluci organizatora; vraća broj poslatih poruka."""
     volonter = prijava.korisnik.korisnik
     kontekst = {'volonter': volonter, 'akcija': prijava.akcija}
 
@@ -92,7 +93,7 @@ def _posalji_odgovor_na_prijavu(prijava, naslov, template_base):
 
 
 def posalji_prihvatanje_prijave(prijava):
-    """Obaveštava volontera da je njegova prijava prihvaćena (SSU 18, 2.2.1)."""
+    """Obaveštava volontera da je njegova prijava prihvaćena; vraća broj poslatih poruka."""
     return _posalji_odgovor_na_prijavu(
         prijava,
         naslov=f'Prijava prihvaćena — {prijava.akcija.naziv}',
@@ -101,7 +102,7 @@ def posalji_prihvatanje_prijave(prijava):
 
 
 def posalji_odbijanje_prijave(prijava):
-    """Obaveštava volontera da njegova prijava nije prihvaćena (SSU 18, 2.2.2)."""
+    """Obaveštava volontera da njegova prijava nije prihvaćena; vraća broj poslatih poruka."""
     return _posalji_odgovor_na_prijavu(
         prijava,
         naslov=f'Odgovor na prijavu — {prijava.akcija.naziv}',

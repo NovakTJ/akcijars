@@ -1,4 +1,5 @@
 # Autor: Milica Milošević 0357/2023
+# Autor: Maša Nikolić 2023/0089
 import re
 
 from django import forms
@@ -305,6 +306,8 @@ class SponzorskaPonudaForm(forms.ModelForm):
 
 
 class _VisestrukiFajlInput(forms.ClearableFileInput):
+    """Widget koji dozvoljava izbor više fajlova odjednom u jednom polju."""
+
     allow_multiple_selected = True
 
 
@@ -316,6 +319,7 @@ class _VisestrukoFajlPolje(forms.FileField):
         super().__init__(*args, **kwargs)
 
     def clean(self, data, initial=None):
+        """Vraća listu očišćenih fajlova kada ih je više, inače jedan očišćeni fajl."""
         pojedinacni = super().clean
         if isinstance(data, (list, tuple)):
             return [pojedinacni(d, initial) for d in data]
@@ -323,7 +327,7 @@ class _VisestrukoFajlPolje(forms.FileField):
 
 
 class ClanakForma(forms.ModelForm):
-    """Forma za kreiranje članka (SSU 22)."""
+    """Forma za kreiranje članka (naslov, kategorija, tekst, glavna i dodatne slike)."""
 
     dodatne_slike = _VisestrukoFajlPolje(
         required=False,
@@ -351,12 +355,14 @@ class ClanakForma(forms.ModelForm):
         }
 
     def clean_naslov(self):
+        """Vraća očišćen naslov; podiže grešku ako je prazan."""
         naslov = (self.cleaned_data.get('naslov') or '').strip()
         if not naslov:
             raise forms.ValidationError('Naslov je obavezan.')
         return naslov
 
     def clean_tekst(self):
+        """Vraća očišćen tekst članka; podiže grešku ako je prazan."""
         tekst = (self.cleaned_data.get('tekst') or '').strip()
         if not tekst:
             raise forms.ValidationError('Tekst članka je obavezan.')

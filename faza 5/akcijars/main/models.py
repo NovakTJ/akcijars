@@ -1,4 +1,5 @@
 # Autor: Milica Milošević 0357/2023
+# Autor: Maša Nikolić 2023/0089
 from django.db import models
 from django.db.models import Case, IntegerField, Value, When
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
@@ -12,6 +13,7 @@ class _OstaloNaKrajuManager(models.Manager):
     """
 
     def get_queryset(self):
+        """Vraća queryset kategorija sortiran abecedno, sa „Ostalo" uvek na dnu."""
         return super().get_queryset().annotate(
             _ostalo=Case(
                 When(naziv__iexact='Ostalo', then=Value(1)),
@@ -384,6 +386,7 @@ class Akcija(models.Model):
 
     @property
     def badge_klasa(self):
+        """Vraća CSS klasu bedža koja odgovara trenutnom statusu akcije."""
         return {
             self.Status.AKTIVNA: 'badge-green',
             self.Status.POPUNJENA: 'badge-warning',
@@ -393,10 +396,12 @@ class Akcija(models.Model):
 
     @property
     def broj_prihvacenih(self):
+        """Vraća broj volontera čija je prijava na akciju prihvaćena."""
         return self.prijave.filter(status=Prijava.Status.PRIHVACENA).count()
 
     @property
     def slobodna_mesta(self):
+        """Vraća broj preostalih slobodnih mesta na akciji (najmanje 0)."""
         return max(0, self.max_br_volontera - self.broj_prihvacenih)
 
 
@@ -497,7 +502,7 @@ class Prijava(models.Model):
 
 
 class KategorijaClanka(models.Model):
-    """Kategorija članka (SSU 4, 2.2.3 — filter po kategoriji)."""
+    """Kategorija članka — koristi se za filtriranje članaka po kategoriji."""
 
     id_kat = models.AutoField(primary_key=True, db_column='IdKat')
     naziv = models.CharField(
@@ -523,7 +528,7 @@ class Clanak(models.Model):
     Tabela Clanak iz specifikacije baze (3.10).
 
     Napomena: spec.baze ne pominje kategoriju na članku; dodato je FK polje
-    zbog SSU 4 (filter po kategoriji) — svesna deviacija u odnosu na 3.10.
+    radi filtriranja članaka po kategoriji — svesna deviacija u odnosu na 3.10.
     """
 
     class Status(models.TextChoices):

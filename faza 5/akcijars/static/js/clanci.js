@@ -1,3 +1,4 @@
+// Autor: Maša Nikolić 2023/0089
 // ── Lista članaka: Ajax filtriranje bez reload-a (SSU 4) ────────────────────
 //
 // Isti obrazac kao akcije.js — server za Ajax zahtev vraća samo

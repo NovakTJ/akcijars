@@ -1,4 +1,5 @@
 # Autor: Milica Milošević 0357/2023
+# Autor: Maša Nikolić 2023/0089
 import json
 import math
 import re
@@ -14,7 +15,7 @@ from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 
 
-# SSU 3, otvoreno pitanje 2 — dozvoljena slova (uklj. srpske), cifre, razmaci.
+# Dozvoljena slova (uključujući srpske), cifre i razmaci u upitu pretrage.
 _DOZVOLJEN_UPIT = re.compile(r'^[a-zA-ZčćžšđČĆŽŠĐ0-9 ]*$')
 
 # SSU 3, 2.2.6 — dozvoljeni radijusi pretrage po lokaciji (km); podrazumevano 25.
@@ -53,8 +54,8 @@ def _haversine_km(lat1, lng1, lat2, lng2):
 
 def _brojevi_paginacije(strana):
     """
-    SSU 3, otvoreno pitanje 2 — kompaktna paginacija: 1, prethodna, trenutna,
-    sledeća, poslednja, bez dupliranja; None = elipse „…".
+    Vraća listu brojeva stranica za kompaktnu paginaciju: 1, prethodna,
+    trenutna, sledeća, poslednja, bez dupliranja; None označava elipse „…".
     """
     ukupno = strana.paginator.num_pages
     trenutna = strana.number
@@ -200,7 +201,11 @@ def odjava(request):
     return redirect('home')
 
 def lista_akcija(request):
-    """Lista svih akcija sa filterima (SSU 3 / 5.3)."""
+    """
+    Prikazuje listu akcija sa filterima (upit, kategorija, status, datum,
+    lokacija) i sortiranjem. Vraća celu stranu, a za Ajax zahtev samo HTML
+    fragment sa rezultatima.
+    """
     akcije = Akcija.objects.select_related('organizator', 'kategorija').all()
 
     q = request.GET.get('q', '').strip()[:64]
@@ -209,7 +214,7 @@ def lista_akcija(request):
     datum = request.GET.get('datum', '').strip()
     sortiranje = request.GET.get('sort', 'datum_kacenja')
 
-    # SSU 3, 2.2.11 — neispravan upit se odbija, prikazuje se početni prikaz.
+    # Neispravan upit se odbija, prikazuje se početni prikaz.
     greska_upita = ''
     if q and not _DOZVOLJEN_UPIT.match(q):
         greska_upita = 'U upitu su dozvoljeni samo slova, cifre i razmaci.'
@@ -355,7 +360,7 @@ def _moja_prijava(korisnik, akcija):
 
 
 def detalj_akcije(request, id_akc):
-    """Detalj pojedinačne akcije (SSU 3, 2.2.1)."""
+    """Vraća stranicu sa detaljima jedne akcije (sidebar prijave, sponzori i, po potrebi, organizator panel)."""
     akcija = get_object_or_404(
         Akcija.objects.select_related('organizator', 'kategorija'),
         pk=id_akc,
@@ -384,7 +389,7 @@ def detalj_akcije(request, id_akc):
 @login_required
 @require_POST
 def prijavi_se(request, id_akc):
-    """Volonter se prijavljuje na akciju (SSU 6, 2.2.1). Vraća sidebar fragment."""
+    """Prijavljuje volontera na akciju; vraća HTML fragment sidebar-a sa novim stanjem prijave."""
     if not request.user.je_volonter:
         return HttpResponseForbidden('Samo volonteri mogu da se prijave.')
     akcija = get_object_or_404(Akcija, pk=id_akc)
@@ -402,6 +407,7 @@ def prijavi_se(request, id_akc):
 
 
 def _je_organizator_akcije(korisnik, akcija):
+    """Vraća True ako je korisnik ulogovani organizator kome pripada data akcija."""
     return (
         korisnik.is_authenticated
         and korisnik.je_organizator
@@ -419,7 +425,7 @@ def _je_otkazana(akcija):
 
 
 def _org_kontekst(akcija):
-    """Kontekst za _org_prijave.html panel."""
+    """Vraća kontekst (prijave na čekanju i prihvaćene) za _org_prijave.html panel."""
     prijave = akcija.prijave.select_related('korisnik__korisnik')
     return {
         'akcija': akcija,
@@ -443,8 +449,8 @@ def _org_ponude_kontekst(akcija):
 
 def _org_ajax_odgovor(request, akcija):
     """
-    Zajednički Ajax odgovor za prihvati/odbij: HTML fragmenti za org panel i
-    za sidebar (progres i status akcije mogu da se menjaju istovremeno).
+    Vraća JsonResponse sa HTML fragmentima org panela i sidebar-a (za akcije
+    prihvati/odbij), pošto se progres i status akcije mogu menjati istovremeno.
     """
     panel = render_to_string('_org_prijave.html', _org_kontekst(akcija), request=request)
     sidebar = render_to_string('_prijava_sidebar.html', {
@@ -457,12 +463,12 @@ def _org_ajax_odgovor(request, akcija):
 @login_required
 @require_POST
 def prihvati_prijavu(request, id_akc, id_kor):
-    """Organizator prihvata prijavu (SSU 18, 2.2.1 i 2.2.4)."""
+    """Organizator prihvata prijavu volontera (uz email obaveštenje); vraća JsonResponse sa osveženim panelom i sidebar-om."""
     akcija = get_object_or_404(Akcija, pk=id_akc)
     if not _je_organizator_akcije(request.user, akcija):
         return HttpResponseForbidden('Samo organizator akcije može ovo da uradi.')
     if akcija.status in (Akcija.Status.POPUNJENA, Akcija.Status.ZAVRSENA, Akcija.Status.OTKAZANA):
-        # SSU 18, 2.2.5 — poruka ide korisniku kroz UI (renderujemo je u panelu).
+        # Otkazana/popunjena/završena akcija — poruka ide korisniku kroz UI panel.
         return _org_ajax_odgovor(request, akcija)
     prijava = get_object_or_404(
         Prijava, akcija=akcija, korisnik_id=id_kor, status=Prijava.Status.NA_CEKANJU
@@ -470,8 +476,8 @@ def prihvati_prijavu(request, id_akc, id_kor):
     prijava.status = Prijava.Status.PRIHVACENA
     prijava.save(update_fields=['status'])
     posalji_prihvatanje_prijave(prijava)
-    # SSU 18, 2.2.4 — akcija se automatski prebacuje u „popunjena" pri
-    # prihvatanju poslednjeg volontera.
+    # Akcija se automatski prebacuje u „popunjena" pri prihvatanju
+    # poslednjeg volontera.
     if akcija.broj_prihvacenih >= akcija.max_br_volontera:
         akcija.status = Akcija.Status.POPUNJENA
         akcija.save(update_fields=['status'])
@@ -481,7 +487,7 @@ def prihvati_prijavu(request, id_akc, id_kor):
 @login_required
 @require_POST
 def odbij_prijavu(request, id_akc, id_kor):
-    """Organizator odbija prijavu (SSU 18, 2.2.2)."""
+    """Organizator odbija prijavu volontera (uz email obaveštenje); vraća JsonResponse sa osveženim panelom i sidebar-om."""
     akcija = get_object_or_404(Akcija, pk=id_akc)
     if not _je_organizator_akcije(request.user, akcija):
         return HttpResponseForbidden('Samo organizator akcije može ovo da uradi.')
@@ -549,8 +555,8 @@ def odbij_ponudu(request, id_akc, ponuda_id):
 @require_POST
 def odjavi_se(request, id_akc):
     """
-    Volonter se odjavljuje sa akcije (SSU 6, 2.2.2 i 2.2.3).
-    Odbijena prijava je konačna — ne dozvoljava se brisanje.
+    Odjavljuje volontera sa akcije (briše njegovu prijavu); vraća HTML fragment
+    sidebar-a. Odbijena prijava je konačna — ne dozvoljava se brisanje.
     """
     if not request.user.je_volonter:
         return HttpResponseForbidden('Samo volonteri mogu da se odjave.')
@@ -719,7 +725,8 @@ def otkazi_akciju(request, id_akc):
 
 def lista_clanaka(request):
     """
-    Javna lista objavljenih članaka sa filterima (SSU 4).
+    Prikazuje javnu listu objavljenih članaka sa filterima; vraća celu stranu,
+    a za Ajax zahtev samo HTML fragment sa rezultatima.
 
     Prikazuju se samo članci sa status='objavljen'. Autori vide svoje na čekanju
     i odbijene članke na sopstvenom profilu (poseban commit).
@@ -733,7 +740,7 @@ def lista_clanaka(request):
     q = request.GET.get('q', '').strip()[:64]
     kategorija = request.GET.get('kategorija', '').strip()
 
-    # SSU 4, 2.2.7 — neispravan upit se odbija, prikazuje se početni prikaz.
+    # Neispravan upit se odbija, prikazuje se početni prikaz.
     greska_upita = ''
     if q and not _DOZVOLJEN_UPIT.match(q):
         greska_upita = 'U upitu su dozvoljeni samo slova, cifre i razmaci.'
@@ -746,7 +753,7 @@ def lista_clanaka(request):
     if kategorija:
         clanci = clanci.filter(kategorija_id=kategorija)
 
-    # SSU 4, otvoreno pitanje 1 — numArticlesPerPage = 9.
+    # Podrazumevano 9 članaka po strani.
     paginator = Paginator(clanci.distinct().order_by('-datum_kreiranja'), 9)
     strana = paginator.get_page(request.GET.get('page'))
 
@@ -894,7 +901,7 @@ def toggle_preporuke(request):
 
 
 def _organizator_panel_kontekst(org, forma_clanka=None):
-    """Zajednički kontekst za organizator_panel.html (koristi ga i kreiraj_clanak view)."""
+    """Vraća zajednički kontekst (akcije, prijave, ponude, članci, statistika) za organizator_panel.html; koristi ga i kreiraj_clanak view."""
     akcije = (
         Akcija.objects
         .filter(organizator=org)
@@ -949,7 +956,7 @@ def _organizator_panel_kontekst(org, forma_clanka=None):
 
 @login_required
 def organizator_panel(request):
-    """Organizatorski panel."""
+    """Prikazuje organizatorski panel; vraća njegovu stranu, a neodobrene i ne-organizatore preusmerava na početnu."""
     if not request.user.je_organizator or not request.user.je_odobren:
         return redirect('home')
 
@@ -1289,13 +1296,14 @@ def ajax_obrisi_clanak(request):
     })
 
 
-# SSU 22 — Kreiranje članka od strane organizatora (inline forma u organizator panelu).
+# Kreiranje članka od strane organizatora (inline forma u organizator panelu).
 
 @login_required
 def kreiraj_clanak(request):
     """
-    Prima POST iz forme unutar organizator panela (tab „Moji članci").
-    GET preusmerava na panel — nema zasebne stranice.
+    Kreira novi članak iz forme u organizator panelu (tab „Moji članci").
+    GET preusmerava na panel; po uspehu vraća redirect na panel, a pri grešci
+    validacije vraća panel sa ponovo otvorenom formom i porukama o greškama.
     """
     if not request.user.je_organizator or not request.user.je_odobren:
         return redirect('home')
@@ -1309,7 +1317,7 @@ def kreiraj_clanak(request):
     if forma.is_valid():
         clanak = forma.save(commit=False)
         clanak.autor = org
-        # status ostaje NA_CEKANJU (default) — admin odobrava kroz SSU 13.
+        # status ostaje NA_CEKANJU (default) — admin ga naknadno odobrava.
         clanak.save()
 
         dodatne = request.FILES.getlist('dodatne_slike')

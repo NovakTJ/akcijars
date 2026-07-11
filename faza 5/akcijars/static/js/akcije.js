@@ -1,3 +1,4 @@
+// Autor: Maša Nikolić 2023/0089
 // ── Lista akcija: Ajax filtriranje bez reload-a (SSU 3) ─────────────────────
 //
 // Presrećemo submit forme i promene svakog input/select-a, gradimo URL sa

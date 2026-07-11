@@ -1,4 +1,5 @@
 # Autor: Milica Milošević 0357/2023
+# Autor: Maša Nikolić 2023/0089
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils.safestring import mark_safe
@@ -141,6 +142,8 @@ class AdministratorProfilAdmin(admin.ModelAdmin):
 
 @admin.register(KategorijaAkcije)
 class KategorijaAkcijeAdmin(admin.ModelAdmin):
+    """Admin prikaz kategorija akcija."""
+
     list_display = ('naziv',)
     search_fields = ('naziv',)
 
@@ -152,6 +155,8 @@ class FotografijaAkcijeInline(admin.TabularInline):
 
 @admin.register(Akcija)
 class AkcijaAdmin(admin.ModelAdmin):
+    """Admin prikaz akcija sa filterima, pretragom i inline fotografijama."""
+
     list_display = ('naziv', 'organizator', 'kategorija', 'datum', 'vreme', 'lokacija', 'status')
     list_filter = ('status', 'kategorija', 'datum')
     search_fields = ('naziv', 'lokacija', 'organizator__naziv_organizacije')
@@ -169,6 +174,8 @@ class FotografijaAkcijeAdmin(admin.ModelAdmin):
 
 @admin.register(Prijava)
 class PrijavaAdmin(admin.ModelAdmin):
+    """Admin prikaz prijava volontera na akcije."""
+
     list_display = ('korisnik', 'akcija', 'status', 'datum_prijave', 'br_sati')
     list_filter = ('status', 'datum_prijave')
     search_fields = ('korisnik__korisnik__ime', 'korisnik__korisnik__prezime', 'akcija__naziv')
@@ -185,17 +192,23 @@ class SponzorskaPonudaAdmin(admin.ModelAdmin):
 
 @admin.register(KategorijaClanka)
 class KategorijaClankaAdmin(admin.ModelAdmin):
+    """Admin prikaz kategorija članaka."""
+
     list_display = ('naziv',)
     search_fields = ('naziv',)
 
 
 class SlikaClankaInline(admin.TabularInline):
+    """Inline za dodavanje slika u okviru članka."""
+
     model = SlikaClanka
     extra = 1
 
 
 @admin.register(Clanak)
 class ClanakAdmin(admin.ModelAdmin):
+    """Admin prikaz članaka sa filterima, pretragom i inline slikama."""
+
     list_display = ('naslov', 'autor', 'kategorija', 'status', 'datum_kreiranja')
     list_filter = ('status', 'kategorija', 'datum_kreiranja')
     search_fields = ('naslov', 'autor__naziv_organizacije')
@@ -206,6 +219,8 @@ class ClanakAdmin(admin.ModelAdmin):
 
 @admin.register(SlikaClanka)
 class SlikaClankaAdmin(admin.ModelAdmin):
+    """Admin prikaz slika članaka."""
+
     list_display = ('id_sli', 'clanak', 'slika')
     search_fields = ('clanak__naslov',)
 
