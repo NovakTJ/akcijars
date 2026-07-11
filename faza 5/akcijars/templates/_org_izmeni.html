@@ -59,6 +59,18 @@
   <div class="form-group">
     <label class="form-label">Lokacija <span class="req">*</span></label>
     {{ izmeni_forma.lokacija }}
+    {{ izmeni_forma.geo_sirina }}
+    {{ izmeni_forma.geo_duzina }}
+    {% if GOOGLE_MAPS_API_KEY %}
+      <div class="form-hint">
+        <i class="bi bi-map" style="color:var(--teal);"></i>
+        Izaberite predlog sa liste, ili kliknite na mapu / prevucite marker da
+        postavite tačnu lokaciju.
+      </div>
+      <div id="lokacija-mapa" class="lokacija-picker"
+           data-lat="{{ izmeni_forma.geo_sirina.value|default:'' }}"
+           data-lng="{{ izmeni_forma.geo_duzina.value|default:'' }}"></div>
+    {% endif %}
     {% for greska in izmeni_forma.lokacija.errors %}
       <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
     {% endfor %}
@@ -97,10 +109,6 @@
       {% endfor %}
     </div>
   </div>
-
-  {# Skrivena geo polja (Google Places autocomplete popunjava pri kreiranju). #}
-  {{ izmeni_forma.geo_sirina }}
-  {{ izmeni_forma.geo_duzina }}
 
   {# ── Slike pre/posle akcije (SSU 10) ── #}
   <div class="form-section-title" style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:24px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--border-light);">

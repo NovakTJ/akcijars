@@ -239,9 +239,16 @@
 
       <!-- ─ TAB: MOJE AKCIJE ─ -->
       <div class="panel-section" id="sec-akcije">
-        <div style="margin-bottom:22px;">
-          <h2 style="font-size:1.375rem;font-weight:800;margin-bottom:3px;">Moje akcije</h2>
-          <p style="color:var(--text-secondary);font-size:.9rem;">Sve akcije koje ste kreirali sa trenutnim statusom i brojem volontera</p>
+        <div style="margin-bottom:22px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div>
+            <h2 style="font-size:1.375rem;font-weight:800;margin-bottom:3px;">Moje akcije</h2>
+            <p style="color:var(--text-secondary);font-size:.9rem;">Sve akcije koje ste kreirali sa trenutnim statusom i brojem volontera</p>
+          </div>
+          {% if request.user.je_odobren %}
+          <a href="{% url 'kreiraj_akciju' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Kreiraj novu akciju
+          </a>
+          {% endif %}
         </div>
 
         {% if akcije %}
@@ -303,8 +310,16 @@
         {% else %}
         <div class="empty-state">
           <div class="es-icon">📅</div>
+          {% if request.user.je_odobren %}
+          <h3>Još nemate kreiranih akcija</h3>
+          <p>Kreirajte prvu volontersku akciju i ona će se pojaviti ovde.</p>
+          <a href="{% url 'kreiraj_akciju' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Kreiraj akciju
+          </a>
+          {% else %}
           <h3>Još niste kreirali nijednu akciju.</h3>
-          <p>Kontaktirajte administratora da biste mogli da kreirate akcije.</p>
+          <p>Vaš nalog organizatora još nije odobren. Kontaktirajte administratora da biste mogli da kreirate akcije.</p>
+          {% endif %}
         </div>
         {% endif %}
       </div>

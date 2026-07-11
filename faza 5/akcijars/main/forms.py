@@ -3,6 +3,7 @@
 import re
 
 from django import forms
+from django.conf import settings
 from django.contrib.auth import authenticate
 from django.db import models
 from django.core.exceptions import ValidationError
@@ -189,9 +190,11 @@ class AkcijaForm(forms.ModelForm):
         required=False,
         widget=forms.TextInput(attrs={'placeholder': '+381 11 123 4567'}),
     )
-    # FZ 4.3.1 — koordinate lokacije. Opcione, popunjava ih Google Places
-    # autocomplete (client-side) na osnovu izabranog mesta; skrivena su od
-    # korisnika. Akcija bez koordinata se i dalje čuva (samo nema markera).
+    # FZ 4.3.1 — koordinate lokacije. Popunjava ih Google Places autocomplete
+    # ili klik/prevlačenje markera na mapi (client-side, vidi static/js/mapa.js);
+    # skrivena su od korisnika. Kada je mapa dostupna (postavljen API ključ),
+    # lokacija se bira preko mape pa su koordinate obavezne (SSU 5, 2.2.1 —
+    # „lokacija koja se bira preko integrisanog Google Maps prozorčića").
     geo_sirina = forms.FloatField(required=False, widget=forms.HiddenInput())
     geo_duzina = forms.FloatField(required=False, widget=forms.HiddenInput())
 
@@ -250,6 +253,18 @@ class AkcijaForm(forms.ModelForm):
                     max_vol, email, telefon]
         if any(v is None or v == '' for v in obavezna):
             raise ValidationError('Nisu uneta sva obavezna polja.')
+
+        # SSU 5, 2.2.1 — lokacija se bira preko integrisanog Google Maps
+        # prozorčića, pa su koordinate obavezne kada je mapa dostupna (postavljen
+        # API ključ). Bez ključa mapa se ne učitava (fallback na čist tekst), pa
+        # koordinate ne zahtevamo da bi kreiranje i dalje radilo.
+        if settings.GOOGLE_MAPS_API_KEY:
+            if cleaned.get('geo_sirina') is None or cleaned.get('geo_duzina') is None:
+                self.add_error(
+                    'lokacija',
+                    'Izaberite tačnu lokaciju na mapi (izaberite predlog sa '
+                    'liste ili kliknite na mapu).',
+                )
 
         # 2.2.3 — datum održavanja u prošlosti.
         if datum < timezone.localdate():

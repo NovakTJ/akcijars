@@ -82,6 +82,11 @@
         btn.style.color             = id === activeId ? 'var(--teal)' : 'var(--text-muted)';
       }
     });
+    // Picker mapa u tabu „Izmeni akciju" se do sada crtala u sakrivenom div-u
+    // (sivo) — kad tab postane vidljiv, inicijalizuj/osveži je.
+    if (activeId === 'org-izmeni' && window.reinicijalizujMapuFormu) {
+      window.reinicijalizujMapuFormu();
+    }
   }
 
   // ── Prijave volontera (SSU 18) ───────────────────────────────────────────
@@ -184,6 +189,8 @@
       // Server vraća osvežen fragment (sa greškama ili porukom o uspehu).
       const panel = document.getElementById('org-izmeni');
       if (panel) panel.innerHTML = await response.text();
+      // Fragment je zamenjen novim DOM-om — ponovo inicijalizuj picker mapu.
+      if (window.reinicijalizujMapuFormu) window.reinicijalizujMapuFormu();
     } catch (err) {
       console.error('Čuvanje izmena nije uspelo:', err);
       if (dugme) dugme.disabled = false;

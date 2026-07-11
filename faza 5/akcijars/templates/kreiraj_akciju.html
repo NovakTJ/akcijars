@@ -74,12 +74,17 @@
             <div class="form-hint">
               <i class="bi bi-map" style="color:var(--teal);"></i>
               {% if GOOGLE_MAPS_API_KEY %}
-                Počnite da kucate naziv mesta i izaberite predlog sa liste da bismo
-                zapamtili tačnu lokaciju na mapi.
+                Počnite da kucate naziv mesta i izaberite predlog sa liste, ili
+                kliknite na mapu / prevucite marker da postavite tačnu lokaciju.
               {% else %}
                 Unesite naziv lokacije (npr. Ada Ciganlija, Beograd).
               {% endif %}
             </div>
+            {% if GOOGLE_MAPS_API_KEY %}
+              <div id="lokacija-mapa" class="lokacija-picker"
+                   data-lat="{{ form.geo_sirina.value|default:'' }}"
+                   data-lng="{{ form.geo_duzina.value|default:'' }}"></div>
+            {% endif %}
             {% for greska in form.lokacija.errors %}
               <div class="form-error" style="display:flex;"><i class="bi bi-exclamation-circle"></i> {{ greska }}</div>
             {% endfor %}

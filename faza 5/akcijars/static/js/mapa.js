@@ -70,11 +70,109 @@
   function inicijalizujFormuAkcije() {
     var input = document.getElementById('id_lokacija');
     if (!input) return;
-    veziAutocomplete(
-      input,
-      document.getElementById('id_geo_sirina'),
-      document.getElementById('id_geo_duzina')
-    );
+
+    var latInput = document.getElementById('id_geo_sirina');
+    var lngInput = document.getElementById('id_geo_duzina');
+    var mapEl = document.getElementById('lokacija-mapa');
+
+    // Bez kontejnera za mapu (npr. ključ nije postavljen) — samo autocomplete.
+    if (!mapEl || !google.maps.places) {
+      veziAutocomplete(input, latInput, lngInput);
+      return;
+    }
+
+    // Već inicijalizovano (ponovni poziv posle promene taba) — samo osveži
+    // veličinu (mapa u sakrivenom div-u se iscrta sivo dok se ne prikaže) i
+    // recentriraj na marker.
+    if (mapEl._picker) {
+      var p = mapEl._picker;
+      google.maps.event.trigger(p.mapa, 'resize');
+      p.mapa.setCenter(p.marker.getVisible() ? p.marker.getPosition() : CENTAR_RS);
+      return;
+    }
+
+    var pocetna = CENTAR_RS;
+    var imaKoord = false;
+    var lat0 = parseFloat(mapEl.dataset.lat);
+    var lng0 = parseFloat(mapEl.dataset.lng);
+    if (!isNaN(lat0) && !isNaN(lng0)) {
+      pocetna = { lat: lat0, lng: lng0 };
+      imaKoord = true;
+    }
+
+    var mapa = new google.maps.Map(mapEl, {
+      center: pocetna,
+      zoom: imaKoord ? 14 : 7,
+      mapTypeControl: false,
+      streetViewControl: false,
+    });
+    var marker = new google.maps.Marker({
+      map: mapa,
+      draggable: true,
+      position: pocetna,
+      visible: imaKoord,
+    });
+    var geocoder = new google.maps.Geocoder();
+
+    // Pamtimo poslednji „potvrđeni" tekst (iz predloga ili geokodiranja) da bismo
+    // razlikovali stvarnu izmenu od izbora — koordinate brišemo samo ako se tekst
+    // zaista promeni (ranije su se brisale na svaki pritisak tastera).
+    input.dataset.lastText = imaKoord ? input.value : '';
+
+    function postaviLokaciju(pos, azurirajTekst) {
+      marker.setPosition(pos);
+      marker.setVisible(true);
+      mapa.panTo(pos);
+      if (mapa.getZoom() < 13) mapa.setZoom(14);
+      if (latInput) latInput.value = pos.lat;
+      if (lngInput) lngInput.value = pos.lng;
+      if (azurirajTekst) {
+        // Klik/prevlačenje: dopuni čitljiv naziv (reverse geocoding), pa označi
+        // dobijeni tekst kao potvrđen.
+        geocoder.geocode({ location: pos }, function (rezultati, status) {
+          if (status === 'OK' && rezultati[0]) {
+            input.value = rezultati[0].formatted_address;
+          }
+          input.dataset.lastText = input.value;
+        });
+      } else {
+        input.dataset.lastText = input.value;
+      }
+    }
+
+    var autocomplete = new google.maps.places.Autocomplete(input, {
+      componentRestrictions: { country: 'rs' },
+      fields: ['geometry', 'name', 'formatted_address'],
+    });
+    autocomplete.addListener('place_changed', function () {
+      var place = autocomplete.getPlace();
+      if (place && place.geometry && place.geometry.location) {
+        postaviLokaciju(
+          { lat: place.geometry.location.lat(), lng: place.geometry.location.lng() },
+          false
+        );
+      }
+    });
+
+    // Izbor lokacije klikom na mapu ili prevlačenjem markera (SSU 5 — biranje
+    // lokacije preko Google Maps prozorčića).
+    mapa.addListener('click', function (e) {
+      postaviLokaciju({ lat: e.latLng.lat(), lng: e.latLng.lng() }, true);
+    });
+    marker.addListener('dragend', function (e) {
+      postaviLokaciju({ lat: e.latLng.lat(), lng: e.latLng.lng() }, true);
+    });
+
+    // Ručna izmena teksta bez izbora predloga → koordinate više ne odgovaraju
+    // unosu; brišemo ih samo ako se tekst STVARNO razlikuje od potvrđenog.
+    input.addEventListener('input', function () {
+      if (input.value === input.dataset.lastText) return;
+      if (latInput) latInput.value = '';
+      if (lngInput) lngInput.value = '';
+      marker.setVisible(false);
+    });
+
+    mapEl._picker = { mapa: mapa, marker: marker };
   }
 
   function inicijalizujPretraguPoLokaciji() {
@@ -115,5 +213,13 @@
     inicijalizujDetaljMapu();
     inicijalizujFormuAkcije();
     inicijalizujPretraguPoLokaciji();
+  };
+
+  // Ponovna inicijalizacija picker mape kada se forma za izmenu prikaže (promena
+  // taba) ili zameni novim fragmentom posle AJAX čuvanja (SSU 10). Bezbedno je
+  // pozvati i pre nego što se Google Maps učita.
+  window.reinicijalizujMapuFormu = function () {
+    if (typeof google === 'undefined' || !google.maps) return;
+    inicijalizujFormuAkcije();
   };
 })();
