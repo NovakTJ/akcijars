@@ -1,6 +1,7 @@
 # Autor: Milica Milošević 0357/2023
 # Autor: Maša Nikolić 2023/0089
 # Autor: Stefan Grujičić 0030/2023
+# Autor: Novak Stijepic 0124/2023
 from django.db import models
 from django.db.models import Case, IntegerField, Value, When
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin

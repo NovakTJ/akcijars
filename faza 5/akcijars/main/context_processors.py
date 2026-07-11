@@ -1,3 +1,5 @@
+# Autor: Novak Stijepic 0124/2023
+
 from django.conf import settings
 
 

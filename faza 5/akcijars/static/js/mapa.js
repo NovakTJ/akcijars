@@ -1,3 +1,4 @@
+// Autor: Novak Stijepic 0124/2023
 // ── Google Maps integracija (FZ 4.3.1) ─────────────────────────────────────
 //
 // `window.initMape` je callback koji Google Maps JS API pozove kad se učita

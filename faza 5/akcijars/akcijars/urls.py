@@ -1,4 +1,5 @@
 # Autor: Milica Milošević 0357/2023
+# Autor: Novak Stijepic 0124/2023
 """
 URL configuration for akcijars project.
 

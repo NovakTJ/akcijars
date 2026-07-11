@@ -1,6 +1,7 @@
 # Autor: Milica Milošević 0357/2023
 # Autor: Maša Nikolić 2023/0089
 # Autor: Stefan Grujičić 0030/2023
+# Autor: Novak Stijepic 0124/2023
 """
 Slanje emasnicimail obaveštenja kori (FZ 4.3.2 — Email API).
 
