@@ -42,12 +42,19 @@
   // Vezuje Places Autocomplete na tekstualno polje i, po izboru mesta, upisuje
   // koordinate u zadata skrivena polja (po id-u). Ograničeno na Srbiju.
   function veziAutocomplete(input, latInput, lngInput) {
-    if (!input || !google.maps.places) return null;
+    if (!input || !google.maps.places || !google.maps.places.Autocomplete) return null;
 
-    var autocomplete = new google.maps.places.Autocomplete(input, {
-      componentRestrictions: { country: 'rs' },
-      fields: ['geometry', 'name', 'formatted_address'],
-    });
+    // Legacy Places Autocomplete nije dostupan novim Google nalozima (od 1.3.2025).
+    // Ako padne, vraćamo null — ostatak (mapa, ručni unos) i dalje radi.
+    var autocomplete;
+    try {
+      autocomplete = new google.maps.places.Autocomplete(input, {
+        componentRestrictions: { country: 'rs' },
+        fields: ['geometry', 'name', 'formatted_address'],
+      });
+    } catch (e) {
+      return null;
+    }
 
     autocomplete.addListener('place_changed', function () {
       var place = autocomplete.getPlace();
@@ -140,19 +147,23 @@
       }
     }
 
-    var autocomplete = new google.maps.places.Autocomplete(input, {
-      componentRestrictions: { country: 'rs' },
-      fields: ['geometry', 'name', 'formatted_address'],
-    });
-    autocomplete.addListener('place_changed', function () {
-      var place = autocomplete.getPlace();
-      if (place && place.geometry && place.geometry.location) {
-        postaviLokaciju(
-          { lat: place.geometry.location.lat(), lng: place.geometry.location.lng() },
-          false
-        );
-      }
-    });
+    // Legacy Places Autocomplete nije dostupan novim Google nalozima (od 1.3.2025).
+    // Ako padne, mapa + klik/prevlačenje markera i dalje rade (SSU 5).
+    try {
+      var autocomplete = new google.maps.places.Autocomplete(input, {
+        componentRestrictions: { country: 'rs' },
+        fields: ['geometry', 'name', 'formatted_address'],
+      });
+      autocomplete.addListener('place_changed', function () {
+        var place = autocomplete.getPlace();
+        if (place && place.geometry && place.geometry.location) {
+          postaviLokaciju(
+            { lat: place.geometry.location.lat(), lng: place.geometry.location.lng() },
+            false
+          );
+        }
+      });
+    } catch (e) { /* autocomplete nedostupan — nastavljamo bez njega */ }
 
     // Izbor lokacije klikom na mapu ili prevlačenjem markera (SSU 5 — biranje
     // lokacije preko Google Maps prozorčića).
