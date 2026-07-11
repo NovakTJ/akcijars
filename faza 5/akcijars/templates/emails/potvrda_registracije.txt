@@ -1,3 +1,5 @@
+{# Autor: Novak Stijepic 0124/2023 #}
+
 Zdravo {{ korisnik.ime }},
 
 Hvala što ste se registrovali na AkcijaRS — portal volonterskih akcija u Srbiji.
