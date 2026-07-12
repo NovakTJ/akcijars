@@ -1,4 +1,5 @@
 # Autor: Milica Milošević 0357/2023
+# Autor: Maša Nikolić 2023/0089
 """
 Pomoćne fabrike za pravljenje test podataka.
 
@@ -10,6 +11,7 @@ import datetime
 from main.models import (
     Korisnik, VolonterProfil, OrganizatorProfil, SponzorProfil,
     KategorijaAkcije, Akcija, KategorijaClanka, Clanak,
+    Prijava, SponzorskaPonuda,
 )
 
 LOZINKA = 'Test1234!'
@@ -67,4 +69,28 @@ def clanak(org, naslov='Test članak', status=Clanak.Status.OBJAVLJEN, kat=None)
     return Clanak.objects.create(
         autor=org.organizator_profil, kategorija=kat or kat_clanka(),
         naslov=naslov, tekst='Tekst test članka.', status=status,
+    )
+
+
+def administrator(email, ime='Admin', prezime='Testni'):
+    """Kreira administratora (superuser sa administratorskim profilom) i vraća Korisnik-a."""
+    return Korisnik.objects.create_superuser(
+        email=email, password=LOZINKA,
+        korisnicko_ime=email.split('@')[0], ime=ime, prezime=prezime,
+    )
+
+
+def prijava(vol, akc, status=Prijava.Status.NA_CEKANJU, br_sati=0):
+    """Kreira prijavu volontera (Korisnik sa volonter_profil-om) na akciju i vraća je."""
+    return Prijava.objects.create(
+        korisnik=vol.volonter_profil, akcija=akc, status=status, br_sati=br_sati,
+    )
+
+
+def ponuda(spon, akc, vrednost=500, opis='Podrška akciji.',
+           status=SponzorskaPonuda.Status.NA_CEKANJU):
+    """Kreira sponzorsku ponudu (Korisnik sa sponzor_profil-om) za datu akciju i vraća je."""
+    return SponzorskaPonuda.objects.create(
+        sponzor=spon.sponzor_profil, akcija=akc,
+        vrednost=vrednost, opis=opis, status=status,
     )
