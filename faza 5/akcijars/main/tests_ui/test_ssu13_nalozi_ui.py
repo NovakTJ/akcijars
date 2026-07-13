@@ -8,7 +8,7 @@ from uuid import uuid4
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 
-from main.models import OrganizatorProfil
+from main.models import Korisnik, OrganizatorProfil
 from main.tests._helpers import administrator, organizator, volonter
 from ._baza import SeleniumBazniTest
 
@@ -34,6 +34,19 @@ class AdminNaloziUITest(SeleniumBazniTest):
             OrganizatorProfil.objects.get(korisnik=self.org).status,
             OrganizatorProfil.Status.ODOBREN,
         )
+
+    def test_admin_odustaje_od_uklanjanja(self):
+        """Proširenje 7a — admin klikne „Ukloni" pa „Otkaži"; korisnik ostaje u sistemu."""
+        vol = volonter(f'meta.{uuid4().hex[:6]}@akcija.rs')
+        self.login(self.admin_email)
+        self.idi('/admin-panel/')
+        self.klik('[data-tab="korisnici"]')                       # tab „Korisnici"
+        self.klik(f'#sec-korisnici button[data-id="{vol.pk}"]')   # dugme „Ukloni"
+        self.klik('#modal-ukloni .btn-ghost')                     # dugme „Otkaži"
+        # korisnik ostaje u bazi i na listi (Ajax se ne šalje)
+        self.assertTrue(Korisnik.objects.filter(pk=vol.pk).exists())
+        self.assertEqual(
+            len(self.br.find_elements(By.CSS_SELECTOR, f'[data-id="{vol.pk}"]')), 1)
 
     def test_ne_admin_ne_pristupa_panelu(self):
         """Volonter ne može da otvori admin panel — preusmeren je."""

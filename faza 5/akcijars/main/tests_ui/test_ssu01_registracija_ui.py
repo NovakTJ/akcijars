@@ -26,7 +26,8 @@ class RegistracijaUITest(SeleniumBazniTest):
         email = f'jovana.{uuid4().hex[:6]}@gmail.com'
         self._popuni(email)
         self.klik('#reg-form button[type="submit"]')
-        self.cekaj('.alert-success')
+        # SSU 2.2.1 korak 5 — tačna poruka o uspehu
+        self.cekaj_tekst('body', 'Registracija je uspešna. Možete se prijaviti na sistem.')
         self.assertTrue(Korisnik.objects.filter(email=email).exists())
 
     def test_lozinke_se_ne_poklapaju(self):

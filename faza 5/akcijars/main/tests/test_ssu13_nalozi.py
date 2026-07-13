@@ -52,7 +52,9 @@ class OdobriNalogTest(TestCase):
             OrganizatorProfil.objects.get(korisnik=self.org).status,
             OrganizatorProfil.Status.ODOBREN,
         )
-        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(len(mail.outbox), 1)  # 2.2.1 korak 7 — email
+        # Posledica 2.5 — odobren korisnik može da pristupi sistemu.
+        self.assertTrue(Korisnik.objects.get(pk=self.org.pk).je_odobren)
 
     def test_odobrenje_sponzora(self):
         """Admin odobrava i sponzora na čekanju."""
@@ -100,6 +102,9 @@ class OdbijNalogTest(TestCase):
             OrganizatorProfil.objects.get(korisnik=self.org).status,
             OrganizatorProfil.Status.ODBIJEN,
         )
+        self.assertEqual(len(mail.outbox), 1)  # 2.2.2 korak 7 — email o odbijanju
+        # Posledica 2.5 — odbijen nalog ostaje neaktivan.
+        self.assertFalse(Korisnik.objects.get(pk=self.org.pk).je_odobren)
 
 
 class UkloniKorisnikaTest(TestCase):
