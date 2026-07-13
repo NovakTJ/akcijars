@@ -74,10 +74,12 @@ from .emails import (
     posalji_izmenu_akcije,
     posalji_obavestenje_volonterima,
     posalji_odbijanje_naloga,
+    posalji_odbijanje_ponude,
     posalji_odbijanje_prijave,
     posalji_odobrenje_naloga,
     posalji_otkazivanje_akcije,
     posalji_potvrdu_registracije,
+    posalji_prihvatanje_ponude,
     posalji_prihvatanje_prijave,
 )
 from .forms import (
@@ -536,6 +538,7 @@ def prihvati_ponudu(request, id_akc, ponuda_id):
         return JsonResponse({'error': 'Ponuda je već obrađena.'}, status=400)
     ponuda.status = SponzorskaPonuda.Status.PRIHVACENA
     ponuda.save(update_fields=['status'])
+    posalji_prihvatanje_ponude(ponuda)  # SSU 17, 2.2.1 korak 8 — email sponzoru
     ctx = _org_ponude_kontekst(akcija)
     return JsonResponse({
         'ponude': render_to_string('_org_ponude.html', ctx, request=request),
@@ -560,6 +563,7 @@ def odbij_ponudu(request, id_akc, ponuda_id):
         return JsonResponse({'error': 'Ponuda je već obrađena.'}, status=400)
     ponuda.status = SponzorskaPonuda.Status.ODBIJENA
     ponuda.save(update_fields=['status'])
+    posalji_odbijanje_ponude(ponuda)  # SSU 17, 2.2.2 korak 7 — email sponzoru
     ctx = _org_ponude_kontekst(akcija)
     return JsonResponse({
         'ponude': render_to_string('_org_ponude.html', ctx, request=request),

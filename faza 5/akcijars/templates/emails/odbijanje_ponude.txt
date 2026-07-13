@@ -1,0 +1,9 @@
+Zdravo {{ sponzor.naziv_organizacije }},
+
+Nažalost, Vaša ponuda za sponzorstvo akcije „{{ akcija.naziv }}" nije prihvaćena.
+
+Zahvaljujemo se na interesovanju i pozivamo Vas da podržite neku od drugih
+akcija dostupnih na AkcijaRS.
+
+Srdačan pozdrav,
+Tim AkcijaRS

@@ -112,6 +112,40 @@ def posalji_odbijanje_prijave(prijava):
     )
 
 
+def _posalji_odgovor_na_ponudu(ponuda, naslov, template_base):
+    """Zajednička logika za slanje mejla sponzoru o odluci organizatora (SSU 17); vraća broj poslatih poruka."""
+    kontekst = {'sponzor': ponuda.sponzor, 'akcija': ponuda.akcija, 'ponuda': ponuda}
+
+    tekst = render_to_string(f'emails/{template_base}.txt', kontekst)
+    html = render_to_string(f'emails/{template_base}.html', kontekst)
+
+    poruka = EmailMultiAlternatives(
+        subject=naslov,
+        body=tekst,
+        to=[ponuda.sponzor.korisnik.email],
+    )
+    poruka.attach_alternative(html, 'text/html')
+    return poruka.send(fail_silently=True)
+
+
+def posalji_prihvatanje_ponude(ponuda):
+    """Obaveštava sponzora da je njegova ponuda za sponzorstvo prihvaćena; vraća broj poslatih poruka."""
+    return _posalji_odgovor_na_ponudu(
+        ponuda,
+        naslov=f'Ponuda prihvaćena — {ponuda.akcija.naziv}',
+        template_base='prihvatanje_ponude',
+    )
+
+
+def posalji_odbijanje_ponude(ponuda):
+    """Obaveštava sponzora da njegova ponuda za sponzorstvo nije prihvaćena; vraća broj poslatih poruka."""
+    return _posalji_odgovor_na_ponudu(
+        ponuda,
+        naslov=f'Odgovor na ponudu — {ponuda.akcija.naziv}',
+        template_base='odbijanje_ponude',
+    )
+
+
 def posalji_obavestenje_volonterima(akcija, poruka, primaoci):
     """
     Šalje obaveštenje organizatora prihvaćenim volonterima akcije (SSU 8, 2.2.1).
