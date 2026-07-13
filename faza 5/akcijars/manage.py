@@ -7,6 +7,13 @@ import sys
 
 def main():
     """Run administrative tasks."""
+    # Faza 7 — testovi podrazumevano koriste `akcijars.test_settings` (brzi MD5
+    # heš lozinki umesto sporog PBKDF2, email u memoriji). Aktivira se samo za
+    # `manage.py test` i samo ako korisnik nije sam prosledio `--settings`.
+    if len(sys.argv) > 1 and sys.argv[1] == 'test' and not any(
+        a == '--settings' or a.startswith('--settings=') for a in sys.argv[2:]
+    ):
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'akcijars.test_settings')
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'akcijars.settings')
     try:
         from django.core.management import execute_from_command_line

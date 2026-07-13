@@ -4,7 +4,7 @@ Jedinični testovi za SSU 15 — Praćenje učešća volontera.
 
 Testira se kontroler ``volonter_panel`` (tekuće prijave, istorija učešća i
 ukupan broj volonterskih sati) — funkcionalnost je implementirao
-Stefan Grujičić (ukrštanje).
+Stefan Grujičić.
 """
 from django.test import TestCase
 from django.urls import reverse
