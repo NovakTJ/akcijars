@@ -14,15 +14,15 @@ notifications and recommendations, as well as account and content administration
 
 ## Project phases
 
-| Phase | Contents | Deadline |
-| :--- | :--- | :--- |
-| [1. Project specification](faza%201) | Problem description, user categories and functional requirements | Apr 6, 2026 |
-| [2. Use case scenarios and prototype](faza%202) | 18 use case scenarios (`ssu/`) and an HTML prototype (`prototip/`) | Apr 16, 2026 |
-| [3. Formal inspection](faza%203) | Inspector logs and formal inspection reports | May 9 / May 14, 2026 |
-| [4. Database modeling](faza%204) | Database specification, SQL script and ER diagram (MySQL Workbench) | May 21, 2026 |
-| [5. Web application implementation](faza%205) | Django application (`akcijars/`) and a list of tools used | Jul 12, 2026 |
-| [6. Web application modeling](faza%206) | UML use case, class and sequence diagrams (StarUML) | Jul 12, 2026 |
-| [7. Web application testing](faza%207) | Test plans and reports (unit and UI tests) | Jul 12, 2026 |
+| Phase | Contents |
+| :--- | :--- |
+| [1. Project specification](faza%201) | Problem description, user categories and functional requirements |
+| [2. Use case scenarios and prototype](faza%202) | 18 use case scenarios (`ssu/`) and an HTML prototype (`prototip/`) |
+| [3. Formal inspection](faza%203) | Inspector logs and formal inspection reports |
+| [4. Database modeling](faza%204) | Database specification, SQL script and ER diagram (MySQL Workbench) |
+| [5. Web application implementation](faza%205) | Django application (`akcijars/`) and a list of tools used |
+| [6. Web application modeling](faza%206) | UML use case, class and sequence diagrams (StarUML) |
+| [7. Web application testing](faza%207) | Test plans and reports (unit and UI tests) |
 
 ## Technologies
 
